@@ -407,6 +407,13 @@ R.PRESETS = [
   { key: 'this-week', label: 'Happening this week', track: 'movement', q: { catalystWithinDays: 7, sortBy: 'heat' } },
   { key: 'coiled', label: 'Coiled up', track: 'movement', q: { setups: ['coiled'], sortBy: 'heat' } },
   { key: 'big-moves', label: 'Biggest expected moves', track: 'movement', q: { severities: ['violent', 'extreme'], sortBy: 'biggestMove' } },
+  // The four the app had no starting point for, and the ones a sorted table is
+  // worst at: money with a deadline, money nobody has to chase, money that is
+  // simply free, and money few people have heard of.
+  { key: 'closing-soon', label: 'Closing soon', track: 'all', q: { expiringWithinDays: 30, sortBy: 'closingSoon', hideTraps: false } },
+  { key: 'free-money', label: 'Free money', track: 'all', q: { sections: ['deals'], sortBy: 'dogScore', hideTraps: false } },
+  { key: 'no-chasing', label: 'No chasing anyone', track: 'all', q: { sections: ['deals'], effortMax: 'light', sortBy: 'dogScore', hideTraps: false } },
+  { key: 'obscure', label: 'Few people know', track: 'all', q: { reaches: ['obscure', 'niche'], sortBy: 'dogScore' } },
 ];
 
 /* ══════════════════════════════════════════════════════ filter bar & menu ══ */

@@ -168,6 +168,39 @@
       format: (q) => q.liquidity.join(', '),
     },
 
+    // ---- Window, effort and reach -----------------------------------------
+    // The three questions a rate-and-risk screener has never been able to
+    // answer: how soon does this disappear, how much work is it, and does
+    // anyone else know about it. All three exist because a sorted table of
+    // eight hundred rows cannot surface a deal that closes on Friday.
+    {
+      key: 'expiringWithin', type: 'number', keys: ['expiringWithinDays'], group: G.TIMING,
+      label: 'Closes within', unit: ' days',
+      description: 'Only things with a published deadline inside this many days. The one thing a table sorted by yield can never show you.',
+      format: (q) => `${q.expiringWithinDays} days or fewer left`,
+    },
+    {
+      key: 'effortMax', type: 'select', keys: ['effortMax'], group: G.TIMING,
+      label: 'Most work I will do',
+      description: 'A 12% yield you click once for and a $1,500 referral needing five friends to sign up are not comparable. This caps how much chasing a row can require.',
+      optionsFrom: 'efforts',
+      format: (q, ctx) => `${(ctx.options.efforts.find((e) => e[0] === q.effortMax) || [])[1] || q.effortMax} or less`,
+    },
+    {
+      key: 'reaches', type: 'multi', keys: ['reaches'], group: G.TIMING,
+      label: 'How well known',
+      description: 'Obscure cuts both ways: uncrowded, and less scrutinised. Shown rather than scored.',
+      optionsFrom: 'reaches',
+      format: (q) => q.reaches.join(', '),
+    },
+    {
+      key: 'vehicleKeys', type: 'multi', keys: ['vehicleKeys'], group: G.TIMING,
+      label: 'How I would play it',
+      description: 'The same view can often be expressed several ways. A stock you want income from is a covered call; one you would happily own cheaper is a cash-secured put.',
+      optionsFrom: 'vehicles',
+      format: (q) => `${q.vehicleKeys.length} way${q.vehicleKeys.length === 1 ? '' : 's'}`,
+    },
+
     // ---- Money in ---------------------------------------------------------
     {
       key: 'minInvestmentMax', type: 'number', keys: ['minInvestmentMax'], group: G.MONEY,

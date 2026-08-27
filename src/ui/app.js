@@ -80,8 +80,21 @@ function filterOptions() {
     termPresets: (c.TERM_PRESETS || []).map((p) => [p.key, p.label]),
     taxTreatments: Object.values(c.TAX_TREATMENT).map((v) => [v, window.F.taxTreatment(v)]),
     trapFlags: Object.keys(c.TRAP_FLAG_TEXT || {}).map((k) => [k, k.replace(/_/g, ' ')]),
+    efforts: (c.EFFORT || []).map((e) => [e.key, e.label]),
+    reaches: (c.REACH || []).map((r) => [r.key, r.label]),
+    vehicles: Object.entries(c.VEHICLE || {}).map(([, v]) => [v, VEHICLE_LABELS[v] || v]),
   };
 }
+
+// The filter picker needs a human name for each vehicle key. The full
+// description lives on the row itself; here it is just the noun.
+const VEHICLE_LABELS = {
+  shares: 'Shares', fractional: 'Fractional shares', etf: 'Fund or ETF',
+  long_call: 'Call option', leaps: 'LEAPS', covered_call: 'Covered call',
+  cash_secured_put: 'Cash-secured put', protective_put: 'Protective put',
+  spread: 'Spread', deposit: 'Deposit account', direct: 'Direct with the provider',
+  on_chain: 'On-chain', auction: 'Auction',
+};
 
 function renderCtx() {
   return {
