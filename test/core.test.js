@@ -290,6 +290,18 @@ describe('scoring', () => {
     assert.match(s.horizonNote, /back in 90d/);
   });
 
+  test('re-scoring an already-scored list is stable', () => {
+    // Every settings change re-scores in place rather than refetching, so a
+    // feedback loop here would silently drift the rankings the longer the app
+    // stays open.
+    let cur = [TBILL, JEPI, FARM].map(make);
+    const snap = () => cur.map((o) => [o.name, o.scores.dogScore, o.risk.score, o.trapScore, o.confidence]);
+    cur = scoreAll(cur, opts);
+    const first = JSON.stringify(snap());
+    for (let i = 0; i < 4; i += 1) cur = scoreAll(cur, opts);
+    assert.strictEqual(JSON.stringify(snap()), first, 'scores drifted across re-scores');
+  });
+
   test('risk aversion is monotonic in appetite', () => {
     assert.ok(riskAversion(0) > riskAversion(50));
     assert.ok(riskAversion(50) > riskAversion(100));
@@ -389,6 +401,18 @@ describe('dedupe', () => {
     assert.strictEqual(list[0].source, 'funds');
     assert.deepStrictEqual(list[0].corroboratedBy, ['bonds']);
     assert.ok(list[0].confidence > 0.9, 'independent agreement raises confidence');
+  });
+
+  test('does not mutate the rows an adapter handed it', () => {
+    const a = make({ ...JEPI, source: 'funds', confidence: 0.9 });
+    const b = make({ ...JEPI, source: 'bonds', confidence: 0.5 });
+    dedupe([a, b]);
+    assert.strictEqual(a.confidence, 0.9, 'the input row must be untouched');
+    assert.strictEqual(a.corroboratedBy, undefined);
+    // ...so running it twice cannot compound the bump.
+    const once = dedupe([a, b]).list[0].confidence;
+    const twice = dedupe([a, b]).list[0].confidence;
+    assert.strictEqual(once, twice);
   });
 
   test('different things are not merged', () => {

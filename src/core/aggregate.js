@@ -100,10 +100,14 @@ function dedupe(list) {
     merged += 1;
     const winner = (o.confidence ?? 0) > (cur.confidence ?? 0) || (!o.seed && cur.seed) ? o : cur;
     const loser = winner === o ? cur : o;
-    winner.corroboratedBy = [...new Set([...(winner.corroboratedBy || []), loser.source])];
-    // Independent agreement is real evidence; a small bump, capped.
-    winner.confidence = Math.min(1, (winner.confidence ?? 0.5) + 0.05);
-    best.set(k, winner);
+    // Replace rather than mutate: these objects belong to their adapter, and a
+    // confidence bump applied in place would compound if this ever ran twice.
+    best.set(k, {
+      ...winner,
+      corroboratedBy: [...new Set([...(winner.corroboratedBy || []), loser.source])],
+      // Independent agreement is real evidence; a small bump, capped.
+      confidence: Math.min(1, (winner.confidence ?? 0.5) + 0.05),
+    });
   }
   return { list: [...best.values()], merged };
 }
