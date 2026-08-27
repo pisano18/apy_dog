@@ -147,18 +147,26 @@ function vehiclesFor(o, { budget = null } = {}) {
 
   if (likelyOptionable(o) && price) {
     const contract = price * CONTRACT_SIZE;
-    const payingNothing = !Number.isFinite(o.apy?.total) || o.apy.total < 0.5;
+    // "Pays nothing" has to mean nothing. A 0.4% dividend is negligible but it
+    // is not zero, and saying otherwise about a real company is just wrong.
+    const y = o.apy?.total;
+    const payingNothing = !Number.isFinite(y) || y < 0.15;
+    const payingLittle = Number.isFinite(y) && y >= 0.15 && y < 1.5;
 
     // The case worth being loud about: the only way to generate cash from a
     // stock that pays no dividend is to sell an option against it.
     add({
       key: K.VEHICLE.COVERED_CALL,
       label: 'Sell a covered call',
-      goal: payingNothing ? 'Manufacture income from something that pays none' : 'Add income on top of the dividend',
+      goal: payingNothing ? 'Manufacture income from something that pays none'
+        : payingLittle ? 'Turn a token dividend into real income'
+          : 'Add income on top of the dividend',
       what: `Own ${CONTRACT_SIZE} shares (${money(contract)}) and sell a call against them. You collect the premium now and cap your upside at the strike. `
         + (payingNothing
           ? 'This is the only way to get cash out of a holding that pays no dividend.'
-          : 'Stacks on top of what it already distributes.'),
+          : payingLittle
+            ? `Its ${y.toFixed(2)}% dividend is close to nothing; premium is where the income would actually come from.`
+            : 'Stacks on top of what it already distributes.'),
       requires: [`${CONTRACT_SIZE} shares — ${money(contract)}`, 'Options approval level 1 at most brokers'],
       capitalNeeded: contract,
     });

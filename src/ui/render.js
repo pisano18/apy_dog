@@ -586,6 +586,22 @@ R.drawer = (detail, ctx) => {
     </div>
   </div>
 
+  ${o.series?.length ? `<div class="dsection">
+    <h4>Price</h4>
+    ${R.chart(o.series, { label: 'over the window shown' })}
+  </div>` : ''}
+
+  ${Number.isFinite(o.daysLeft) || o.notYetOpen || o.effort !== 'passive' || o.reach !== 'common' ? `<div class="dsection">
+    <h4>Getting it</h4>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px">
+      ${Number.isFinite(o.daysLeft) ? R.countdownChip(o) : ''}
+      ${o.notYetOpen ? `<span class="tag">opens in ${o.daysUntilOpen} days</span>` : ''}
+      ${o.effort && o.effort !== 'passive' ? `<span class="tag ${o.effort === 'social' ? 'social' : ''}">${esc((window.EFFORT_INFO?.[o.effort] || {}).label || o.effort)}</span>` : ''}
+      ${o.reach && o.reach !== 'common' ? `<span class="tag ${o.reach === 'obscure' ? 'obscure' : ''}">${esc(o.reach)}</span>` : ''}
+    </div>
+    ${o.effort && window.EFFORT_INFO?.[o.effort] ? `<div class="sectionnote">${esc(window.EFFORT_INFO[o.effort].text)}</div>` : ''}
+  </div>` : ''}
+
   ${isMovement && m ? `<div class="dsection">
     <h4>What is going on</h4>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
@@ -668,6 +684,23 @@ R.drawer = (detail, ctx) => {
   ${detail.series?.length > 1 ? `<div class="dsection"><h4>Rate history you have recorded</h4>${sparkline(detail.series)}</div>` : ''}
 
   ${o.notes ? `<div class="dsection"><div class="infobox">${esc(o.notes)}</div></div>` : ''}
+
+  ${(o.vehicles || []).length ? `<div class="dsection">
+    <h4>How you would play it</h4>
+    ${o.vehicles.map((v) => `<div class="vehrow ${v.viable === false ? 'reach-no' : ''}">
+      <span class="vmark" style="color:${v.viable === false ? 'var(--text-faint)' : 'var(--pos)'}">${v.viable === false ? '✕' : '✓'}</span>
+      <span class="vbody">
+        <span class="vtop">
+          <span class="vlbl">${esc(v.label)}</span>
+          <span class="vgoal">${esc(v.goal)}</span>
+          ${Number.isFinite(v.capitalNeeded) ? `<span class="vcap">needs ${esc(window.F.money(v.capitalNeeded))}</span>` : ''}
+        </span>
+        <span class="vwhat">${esc(v.what)}</span>
+        ${(v.requires || []).length ? `<span class="vwhat" style="color:var(--text-faint)">Needs: ${v.requires.map(esc).join(' · ')}</span>` : ''}
+      </span>
+    </div>`).join('')}
+    ${o.vehiclesOutOfReach ? `<div class="sectionnote">${o.vehiclesOutOfReach} of these need more capital than the amount you have set. They are shown rather than hidden, because knowing a covered call needs 100 shares is useful information.</div>` : ''}
+  </div>` : ''}
 
   <div class="dsection">
     <h4>How to buy it</h4>
