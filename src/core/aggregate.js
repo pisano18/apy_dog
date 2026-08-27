@@ -26,6 +26,18 @@ const T = require('./tracks');
 /** Scoring needs the risk-free rate; fall back sensibly if Treasury is down. */
 const FALLBACK_RISK_FREE = 4.0;
 
+/**
+ * Did this source actually produce anything?
+ *
+ * Not every source produces opportunities. The calendar and filings feeds
+ * produce dated EVENTS and an empty opportunities array by design, so judging
+ * them on row count alone reports a healthy source as failed and sends the user
+ * to the Sources panel to debug something that is working perfectly.
+ */
+function yielded(res) {
+  return (res?.opportunities?.length || 0) + (res?.events?.length || 0) > 0;
+}
+
 async function runSource(adapter, ctx) {
   const started = Date.now();
   try {
@@ -35,7 +47,7 @@ async function runSource(adapter, ctx) {
         ...res,
         id: adapter.id,
         label: adapter.label,
-        status: res.opportunities?.length ? C.SOURCE_STATUS.OFFLINE : C.SOURCE_STATUS.FAILED,
+        status: yielded(res) ? C.SOURCE_STATUS.OFFLINE : C.SOURCE_STATUS.FAILED,
         ms: Date.now() - started,
       };
     }
@@ -43,13 +55,13 @@ async function runSource(adapter, ctx) {
     const opportunities = res?.opportunities || [];
     // An adapter that "succeeds" with nothing is not a success. Fall back so the
     // user still sees rows rather than an empty category.
-    if (!opportunities.length) {
+    if (!yielded(res)) {
       const seeded = adapter.loadSeed(ctx) || {};
       return {
         ...seeded,
         id: adapter.id,
         label: adapter.label,
-        status: seeded.opportunities?.length ? C.SOURCE_STATUS.PARTIAL : C.SOURCE_STATUS.FAILED,
+        status: yielded(seeded) ? C.SOURCE_STATUS.PARTIAL : C.SOURCE_STATUS.FAILED,
         warnings: [...(res?.warnings || []), ...(seeded.warnings || []),
           'Live fetch returned no usable rows; showing the bundled snapshot instead.'],
         ms: Date.now() - started,
@@ -65,13 +77,14 @@ async function runSource(adapter, ctx) {
       id: adapter.id,
       label: adapter.label,
       opportunities: seeded.opportunities || [],
-      status: seeded.opportunities?.length ? C.SOURCE_STATUS.PARTIAL : C.SOURCE_STATUS.FAILED,
+      events: seeded.events || [],
+      status: yielded(seeded) ? C.SOURCE_STATUS.PARTIAL : C.SOURCE_STATUS.FAILED,
       notes: seeded.notes || [],
       warnings: [
         blocked
           ? `${adapter.label}: blocked by a network policy or firewall (HTTP ${err.status}).`
           : `${adapter.label}: ${err?.message || String(err)}`,
-        ...(seeded.opportunities?.length ? ['Showing the bundled snapshot for this source.'] : []),
+        ...(yielded(seeded) ? ['Showing the bundled snapshot for this source.'] : []),
       ],
       error: String(err?.message || err),
       ms: Date.now() - started,
@@ -251,6 +264,10 @@ async function aggregate(adapters, opts = {}) {
     label: r.label,
     status: r.status || C.SOURCE_STATUS.OK,
     count: r.opportunities?.length || 0,
+    eventCount: r.events?.length || 0,
+    // A calendar feed's contribution is events, not rows; reporting "0 rows" for
+    // a working source is how a healthy feed gets mistaken for a broken one.
+    produces: (r.events?.length || 0) > 0 && !(r.opportunities?.length || 0) ? 'events' : 'opportunities',
     ms: r.ms,
     notes: r.notes || [],
     warnings: r.warnings || [],

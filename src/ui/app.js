@@ -364,7 +364,9 @@ function renderSources() {
       <div class="info">
         <div class="nm">${esc(h.label)} <span class="st" style="color:${colour[h.status]}">${word[h.status] || h.status}</span></div>
         <div class="meta">${esc(src.description || '')}</div>
-        <div class="meta">${h.count.toLocaleString()} rows${h.ms ? ` · ${h.ms}ms` : ''}</div>
+        <div class="meta">${h.produces === 'events'
+          ? `${(h.eventCount || 0).toLocaleString()} dated events`
+          : `${h.count.toLocaleString()} rows${h.eventCount ? ` · ${h.eventCount} events` : ''}`}${h.ms ? ` · ${h.ms}ms` : ''}</div>
         ${(h.notes || []).map((n) => `<div class="msg">${esc(n)}</div>`).join('')}
         ${(h.warnings || []).map((w) => `<div class="msg warn">⚠ ${esc(w)}</div>`).join('')}
       </div>

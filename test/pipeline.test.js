@@ -127,9 +127,11 @@ describe('aggregate', () => {
     assert.strictEqual(result.health.length, adapters.length);
     for (const h of result.health) {
       assert.ok(Object.values(C.SOURCE_STATUS).includes(h.status), `${h.id} status ${h.status}`);
-      // A disabled source contributing nothing is the correct outcome, not a fault.
+      // A disabled source contributing nothing is the correct outcome, not a
+      // fault, and an events-only source contributes events rather than rows.
       if (h.status !== C.SOURCE_STATUS.DISABLED) {
-        assert.ok(h.count > 0, `${h.label} is enabled but contributed nothing`);
+        const contributed = (h.count || 0) + (h.eventCount || 0);
+        assert.ok(contributed > 0, `${h.label} is enabled but contributed nothing`);
       }
     }
     const counted = result.health.reduce((n, h) => n + h.count, 0);
