@@ -536,6 +536,23 @@ function registerIpc() {
     return next;
   });
 
+  /**
+   * The plan.
+   *
+   * Ordering, not ranking. Assembled here because it reads the whole dataset
+   * and the user's settings at once, and because the tiering is a decision the
+   * app makes rather than a view the renderer composes.
+   */
+  handle('data:plan', (facts) => {
+    const { buildPlan } = require('../src/core/plan');
+    store.updateSettings({ planFacts: { ...(store.settings.planFacts || {}), ...(facts || {}) } });
+    return buildPlan(dataset.opportunities, {
+      budget: Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null,
+      facts: store.settings.planFacts || {},
+      riskFree: dataset.meta?.riskFreeRate ?? 4,
+    });
+  });
+
   handle('app:checkUpdates', () => checkForUpdates({ interactive: false }));
   handle('app:installUpdate', () => {
     try {
@@ -934,10 +951,10 @@ async function runSmokeTest() {
   }
 
   // Every other view. A pane that throws on render is invisible from Find alone.
-  for (const view of ['events', 'sources', 'settings', 'watch']) {
+  for (const view of ['plan', 'events', 'sources', 'settings', 'watch']) {
     try {
       await js(`document.querySelector('.tab[data-view="${view}"]').click(); true`);
-      await wait(500);
+      await wait(view === 'plan' ? 900 : 500);
       const n = await js(`document.querySelector('#view-${view}').innerHTML.length`);
       report[`${view}Html`] = n;
       if (n < 400) failuresLate.push(`${view} pane rendered almost nothing (${n} chars)`);
@@ -945,6 +962,18 @@ async function runSmokeTest() {
     } catch (err) {
       failuresLate.push(`${view} pane failed: ${err.message}`);
     }
+  }
+
+  // The plan is an ordering, so an empty or single-step one means the tiering
+  // silently collapsed — which looks fine on screen and is the whole feature.
+  try {
+    await js("document.querySelector('.tab[data-view=\"plan\"]').click(); true");
+    await wait(700);
+    report.planSteps = await js("document.querySelectorAll('#view-plan .planstep').length");
+    report.planTiers = await js("document.querySelectorAll('#view-plan section h3').length");
+    if (!report.planSteps) failuresLate.push('the plan produced no steps');
+  } catch (err) {
+    failuresLate.push(`plan check failed: ${err.message}`);
   }
 
   try {

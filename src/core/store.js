@@ -65,6 +65,10 @@ const DEFAULT_SETTINGS = {
   watchClosingDays: 7,          // warn this many days before a watched window shuts
   watchNewDealsWorth: 200,      // and when a deal worth at least this much appears
 
+  // What the user has told the planner about themselves. Everything here is a
+  // fact the app cannot derive and refuses to guess.
+  planFacts: {},
+
   // --- safety rails --------------------------------------------------------
   acknowledgedDisclaimer: false,
 };

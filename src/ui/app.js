@@ -390,6 +390,131 @@ async function renderRadar() {
   $('#view-radar').innerHTML = window.R.radar({ cards, meta: d.meta, budget: d.budget }, renderCtx());
 }
 
+/* ------------------------------------------------------------------- plan - */
+
+/**
+ * The plan view.
+ *
+ * Everything else in this app ranks. This orders — and the order is frequently
+ * not the ranking, because a 100% employer match and a 5.4% CD are not two
+ * points on one scale.
+ */
+async function renderPlan() {
+  const el = $('#view-plan');
+  let p;
+  try {
+    p = await window.apy.plan(S.planFacts || null);
+  } catch (err) {
+    el.innerHTML = `<div class="wrap"><h2>Plan</h2><div class="infobox">Could not build a plan: ${esc(err.message)}</div></div>`;
+    return;
+  }
+  S.plan = p;
+  const f = p.facts;
+  const money = (v) => window.F.money(v, { dp: 0 });
+
+  const askRow = (id, label, input, hint) => `<div class="field">
+    <label>${label}</label>${input}
+    ${hint ? `<span style="font-size:10.5px;color:var(--text-faint)">${hint}</span>` : ''}
+  </div>`;
+
+  // Numbered across the whole plan, not within each tier. It is one sequence —
+  // restarting at 1 under every heading turns an order of operations back into
+  // six unrelated lists.
+  const order = new Map(p.steps.map((s, i) => [s.id, i + 1]));
+  const stepHtml = (s) => `<li class="planstep" data-act="goto" data-id="${esc(s.id)}">
+    <span class="pnum">${order.get(s.id)}</span>
+    <span class="pbody">
+      <span class="ptop">
+        <span class="pname">${esc(s.name)}</span>
+        ${s.grade ? `<span class="grade" style="color:${esc(s.gradeColor || 'var(--text-dim)')};background:${esc((s.gradeColor || '#888') + '18')}">${esc(s.grade)}</span>` : ''}
+        ${Number.isFinite(s.daysLeft) ? `<span class="countdown" style="color:var(--neg);background:var(--neg-soft)">${s.daysLeft <= 0 ? 'today' : `${Math.round(s.daysLeft)}d`}</span>` : ''}
+      </span>
+      <span class="pmeta">
+        ${s.provider ? `${esc(s.provider)} · ` : ''}${esc(window.EFFORT_INFO?.[s.effort]?.label || s.effort)}
+        ${s.minutes ? ` · about ${s.minutes < 60 ? `${s.minutes} min` : `${Math.round(s.minutes / 60)}h`}` : ''}
+      </span>
+      ${s.note ? `<span class="pnote">${esc(s.note)}</span>` : ''}
+      ${s.caution ? `<span class="pcaution">${esc(s.caution)}</span>` : ''}
+    </span>
+    <span class="pval">
+      ${s.dollarsUnknown ? '<span class="pund">rate only</span>'
+    : Number.isFinite(s.dollars) ? `<b>${money(s.dollars)}</b><span class="u">year one</span>` : '<span class="pund">—</span>'}
+      ${Number.isFinite(s.capital) && s.capital > 0 ? `<span class="pcap">${money(s.capital)} committed</span>` : ''}
+    </span>
+  </li>`;
+
+  el.innerHTML = `<div class="wrap">
+    <h2>What to do, in order</h2>
+    <p class="lead">Every other view in this app ranks things. This one orders them — and the order is often not
+      the ranking, because a dollar-for-dollar employer match is a 100% return and no yield on this page competes
+      with that. Tell it the handful of things it cannot work out for itself and the sequence becomes yours.</p>
+
+    <section><h3>What it needs from you</h3>
+      <div class="grid3">
+        ${askRow('p-match', 'Does your employer match?',
+    `<select id="p-match">
+            <option value="">I do not know</option>
+            <option value="yes" ${f.employerMatches === true ? 'selected' : ''}>Yes</option>
+            <option value="no" ${f.employerMatches === false ? 'selected' : ''}>No</option>
+          </select>`, 'Roughly a third of plans do not.')}
+        ${askRow('p-card', 'Card balance you carry ($)',
+    `<input type="number" id="p-card" min="0" step="100" value="${Number.isFinite(f.cardBalance) ? f.cardBalance : ''}" placeholder="0" />`,
+    'At 25% APR, clearing it beats everything below the match.')}
+        ${askRow('p-spend', 'You spend about ($ / month)',
+    `<input type="number" id="p-spend" min="0" step="100" value="${Number.isFinite(f.monthlyExpenses) ? f.monthlyExpenses : ''}" placeholder="not set" />`,
+    'Only used to size the buffer.')}
+        ${askRow('p-hours', 'Hours of hassle you will spend',
+    `<input type="number" id="p-hours" min="0" max="80" step="1" value="${f.hoursAvailable}" />`,
+    'Decides how many bounded offers are worth chasing.')}
+        ${askRow('p-months', 'Months of buffer you want',
+    `<input type="number" id="p-months" min="0" max="24" step="1" value="${f.bufferMonths}" />`, '')}
+      </div>
+    </section>
+
+    <section><h3>What it comes to</h3>
+      <div class="statgrid">
+        <div class="stat"><div class="v" style="color:var(--pos)">${p.fromCapital ? money(p.fromCapital) : '—'}</div>
+          <div class="k">Year one, on the money you deploy</div></div>
+        <div class="stat"><div class="v" style="color:var(--brand)">${p.fromActions ? money(p.fromActions) : '—'}</div>
+          <div class="k">Year one, from actions needing no capital</div></div>
+        <div class="stat"><div class="v">${Number.isFinite(p.unallocated) ? money(p.unallocated) : '—'}</div>
+          <div class="k">Left unallocated</div></div>
+        <div class="stat"><div class="v">${Math.round(p.minutesUsed / 6) / 10}h</div>
+          <div class="k">Of your time, spent</div></div>
+      </div>
+      <div class="sectionnote">These two totals are deliberately not added together. A pre-tax commuter election
+        saves real money and needs no capital, so it does not scale with what you have and does not belong in the
+        same number as a yield on a balance.</div>
+    </section>
+
+    ${p.tiers.map((t) => `<section>
+      <h3>${esc(t.title)}</h3>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.55;margin:0 0 10px;max-width:780px">${esc(t.why)}</p>
+      <ol class="plansteps">${p.steps.filter((s) => s.tier === t.key).map(stepHtml).join('')}</ol>
+    </section>`).join('')}
+
+    ${p.notKnown.length ? `<section><h3>What it does not know</h3>
+      <div class="infobox"><ul style="margin:0;padding-left:18px;line-height:1.6">
+        ${p.notKnown.map((n) => `<li>${esc(n)}</li>`).join('')}
+      </ul></div></section>` : ''}
+
+    ${p.skipped.length ? `<section><h3>Left out, and why</h3>
+      <div class="sectionnote">A plan that silently drops things reads as a complete plan. These did not fit the
+        money or the time you gave it.</div>
+      <ul class="skiplist">${p.skipped.slice(0, 12).map((s) => `<li><b>${esc(s.name || s.tier)}</b> — ${esc(s.why)}</li>`).join('')}
+        ${p.skipped.length > 12 ? `<li style="color:var(--text-faint)">…and ${p.skipped.length - 12} more</li>` : ''}</ul>
+    </section>` : ''}
+
+    <section><h3>What this is</h3>
+      <div class="disclaimer">This is an ordering, computed from public rate data and the handful of facts above.
+        It is not financial advice and it does not know your circumstances — your job security, your dependants,
+        your health, your other holdings, or your plan documents. The tiers reflect an ordering most people would
+        recognise as sensible; whether it is right <i>for you</i> is a judgement this app cannot make.
+        ${p.assumptions.map((a) => esc(a)).join(' ')}</div>
+    </section>
+  </div>`;
+}
+
 function renderEvents() {
   const upcoming = S.events.filter((e) => !e.past).sort((a, b) => a.dateMs - b.dateMs);
   const past = S.events.filter((e) => e.past).sort((a, b) => b.dateMs - a.dateMs);
@@ -642,8 +767,9 @@ function switchView(view) {
   $('#view-find').style.display = view === 'find' ? 'flex' : 'none';
   $('#view-radar').style.display = view === 'radar' ? 'flex' : 'none';
   $('#drawer').classList.toggle('hidden', view !== 'find' || !S.detail);
-  for (const v of ['events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
+  for (const v of ['plan', 'events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
   if (view === 'radar') renderRadar().catch(() => {});
+  if (view === 'plan') renderPlan().catch(() => {});
   if (view === 'events') renderEvents();
   if (view === 'sources') renderSources();
   if (view === 'settings') renderSettings();
@@ -903,6 +1029,18 @@ function wire() {
       's-closing': (v) => ({ watchClosingDays: Number(v) }),
       's-newdeal': (v) => ({ watchNewDealsWorth: Number(v) }),
     };
+    if (el.id.startsWith('p-')) {
+      const num = (v) => (v === '' ? null : Number(v));
+      const facts = {
+        'p-match': () => ({ employerMatches: el.value === '' ? null : el.value === 'yes' }),
+        'p-card': () => ({ cardBalance: num(el.value) }),
+        'p-spend': () => ({ monthlyExpenses: num(el.value) }),
+        'p-hours': () => ({ hoursAvailable: Number(el.value) || 0 }),
+        'p-months': () => ({ bufferMonths: Number(el.value) || 0 }),
+      }[el.id];
+      if (facts) { S.planFacts = facts(); await renderPlan(); }
+      return;
+    }
     const fn = map[el.id];
     if (!fn) return;
     S.boot.settings = await window.apy.updateSettings(fn(el.value));
