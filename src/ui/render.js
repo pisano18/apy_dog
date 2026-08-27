@@ -158,6 +158,7 @@ R.MOVEMENT_COLUMNS = [
   { key: 'watch', label: '', width: 26 },
   { key: 'name', label: 'Ticker', sort: 'name' },
   { key: 'heat', label: 'Heat', sort: 'heat', num: true },
+  { key: 'chart', label: '12mo', sort: null, width: 84 },
   { key: 'setup', label: 'Setup', sort: null },
   { key: 'catalyst', label: 'Next catalyst', sort: 'soonest' },
   { key: 'severity', label: 'If it moves', sort: 'biggestMove' },
@@ -189,6 +190,7 @@ function movementRow(o, ctx) {
     <td><span class="star ${ctx.watched ? 'on' : ''}" data-act="watch" data-id="${esc(o.id)}">${ctx.watched ? '★' : '☆'}</span></td>
     <td>${nameCell(o, ctx.classes)}</td>
     <td class="num">${heatBar(m)}</td>
+    <td>${o.series?.length ? R.sparkline(o.series) : '<span class="spark2"></span>'}</td>
     <td>${setupChip(m)}</td>
     <td>${catalystCell(m)}</td>
     <td>${severityChip(m)}</td>
@@ -230,6 +232,61 @@ R.table = (rows, ctx) => {
   }).join('');
 
   return `<table class="results"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+};
+
+/* ════════════════════════════════════════════════════════════════ charts ══ */
+
+/**
+ * Price chart from a downsampled series.
+ *
+ * Deliberately unlabelled on the row and lightly labelled in the drawer. The
+ * shape is the information — whether something is grinding up, coiling, or
+ * falling off a cliff reads instantly and a grid of axis ticks would only
+ * compete with it.
+ */
+function chartPath(series, w, h, pad = 2) {
+  const vals = (series || []).filter(Number.isFinite);
+  if (vals.length < 2) return null;
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || Math.abs(max) || 1;
+  const x = (i) => pad + (i / (vals.length - 1)) * (w - pad * 2);
+  const y = (v) => h - pad - ((v - min) / span) * (h - pad * 2);
+  const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const area = `${line}L${x(vals.length - 1).toFixed(1)},${h}L${x(0).toFixed(1)},${h}Z`;
+  return { line, area, min, max, first: vals[0], last: vals[vals.length - 1], up: vals[vals.length - 1] >= vals[0] };
+}
+
+R.sparkline = (series, w = 74, h = 24) => {
+  const p = chartPath(series, w, h);
+  if (!p) return '<span class="spark2"></span>';
+  const c = p.up ? 'var(--pos)' : 'var(--neg)';
+  return `<svg class="spark2" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${p.line}" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+};
+
+R.chart = (series, { w = 380, h = 132, label = '' } = {}) => {
+  const p = chartPath(series, w, h, 6);
+  if (!p) return '<div class="infobox">No price history pulled for this one yet.</div>';
+  const c = p.up ? 'var(--pos)' : 'var(--neg)';
+  const id = `g${Math.random().toString(36).slice(2, 8)}`;
+  const pct = p.first ? ((p.last - p.first) / Math.abs(p.first)) * 100 : 0;
+  return `<div class="chartbox">
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="${c}" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="${c}" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path d="${p.area}" fill="url(#${id})"/>
+      <path d="${p.line}" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="chartmeta">
+      <span>${esc(window.F.money(p.min, { dp: 2 }))}</span>
+      <span style="color:${c}">${window.F.pctSigned(pct, 1)} ${esc(label)}</span>
+      <span>${esc(window.F.money(p.max, { dp: 2 }))}</span>
+    </div>
+  </div>`;
 };
 
 /* ═══════════════════════════════════════════════════════════════ presets ══ */
@@ -371,6 +428,91 @@ R.eventRow = (e, ctx = {}) => {
     <div class="away">${esc(window.CATALYST_WHEN ? window.CATALYST_WHEN(e.daysAway) : `${Math.round(e.daysAway)}d`)}</div>
   </div>`;
 };
+
+/* ═══════════════════════════════════════════════════════════════════ radar ══ */
+
+/**
+ * The landing view.
+ *
+ * Seven hundred rows sorted by anything is not navigable — the crypto tickers
+ * alone bury every bank offer in the app. So the first thing you see is a digest:
+ * a handful from each shelf, plus the two things a flat table can never surface,
+ * which are what closes soon and what almost nobody knows about.
+ *
+ * Every card links through to the full filtered list, so this is a way in rather
+ * than a wall between you and the data.
+ */
+
+function countdownChip(o) {
+  if (!Number.isFinite(o.daysLeft)) return '';
+  const d = o.daysLeft;
+  const col = d <= 7 ? 'var(--neg)' : d <= 31 ? 'var(--warn)' : 'var(--text-faint)';
+  const bg = d <= 7 ? 'var(--neg-soft)' : d <= 31 ? 'var(--warn-soft)' : 'var(--panel-3)';
+  const txt = d < 0 ? 'closed' : d === 0 ? 'today' : d === 1 ? '1 day' : `${d} days`;
+  return `<span class="countdown" style="color:${col};background:${bg}">${txt}</span>`;
+}
+
+function radarItem(o, valueFn, subFn) {
+  return `<li class="ritem" data-act="goto" data-id="${esc(o.id)}">
+    ${o.series?.length ? R.sparkline(o.series, 54, 20) : ''}
+    <span class="body">
+      <span class="nm">${esc(o.name)}</span>
+      <span class="sub">${esc(subFn(o))}</span>
+    </span>
+    <span class="val">${valueFn(o)}</span>
+  </li>`;
+}
+
+function radarCard({ icon, title, blurb, rows, count, query, valueFn, subFn, emptyText }) {
+  return `<section class="rcard">
+    <header>
+      <span class="ic">${icon}</span>
+      <h3>${esc(title)}</h3>
+      <span class="n">${count}</span>
+      <button class="more" data-act="radar-more" data-query='${esc(JSON.stringify(query))}'>see all →</button>
+    </header>
+    ${blurb ? `<div class="blurb">${esc(blurb)}</div>` : ''}
+    <ul>${rows.length
+    ? rows.map((o) => radarItem(o, valueFn, subFn)).join('')
+    : `<li class="empty3">${esc(emptyText || 'Nothing here right now.')}</li>`}</ul>
+  </section>`;
+}
+
+R.radar = (data, ctx) => {
+  const { cards, meta, budget } = data;
+  const money = window.F.money;
+
+  const budgetBar = budget
+    ? `<div class="budgetbar">
+        <span class="lbl">Working with <b>${money(budget)}</b> — every figure below is what it would earn you.</span>
+        <span class="spacer"></span>
+        <input type="number" id="radar-budget" value="${budget}" step="1000" />
+        <button class="btn sm" data-act="set-budget">Update</button>
+        <button class="btn ghost sm" data-act="clear-budget">Clear</button>
+      </div>`
+    : `<div class="budgetbar unset">
+        <span class="lbl"><b>How much are you working with?</b> Optional — without it you get rates, with it you get dollars, and capped offers get ranked on what they are actually worth to you.</span>
+        <span class="spacer"></span>
+        <input type="number" id="radar-budget" placeholder="e.g. 10000" step="1000" />
+        <button class="btn primary sm" data-act="set-budget">Set</button>
+      </div>`;
+
+  return `<div class="rwrap">
+    <div class="rhead">
+      <div>
+        <h1>What is worth looking at</h1>
+        <div class="sub">${meta.total.toLocaleString()} opportunities · ${meta.upcomingEvents || 0} dated events · scanned ${meta.generatedAt ? window.F.ago(meta.generatedAt) : 'never'}</div>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn" data-act="goto-section" data-val="all">Browse everything →</button>
+    </div>
+    ${budgetBar}
+    <div class="rgrid">${cards.join('')}</div>
+  </div>`;
+};
+
+R.radarCard = radarCard;
+R.countdownChip = countdownChip;
 
 /* ══════════════════════════════════════════════════════════════════ drawer ══ */
 

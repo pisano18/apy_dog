@@ -43,7 +43,9 @@ const DEFAULT_SETTINGS = {
   userRatesPath: null,          // filled in at runtime: userData/user-rates.json
 
   // --- display -------------------------------------------------------------
-  theme: 'system',              // system | dark | light
+  // Dark by default. The app is designed dark; following a bright system
+  // setting hands people a white wall of numbers they did not ask for.
+  theme: 'dark',                // dark | light | system
   density: 'comfortable',
   visibleColumns: null,         // null = the default set
   lastQuery: null,

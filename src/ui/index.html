@@ -12,14 +12,17 @@
     <header class="titlebar">
       <div class="brand"><span class="mark">🐕</span><span class="name">APY Dog</span><span class="ver" id="ver"></span></div>
 
-      <div class="trackswitch" id="trackswitch">
-        <button data-track="income" title="Things that pay a yield you can actually compute">
-          <span class="dot" style="background:var(--pos)"></span>Income <span class="n" id="n-income"></span>
+      <div class="sectionswitch" id="trackswitch">
+        <button data-section="income" title="Things that pay a rate you can compute">
+          <span class="ic">◆</span>Income <span class="n" id="n-income"></span>
         </button>
-        <button data-track="movement" title="Things whose return comes from price — what is about to move, and how hard">
-          <span class="dot" style="background:var(--brand)"></span>Movement <span class="n" id="n-movement"></span>
+        <button data-section="movement" title="Things whose return is price — what is about to move, and how hard">
+          <span class="ic">◈</span>Movement <span class="n" id="n-movement"></span>
         </button>
-        <button data-track="all" class="on">Everything <span class="n" id="n-all"></span></button>
+        <button data-section="deals" title="Bounded money: bonuses, referrals, promotions">
+          <span class="ic">★</span>Deals <span class="n" id="n-deals"></span>
+        </button>
+        <button data-section="all" class="on">All <span class="n" id="n-all"></span></button>
       </div>
 
       <div class="search">
@@ -31,7 +34,8 @@
       <span class="spacer"></span>
 
       <nav class="tabs" id="tabs">
-        <button class="tab active" data-view="find">Find</button>
+        <button class="tab active" data-view="radar">Radar</button>
+        <button class="tab" data-view="find">Browse</button>
         <button class="tab" data-view="events">Calendar <span class="count" id="ev-count">0</span></button>
         <button class="tab" data-view="watch">Watchlist <span class="count" id="watch-count">0</span></button>
         <button class="tab" data-view="sources">Sources <span class="count" id="src-count">–</span></button>
@@ -51,6 +55,8 @@
     </div>
 
     <div class="main">
+      <div class="radar" id="view-radar"></div>
+
       <div class="content" id="view-find">
         <div class="filterbar" id="filterbar"></div>
         <div class="resbar">

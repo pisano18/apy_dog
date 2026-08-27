@@ -14,6 +14,7 @@ const { History } = require('../src/core/history');
 const C = require('../src/core/constants');
 const T = require('../src/core/tracks');
 const { EVENT_INFO } = require('../src/core/catalyst');
+const K = require('../src/core/opportunity-kinds');
 const tax = require('../src/core/tax');
 const { toCSV, toJSON } = require('../src/core/export');
 
@@ -249,6 +250,13 @@ function registerIpc() {
       CLARITY: T.CLARITY,
       HEAT: T.HEAT,
       EVENT_INFO,
+      SECTION: K.SECTION,
+      SECTION_INFO: K.SECTION_INFO,
+      EFFORT: K.EFFORT,
+      EFFORT_INFO: K.EFFORT_INFO,
+      REACH: K.REACH,
+      REACH_INFO: K.REACH_INFO,
+      VEHICLE: K.VEHICLE,
       STATE_TOP_RATES: tax.STATE_TOP_RATES,
       FEDERAL_ORDINARY_BRACKETS: tax.FEDERAL_ORDINARY_BRACKETS,
       FEDERAL_LTCG_BRACKETS: tax.FEDERAL_LTCG_BRACKETS,
@@ -285,6 +293,42 @@ function registerIpc() {
     let series = [];
     try { series = history.seriesFor(id, { days: 365 }); } catch { /* optional */ }
     return { opportunity: o, series };
+  });
+
+  /**
+   * The Radar digest.
+   *
+   * Assembled here rather than in the renderer because the main process already
+   * holds the dataset — six filtered queries over seven hundred rows is trivial
+   * in-process and six IPC round trips is not.
+   */
+  handle('data:radar', () => {
+    const rows = dataset.opportunities;
+    const budget = Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null;
+    const take = (q, n = 5) => applyQuery(rows, { ...DEFAULT_QUERY, ...q, watchlist: store.watchlistIds(), limit: n });
+    const countOf = (q) => applyQuery(rows, { ...DEFAULT_QUERY, ...q, watchlist: store.watchlistIds() }).length;
+    const spec = (q) => ({ rows: take(q), count: countOf(q), query: q });
+
+    return {
+      budget,
+      meta: dataset.meta,
+      groups: {
+        // What a flat table can never show you: things with a deadline.
+        closing: spec({ expiringWithinDays: 30, sortBy: 'closingSoon', hideTraps: false }),
+        // What is coming, for what you already hold or might.
+        thisWeek: spec({ track: 'movement', catalystWithinDays: 7, sortBy: 'soonest' }),
+        // The three shelves.
+        income: spec({ sections: ['income'], sortBy: 'dogScore' }),
+        movement: spec({ sections: ['movement'], sortBy: 'heat' }),
+        deals: spec({ sections: ['deals'], sortBy: 'dogScore', hideTraps: false }),
+        // Things few people follow, which is genuinely informative both ways.
+        obscure: spec({ reaches: ['obscure', 'niche'], sortBy: 'dogScore' }),
+        // Money for an afternoon's work, ranked by least effort first.
+        easy: spec({ sections: ['deals'], effortMax: 'light', sortBy: 'dogScore', hideTraps: false }),
+        // What you are already tracking.
+        watching: spec({ watchlistOnly: true, hideTraps: false, includeSpeculative: true }),
+      },
+    };
   });
 
   handle('data:refresh', (opts) => doRefresh(opts || {}));
@@ -434,9 +478,26 @@ async function runSmokeTest() {
 
   await new Promise((r) => setTimeout(r, 3500));
 
-  let report;
+  // The app lands on Radar now. Check the digest first, then move to Browse for
+  // everything that exercises the table.
+  let report = {};
   try {
-    report = await win.webContents.executeJavaScript(`(() => ({
+    report.radarCards = await win.webContents.executeJavaScript("document.querySelectorAll('#view-radar .rcard').length");
+    report.radarItems = await win.webContents.executeJavaScript("document.querySelectorAll('#view-radar .ritem').length");
+    report.budgetPrompt = await win.webContents.executeJavaScript("!!document.querySelector('#view-radar .budgetbar.unset')");
+    try { fs.mkdirSync(path.join(__dirname, '..', 'build'), { recursive: true }); } catch { /* exists */ }
+    fs.writeFileSync(path.join(__dirname, '..', 'build', 'smoke-radar.png'), (await win.webContents.capturePage()).toPNG());
+    if (!report.radarCards) failuresLate.push('the radar digest rendered no cards');
+    if (!report.radarItems) failuresLate.push('the radar cards are all empty');
+    if (!report.budgetPrompt) failuresLate.push('a fresh install should ask for a budget');
+    await win.webContents.executeJavaScript("document.querySelector('.tab[data-view=\"find\"]').click(); true");
+    await new Promise((r) => setTimeout(r, 700));
+  } catch (err) {
+    failuresLate.push(`radar check failed: ${err.message}`);
+  }
+
+  try {
+    report = { ...report, ...await win.webContents.executeJavaScript(`(() => ({
       rows: document.querySelectorAll('#tablewrap tbody tr').length,
       headers: document.querySelectorAll('#tablewrap thead th').length,
       filterBarItems: document.querySelectorAll('#filterbar > *').length,
@@ -445,10 +506,9 @@ async function runSmokeTest() {
       desc: (document.querySelector('#res-desc') || {}).textContent || '',
       title: document.title,
       bodyText: document.body.innerText.slice(0, 180),
-    }))()`);
+    }))()`) };
   } catch (err) {
     errors.push(`executeJavaScript failed: ${err.message}`);
-    report = {};
   }
 
   const outDir = path.join(__dirname, '..', 'build');
@@ -479,7 +539,7 @@ async function runSmokeTest() {
   // The movement track must render a genuinely different set of columns; that
   // separation is the whole point of the rework.
   try {
-    await js("document.querySelector('#trackswitch button[data-track=\"movement\"]').click(); true");
+    await js("document.querySelector('#trackswitch button[data-section=\"movement\"]').click(); true");
     await wait(800);
     report.movementRows = await js("document.querySelectorAll('#tablewrap tbody tr').length");
     report.movementHeaders = await js("Array.from(document.querySelectorAll('#tablewrap thead th')).map(t=>t.textContent.trim().replace(/[▲▼]/g,'')).join('|')");
@@ -487,6 +547,13 @@ async function runSmokeTest() {
     if (!report.movementRows) failuresLate.push('movement track rendered no rows');
     if (!/Heat/.test(report.movementHeaders || '')) failuresLate.push('movement track is not showing movement columns');
     if (!/Catalyst|catalyst/.test(report.movementHeaders || '')) failuresLate.push('movement track has no catalyst column');
+    // Only a failure if rows carry a series and it is not being drawn. Until the
+    // market sources attach one there is legitimately nothing to plot.
+    report.rowsWithSeries = await js("(window.__S && window.__S.rows || []).filter(r => r.series && r.series.length).length");
+    report.sparklines = await js("document.querySelectorAll('#tablewrap tbody svg.spark2 path').length");
+    if (report.rowsWithSeries > 0 && !report.sparklines) {
+      failuresLate.push(`${report.rowsWithSeries} rows carry a price series but no chart rendered`);
+    }
   } catch (err) {
     failuresLate.push(`track switch failed: ${err.message}`);
   }
@@ -494,7 +561,7 @@ async function runSmokeTest() {
   // Filters: open the picker, add one, confirm it becomes a pill and narrows the
   // list, then confirm Clear all provably resets it.
   try {
-    await js("document.querySelector('#trackswitch button[data-track=\"income\"]').click(); true");
+    await js("document.querySelector('#trackswitch button[data-section=\"income\"]').click(); true");
     await wait(600);
     const before = await js("document.querySelectorAll('#tablewrap tbody tr').length");
 
@@ -573,7 +640,8 @@ async function runSmokeTest() {
   const failures = [...failuresLate];
   if (!report.rows) failures.push('no table rows rendered');
   if (!report.headers) failures.push('no table headers rendered');
-  if (!report.trackButtons) failures.push('track switch did not render');
+  if (!report.trackButtons) failures.push('section switch did not render');
+  if (!report.radarCards) failures.push('radar did not render');
   if (!report.filterBarItems) failures.push('filter bar rendered nothing');
   failures.push(...errors);
 

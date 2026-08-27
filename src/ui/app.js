@@ -21,7 +21,7 @@ const S = {
   watchlist: [],
   selectedId: null,
   detail: null,
-  view: 'find',
+  view: 'radar',
   refreshing: false,
   sourcesTotal: 0,
   doneCount: 0,
@@ -114,10 +114,11 @@ async function runQuery() {
     $('#tablewrap').innerHTML = window.R.table(S.rows, ctx);
     $('#filterbar').innerHTML = window.R.filterBar(S.query, ctx);
     $('#res-desc').innerHTML = `<b>${res.total.toLocaleString()}</b> of ${(res.facets?.total ?? 0).toLocaleString()}`;
-    const bt = res.facets?.byTrack || {};
-    $('#n-income').textContent = (bt.income ?? 0).toLocaleString();
-    $('#n-movement').textContent = (bt.movement ?? 0).toLocaleString();
-    $('#n-all').textContent = (bt.all ?? 0).toLocaleString();
+    const bs = res.facets?.bySection || {};
+    $('#n-income').textContent = (bs.income ?? 0).toLocaleString();
+    $('#n-movement').textContent = (bs.movement ?? 0).toLocaleString();
+    $('#n-deals').textContent = (bs.deals ?? 0).toLocaleString();
+    $('#n-all').textContent = (res.facets?.total ?? 0).toLocaleString();
   } catch (err) {
     toast('Query failed', err.message, 'err');
   }
@@ -223,10 +224,11 @@ function seedFilterValue(def) {
 }
 
 function clearAllFilters() {
-  const keepTrack = S.query.track;
-  const keepSort = S.query.sortBy;
-  const keepText = S.query.text;
-  S.query = { ...S.boot.constants.DEFAULT_QUERY, track: keepTrack, sortBy: keepSort, text: keepText };
+  // The section, the sort and the search box are navigation, not filters.
+  // Wiping them would dump someone out of Deals and back into all 700 rows,
+  // which is the opposite of what "clear my filters" means.
+  const { track, sections, sortBy, sortDir, text } = S.query;
+  S.query = { ...S.boot.constants.DEFAULT_QUERY, track, sections, sortBy, sortDir, text };
   closePopovers();
   runQuery();
 }
@@ -244,8 +246,25 @@ function applyPreset(key) {
 
 /* ------------------------------------------------------------ track & sort */
 
+function currentSection() {
+  const sec = S.query.sections || [];
+  if (sec.length === 1) return sec[0];
+  return 'all';
+}
+
+function applySection(section) {
+  if (section === 'all') { S.query.sections = []; S.query.track = 'all'; }
+  else { S.query.sections = [section]; S.query.track = section === 'movement' ? 'movement' : 'all'; }
+  syncTrackButtons();
+  syncSortOptions();
+  closePopovers();
+  switchView('find');
+  runQuery();
+}
+
 function syncTrackButtons() {
-  $$('#trackswitch button').forEach((b) => b.classList.toggle('on', b.dataset.track === (S.query.track || 'all')));
+  const cur = currentSection();
+  $$('#trackswitch button').forEach((b) => b.classList.toggle('on', b.dataset.section === cur));
 }
 
 const INCOME_SORTS = [
@@ -259,14 +278,85 @@ const MOVEMENT_SORTS = [
   ['clarity', 'Clearest signal'], ['grade', 'Safest first'], ['price', 'Lowest price'], ['name', 'Name'],
 ];
 
+const DEAL_SORTS = [
+  ['dogScore', 'Best value'], ['closingSoon', 'Closing soonest'], ['leastEffort', 'Least work'],
+  ['obscurity', 'Least known'], ['apy', 'Highest annualised'], ['minInvestment', 'Lowest entry'], ['name', 'Name'],
+];
+
 function syncSortOptions() {
-  const list = S.query.track === 'movement' ? MOVEMENT_SORTS : INCOME_SORTS;
+  const sec = currentSection();
+  const list = sec === 'movement' ? MOVEMENT_SORTS : sec === 'deals' ? DEAL_SORTS : INCOME_SORTS;
   const valid = list.some(([v]) => v === S.query.sortBy);
   if (!valid) S.query.sortBy = list[0][0];
   $('#q-sort').innerHTML = list.map(([v, l]) => `<option value="${v}"${S.query.sortBy === v ? ' selected' : ''}>${l}</option>`).join('');
 }
 
 /* ------------------------------------------------------------ other views - */
+
+async function renderRadar() {
+  let d;
+  try { d = await window.apy.radar(); } catch (err) { toast('Could not build the digest', err.message, 'err'); return; }
+  const money = window.F.money;
+  const pct = window.F.pct;
+  const hasBudget = !!d.budget;
+
+  // Each card picks the value that actually matters for its shelf. Showing a
+  // yield next to a referral bonus, or a heat score next to a CD, is how the
+  // old flat table became unreadable.
+  const yieldVal = (o) => (hasBudget && Number.isFinite(o.scores?.incomeYear1)
+    ? `${money(o.scores.incomeYear1, { dp: 0 })}<span class="u">year 1</span>`
+    : `${pct(o.apy?.total, 2)}<span class="u">a year</span>`);
+  const heatVal = (o) => {
+    const m = o.movement || {};
+    return `${Math.round(m.heat ?? 0)}<span class="u">${esc(m.heatLabel || '')}</span>`;
+  };
+  const dealVal = (o) => (hasBudget && Number.isFinite(o.scores?.incomeYear1)
+    ? `${money(o.scores.incomeYear1, { dp: 0 })}<span class="u">to you</span>`
+    : `${pct(o.apy?.total, 1)}<span class="u">annualised</span>`);
+
+  const classOf = (o) => S.boot.constants.ASSET_CLASS_LABELS[o.assetClass] || o.assetClass;
+  const effortOf = (o) => (S.boot.constants.EFFORT_INFO?.[o.effort]?.label || '');
+  const sub = {
+    plain: (o) => `${classOf(o)} · ${o.rating?.grade || ''}`,
+    withEffort: (o) => [classOf(o), effortOf(o), o.provider].filter(Boolean).join(' · '),
+    withCatalyst: (o) => {
+      const e = o.movement?.catalyst?.event;
+      return e ? `${e.label} ${window.CATALYST_WHEN(e.daysAway)}` : (o.movement?.setupLabel || classOf(o));
+    },
+    withCountdown: (o) => [effortOf(o), o.provider || classOf(o)].filter(Boolean).join(' · '),
+  };
+
+  const g = d.groups;
+  const cards = [];
+  const card = (icon, title, blurb, group, valueFn, subFn, emptyText) => {
+    if (!group) return;
+    cards.push(window.R.radarCard({
+      icon, title, blurb, rows: group.rows, count: group.count, query: group.query, valueFn, subFn, emptyText,
+    }));
+  };
+
+  card('⏳', 'Closing soon', 'Windows that shut. The one thing a sorted table can never show you.',
+    g.closing, (o) => window.R.countdownChip(o), sub.withCountdown,
+    'Nothing with a published deadline right now.');
+  card('◈', 'Happening this week', 'Dated catalysts inside seven days.',
+    g.thisWeek, heatVal, sub.withCatalyst, 'Nothing scheduled in the next week.');
+  card('★', 'Best deals', 'Bounded money. Usually the highest return per dollar in the app, and always capped.',
+    g.deals, dealVal, sub.withEffort, 'No deals loaded.');
+  card('◆', 'Best income', hasBudget ? 'Ranked by what it pays you on your amount.' : 'Ranked risk-adjusted, after tax.',
+    g.income, yieldVal, sub.plain, 'No income rows.');
+  card('⚡', 'Least work, real money', 'Deals you can take without chasing anyone.',
+    g.easy, dealVal, sub.withEffort, 'Nothing that is both easy and worthwhile.');
+  card('◇', 'Few people know', 'Obscure and niche. Uncrowded, and worth more scrutiny for the same reason.',
+    g.obscure, yieldVal, sub.withEffort, 'Nothing flagged as obscure yet.');
+  card('◈', 'Moving most', 'Highest heat. Not a direction call.',
+    g.movement, heatVal, sub.withCatalyst, 'Nothing measured.');
+  if (g.watching?.count) {
+    card('★', 'You are watching', '', g.watching,
+      (o) => (o.section === 'movement' ? heatVal(o) : yieldVal(o)), sub.plain, '');
+  }
+
+  $('#view-radar').innerHTML = window.R.radar({ cards, meta: d.meta, budget: d.budget }, renderCtx());
+}
 
 function renderEvents() {
   const upcoming = S.events.filter((e) => !e.past).sort((a, b) => a.dateMs - b.dateMs);
@@ -487,8 +577,10 @@ function switchView(view) {
   S.view = view;
   $$('#tabs .tab').forEach((t) => t.classList.toggle('active', t.dataset.view === view));
   $('#view-find').style.display = view === 'find' ? 'flex' : 'none';
+  $('#view-radar').style.display = view === 'radar' ? 'flex' : 'none';
   $('#drawer').classList.toggle('hidden', view !== 'find' || !S.detail);
   for (const v of ['events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
+  if (view === 'radar') renderRadar().catch(() => {});
   if (view === 'events') renderEvents();
   if (view === 'sources') renderSources();
   if (view === 'settings') renderSettings();
@@ -504,13 +596,9 @@ function wire() {
   });
 
   $('#trackswitch').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-track]');
+    const b = e.target.closest('button[data-section]');
     if (!b) return;
-    S.query.track = b.dataset.track;
-    syncTrackButtons();
-    syncSortOptions();
-    closePopovers();
-    runQuery();
+    applySection(b.dataset.section);
   });
 
   $('#btn-refresh').addEventListener('click', () => refresh(false));
@@ -676,6 +764,29 @@ function wire() {
     const { act, id, url, val } = b.dataset;
     if (act === 'open') { e.preventDefault(); return window.apy.openExternal(url); }
     if (act === 'goto-view') { e.preventDefault(); return switchView(val); }
+    if (act === 'goto-section') { return applySection(val); }
+    if (act === 'radar-more') {
+      let q = {};
+      try { q = JSON.parse(b.dataset.query || '{}'); } catch { /* fall back to no filter */ }
+      S.query = { ...S.boot.constants.DEFAULT_QUERY, ...q };
+      syncTrackButtons(); syncSortOptions();
+      switchView('find');
+      return runQuery();
+    }
+    if (act === 'set-budget') {
+      const v = Number($('#radar-budget')?.value);
+      if (!Number.isFinite(v) || v <= 0) return toast('Enter an amount', 'Or clear it to go back to rates only.', 'warn');
+      S.boot.settings = await window.apy.updateSettings({ budget: v });
+      toast('Set', `Figures now shown on ${window.F.money(v)}.`);
+      await runQuery();
+      return renderRadar();
+    }
+    if (act === 'clear-budget') {
+      S.boot.settings = await window.apy.updateSettings({ budget: null });
+      toast('Cleared', 'Showing rates only.');
+      await runQuery();
+      return renderRadar();
+    }
     if (act === 'goto') { switchView('find'); return openDetail(id); }
     if (act === 'goto-symbol') { switchView('find'); S.query.text = val; $('#q-text').value = val; return runQuery(); }
     if (act === 'open-user-rates') { await window.apy.openUserRates(); return toast('Opened', 'Edit, save, then refresh.'); }
@@ -734,9 +845,10 @@ function wire() {
       if (!$('#fmenu').classList.contains('hidden') || !$('#fedit').classList.contains('hidden')) closePopovers();
       else if (S.detail) closeDrawer();
       else $('#q-text').blur();
-    } else if (!mod && ['1', '2', '3'].includes(e.key) && document.activeElement.tagName !== 'INPUT') {
-      S.query.track = ['income', 'movement', 'all'][Number(e.key) - 1];
-      syncTrackButtons(); syncSortOptions(); runQuery();
+    } else if (!mod && ['1', '2', '3', '4'].includes(e.key) && document.activeElement.tagName !== 'INPUT') {
+      applySection(['income', 'movement', 'deals', 'all'][Number(e.key) - 1]);
+    } else if (!mod && e.key.toLowerCase() === 'r' && document.activeElement.tagName !== 'INPUT') {
+      switchView('radar');
     }
   });
 
@@ -760,6 +872,7 @@ function wire() {
     await runQuery();
     $('#src-count').textContent = `${payload.meta.sourcesOk}/${payload.meta.sourcesTotal}`;
     $('#ev-count').textContent = (payload.meta.upcomingEvents ?? 0).toLocaleString();
+    if (S.view === 'radar') renderRadar().catch(() => {});
     if (S.view === 'sources') renderSources();
     if (S.view === 'events') renderEvents();
     for (const a of payload.alerts || []) toast('Alert', a.message, 'warn');
@@ -796,6 +909,7 @@ async function main() {
   S.query = { ...S.boot.constants.DEFAULT_QUERY, ...(S.boot.settings.lastQuery || {}) };
 
   window.RATING_AXES = S.boot.constants.RATING_AXES;
+  window.EFFORT_INFO = S.boot.constants.EFFORT_INFO;
   window.EVENT_INFO = S.boot.constants.EVENT_INFO;
   window.CATALYST_WHEN = (d) => {
     if (!Number.isFinite(d)) return '';
@@ -816,8 +930,10 @@ async function main() {
   syncTrackButtons();
   syncSortOptions();
 
+  window.__S = S;   // read by the headless smoke check; harmless otherwise
   wire();
   await runQuery();
+  switchView('radar');
 
   if (!S.boot.settings.acknowledgedDisclaimer) {
     notice('<b>APY Dog finds and ranks — it does not give advice.</b> Nothing here predicts direction. Verify every number before moving money.',
