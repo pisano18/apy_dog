@@ -62,7 +62,9 @@ const ACCESS_NOTES =
   'Any US brokerage, commission free. Trades like a stock and settles T+1; one share is the practical minimum, '
   + 'or less wherever fractional shares are supported.';
 
+// Number(null) is 0, which is how a missing yield becomes a confident "0%".
 const num = (v) => {
+  if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'string' ? Number(v.replace(/[$,%\s]/g, '')) : Number(v);
   return Number.isFinite(n) ? n : null;
 };
@@ -293,13 +295,21 @@ const UNIVERSE = {
   ],
 };
 
+// Stamp each entry with the group it was declared in, so a bare UNIVERSE entry
+// is self-describing wherever it travels — buildOpportunity is exported and must
+// not silently downgrade a fund to "user-added" just because it was handed the
+// raw table instead of a resolved one.
+for (const [category, list] of Object.entries(UNIVERSE)) {
+  for (const e of list) e.category = category;
+}
+
 /** Merge the built-in universe with anything the user added in settings. */
 function resolveUniverse(settings = {}) {
   const cfg = settings?.sources?.funds || settings?.funds || {};
   const out = new Map();
 
-  for (const [category, list] of Object.entries(UNIVERSE)) {
-    for (const e of list) out.set(e.symbol, { ...e, category });
+  for (const list of Object.values(UNIVERSE)) {
+    for (const e of list) out.set(e.symbol, { ...e });
   }
 
   const extras = [].concat(
@@ -902,8 +912,8 @@ function loadSeed(ctx) {
     // Seed rows carry a symbol; the universe carries everything else, so a fee or
     // classification fix in one place applies to both the offline and live rows.
     const known = new Map();
-    for (const [category, list] of Object.entries(UNIVERSE)) {
-      for (const e of list) known.set(e.symbol, { ...e, category });
+    for (const list of Object.values(UNIVERSE)) {
+      for (const e of list) known.set(e.symbol, e);
     }
 
     const rows = [];

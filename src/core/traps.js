@@ -112,6 +112,31 @@ function detectTraps(o, context = {}) {
   if (Number.isFinite(o.risk?.leverage) && o.risk.leverage > 1.4) {
     flag(C.TRAP_FLAGS.LEVERAGED, 10, `${o.risk.leverage.toFixed(2)}x leveraged — the yield is borrowed.`);
   }
+  // Covered-call funds are the most misread product in any yield screen. The
+  // headline "yield" is largely option premium, which is not income earned on top
+  // of the position — it is your own upside, sold. QYLD-style funds have paid
+  // double-digit distributions for years while badly trailing the index they
+  // write against. This is structural, so it is flagged from the strategy alone
+  // rather than from a number we would have to guess at.
+  if (o.subType === 'covered_call') {
+    const rate = o.apy?.total;
+    const severity = Number.isFinite(rate) && rate > 10 ? 13 : 8;
+    flag(C.TRAP_FLAGS.CAPPED_UPSIDE, severity,
+      `Pays ${Number.isFinite(rate) ? `${rate.toFixed(1)}%` : 'a high distribution'} by selling call options on its holdings. `
+      + 'That premium is your upside, sold — in a strong market total return lags the index it writes against, '
+      + 'and the distribution is not income the underlying actually earned.');
+  }
+
+  // Fees come out of your return whether or not the fund performs.
+  if (Number.isFinite(o.expenseRatio) && Number.isFinite(o.apy?.total) && o.apy.total > 0) {
+    const bite = o.expenseRatio / o.apy.total;
+    if (o.expenseRatio >= 1.5) {
+      flag(C.TRAP_FLAGS.HIGH_FEES, 12, `${o.expenseRatio.toFixed(2)}% annual fee eats ${(bite * 100).toFixed(0)}% of this yield before you see it.`);
+    } else if (o.expenseRatio >= 0.9) {
+      flag(C.TRAP_FLAGS.HIGH_FEES, 6, `${o.expenseRatio.toFixed(2)}% annual fee takes ${(bite * 100).toFixed(0)}% of the yield.`);
+    }
+  }
+
   if (Number.isFinite(o.payoutCoverage) && o.payoutCoverage < 0.9) {
     flag(C.TRAP_FLAGS.UNSUSTAINABLE_PAYOUT, 16, `Earnings cover only ${(o.payoutCoverage * 100).toFixed(0)}% of the distribution. Cuts follow.`);
   }

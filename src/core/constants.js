@@ -141,6 +141,8 @@ const TRAP_FLAGS = {
   YIELD_FROM_PRINCIPAL: 'yield_from_principal',
   UNSUSTAINABLE_PAYOUT: 'unsustainable_payout',
   DEPEG_EXPOSURE: 'depeg_exposure',
+  CAPPED_UPSIDE: 'capped_upside',
+  HIGH_FEES: 'high_fees',
 };
 
 const TRAP_FLAG_TEXT = {
@@ -160,6 +162,8 @@ const TRAP_FLAG_TEXT = {
   yield_from_principal: 'Payout appears to exceed what the underlying actually earns.',
   unsustainable_payout: 'Distribution is not covered by income and has a history of cuts.',
   depeg_exposure: 'Depends on a peg holding. Pegs break.',
+  capped_upside: 'The distribution is funded by selling away your upside. In a rising market this lags badly.',
+  high_fees: 'The fee takes a large bite out of what you actually keep.',
 };
 
 const SOURCE_STATUS = {

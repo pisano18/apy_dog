@@ -220,6 +220,27 @@ describe('trap detection', () => {
     assert.ok(t.flags.includes('unsustainable_payout'));
   });
 
+  test('flags covered-call funds for selling away the upside', () => {
+    // The single most misread product in any yield screen: the distribution is
+    // option premium, not income the underlying earned.
+    const qyld = make({ name: 'x', assetClass: 'etf', subType: 'covered_call', apy: { total: 12 }, expenseRatio: 0.61 });
+    const t = detectTraps(qyld, {});
+    assert.ok(t.flags.includes('capped_upside'));
+    assert.match(t.detail.find((d) => d.flag === 'capped_upside').message, /upside, sold/);
+    // A plain dividend ETF is not flagged for this.
+    assert.ok(!detectTraps(make({ name: 'y', assetClass: 'etf', subType: 'dividend_etf', apy: { total: 3.7 } }), {}).flags.includes('capped_upside'));
+  });
+
+  test('flags fees that eat a meaningful share of the yield', () => {
+    const pricey = make({ name: 'x', assetClass: 'cef', apy: { total: 13.5 }, expenseRatio: 1.9 });
+    assert.ok(detectTraps(pricey, {}).flags.includes('high_fees'));
+    assert.ok(!detectTraps(make({ name: 'y', assetClass: 'etf', apy: { total: 3.7 }, expenseRatio: 0.06 }), {}).flags.includes('high_fees'));
+  });
+
+  test('flags leverage on mortgage REITs and BDCs', () => {
+    assert.ok(detectTraps(make({ name: 'x', assetClass: 'reit', apy: { total: 14 }, risk: { leverage: 8 } }), {}).flags.includes('leveraged'));
+  });
+
   test('does not double-report age on bundled snapshot rows', () => {
     const old = { name: 'x', assetClass: 'cash', apy: { total: 4 }, dataAsOf: '2020-01-01' };
     assert.ok(detectTraps(make({ ...old, seed: false }), {}).flags.includes('stale_data'));

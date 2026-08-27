@@ -315,7 +315,7 @@ test('CEF and mortgage-REIT fields we cannot measure stay null', () => {
   assert.equal(gof.navPremium, null);
   assert.equal(gof.payoutCoverage, null);
   assert.equal(gof.tvl, null);
-  assert.match(gof.notes, /left blank rather than\s+guessed|left blank rather than guessed/);
+  assert.match(gof.notes, /left blank rather than guessed/);
   assert.equal(gof.risk.leverage, 1.35);
   assert.match(gof.accessNotes, /limit orders/);
 });
@@ -488,7 +488,7 @@ test('one dead symbol degrades the source to partial instead of killing it', asy
   assert.equal(res.status, 'partial');
   assert.equal(res.opportunities.some((o) => o.symbol === dead), false);
   assert.ok(res.opportunities.length >= 5);
-  assert.match(res.notes.join(' '), new RegExp(`${dead} \\(HTTP 404\\)`));
+  assert.match(res.notes.join(' '), new RegExp(`${dead} \\(query1[^)]*HTTP 404\\)`));
   // Both Yahoo hosts get a try before we give up on a symbol.
   assert.ok(stub.calls.some((u) => u.includes('query2.finance.yahoo.com') && u.includes(dead)));
 });
