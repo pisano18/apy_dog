@@ -272,6 +272,41 @@ test('buildRows rejects the unusable and never throws', () => {
   assert.equal(typed.opportunities[0].apy.total, 4.25);
 });
 
+test('a confidence typed on a row can only lower the curated ceiling', () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const conf = (confidence) => adapter.buildRows([{
+    id: 'u', kind: 'cd', name: 'U', apy: 4, termDays: 365,
+    origin: 'user', dataAsOf: today, confidence,
+  }], ctx).opportunities[0].confidence;
+
+  // A freshly-dated contractual row from the user's own file is the highest
+  // confidence this source can produce, and the cap still binds it.
+  assert.equal(conf(undefined), adapter.CURATED_CONFIDENCE);
+  // Typing a bigger number must not buy trust a hand-maintained rate has not earned.
+  for (const tooHigh of [0.95, 1, 5, '0.99']) {
+    assert.equal(conf(tooHigh), adapter.CURATED_CONFIDENCE, `confidence ${tooHigh}`);
+  }
+  // Lowering still works — that is what the seed's promotional rows rely on.
+  assert.equal(conf(0.3), 0.3);
+  // And nothing may escape the 0..1 range schema.normalize guarantees.
+  for (const negative of [-0.5, -1, -1e9]) assert.equal(conf(negative), 0);
+});
+
+test('no row from any input can carry a confidence outside 0..cap', () => {
+  const rows = adapter.buildRows([
+    { id: 'a', kind: 'savings', name: 'A', apy: 3, confidence: -1 },
+    { id: 'b', kind: 'savings', name: 'B', apy: 3, confidence: 99 },
+    { id: 'c', kind: 'savings', name: 'C', apy: 3, confidence: 'nonsense' },
+    { id: 'd', kind: 'savings', name: 'D', apy: 3, confidence: null },
+    { id: 'e', kind: 'savings', name: 'E', apy: 3 },
+  ], ctx).opportunities;
+  assert.equal(rows.length, 5);
+  for (const o of rows) {
+    assert.ok(o.confidence >= 0 && o.confidence <= adapter.CURATED_CONFIDENCE,
+      `${o.id} confidence ${o.confidence} is outside 0..${adapter.CURATED_CONFIDENCE}`);
+  }
+});
+
 test('parseFdicInstitution reads the real response shape and shrugs off drift', () => {
   assert.deepEqual(adapter.parseFdicInstitution(fdic.ally), { name: 'Ally Bank', cert: 57803, active: true });
   assert.deepEqual(adapter.parseFdicInstitution(fdic.goldman_string_fields), { name: 'Goldman Sachs Bank USA', cert: 33124, active: true });
@@ -281,6 +316,72 @@ test('parseFdicInstitution reads the real response shape and shrugs off drift', 
   for (const bad of [fdic.no_match, fdic.renamed_fields, fdic.not_the_api_at_all, null, undefined, {}, [], 'html', { data: 'nope' }]) {
     assert.equal(adapter.parseFdicInstitution(bad), null);
   }
+});
+
+test('a corrupted FDIC response is a non-answer, never a half-answer', () => {
+  // Null fields, missing keys, wrong types, an empty array, and an object where
+  // the array should be. Each must read as "no match", because the alternative
+  // is a row that claims to be insured on the strength of garbage.
+  for (const key of ['null_fields', 'missing_cert', 'cert_zero', 'wrong_types',
+    'data_not_an_array', 'null_row', 'inner_data_is_a_string', 'no_data_key']) {
+    assert.equal(adapter.parseFdicInstitution(fdic[key]), null, `${key} must not parse as a match`);
+  }
+  // CERT:[57803] coerces to 57803 in JavaScript and NAME:{} stringifies to
+  // "[object Object]". Neither may reach a note about somebody's deposits.
+  assert.equal(adapter.parseFdicInstitution(fdic.wrong_types), null);
+});
+
+test('every corrupted FDIC payload still returns the full rate table', async () => {
+  for (const key of Object.keys(fdic).filter((k) => !k.startsWith('_'))) {
+    const out = await adapter.fetch({ ...ctx, http: { ...http, async getJSON() { return fdic[key]; } } });
+    assert.ok(['ok', 'partial'].includes(out.status), `${key} -> ${out.status}`);
+    assert.equal(out.opportunities.length, 45, `${key} lost rows`);
+    for (const o of out.opportunities) assert.deepEqual(schema.validate(o), [], `${key}: ${o.id} failed validation`);
+  }
+  // And the same for a transport that misbehaves rather than a payload that does.
+  for (const getJSON of [
+    () => { throw new Error('sync boom'); },
+    async () => { throw new Error('async boom'); },
+    async () => undefined,
+  ]) {
+    const out = await adapter.fetch({ ...ctx, http: { ...http, getJSON } });
+    assert.equal(out.opportunities.length, 45);
+  }
+});
+
+test('a lookup with no certificate number never prints as confirmed insurance', () => {
+  // A stale or hand-edited cache entry is the realistic way this arrives.
+  for (const junk of ['junk', {}, { cert: null }, { cert: 0 }, { cert: 'abc' }, { name: 'Ally Bank' }]) {
+    const rows = adapter.buildRows([{ id: 'a', kind: 'savings', name: 'A', apy: 3, insurance: 'fdic', fdicName: 'Ally Bank' }], ctx);
+    const summary = adapter.applyFdicVerification(rows.opportunities, rows.lookups, { 'Ally Bank': junk });
+    assert.equal(summary.verified, 0, `${JSON.stringify(junk)} must not count as verified`);
+    assert.deepEqual(summary.unmatched, ['Ally Bank']);
+    assert.doesNotMatch(rows.opportunities[0].notes, /certificate #(undefined|null|NaN|0\b)/);
+    assert.match(rows.opportunities[0].notes, /unverified here/);
+  }
+  // The insurance claim itself is never stripped on the strength of a bad lookup.
+  const rows = adapter.buildRows([{ id: 'a', kind: 'savings', name: 'A', apy: 3, insurance: 'fdic', fdicName: 'Ally Bank' }], ctx);
+  adapter.applyFdicVerification(rows.opportunities, rows.lookups, { 'Ally Bank': {} });
+  assert.equal(rows.opportunities[0].risk.insurance, C.INSURANCE.FDIC);
+});
+
+test('applyFdicVerification tolerates a junk table and junk rows', () => {
+  // Not a lookup table means nothing was checked, which is not the same as
+  // having checked and found nothing: every row must be left untouched.
+  for (const byName of [null, undefined, 0, 'str', [], true]) {
+    const rows = adapter.buildRows([{ id: 'a', kind: 'savings', name: 'A', apy: 3, insurance: 'fdic', fdicName: 'Ally Bank' }], ctx);
+    const summary = adapter.applyFdicVerification(rows.opportunities, rows.lookups, byName);
+    assert.deepEqual(summary, { verified: 0, unmatched: [], inactive: [] });
+    assert.equal(rows.opportunities[0].notes, null);
+  }
+  const rows = adapter.buildRows([{ id: 'a', kind: 'savings', name: 'A', apy: 3, insurance: 'fdic', fdicName: 'Ally Bank' }], ctx);
+  const summary = adapter.applyFdicVerification(
+    [null, undefined, 7, 'row', ...rows.opportunities],
+    rows.lookups,
+    { 'Ally Bank': { name: 'Ally Bank', cert: 57803, active: true } },
+  );
+  assert.equal(summary.verified, 1);
+  assert.match(rows.opportunities[0].notes, /certificate #57803/);
 });
 
 test('FDIC verification annotates rows without ever inventing or removing insurance', () => {

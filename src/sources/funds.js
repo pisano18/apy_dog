@@ -44,6 +44,7 @@ const baseC = require('../core/constants');
 const ID = 'funds';
 const LABEL = 'Income ETFs, REITs, BDCs & CEFs';
 const DAY = 86400000;
+const MAX_TIME = 8.64e15;       // the widest instant Date can represent
 
 const CHART_HOSTS = [
   'https://query1.finance.yahoo.com',
@@ -381,7 +382,8 @@ function detectFrequency(timestamps) {
  * raised its rate and flattering nonsense for a variable payer that happened to
  * have one good month.
  */
-function computeYield({ dividends = [], price, nowMs = Date.now(), windowDays = 365 } = {}) {
+function computeYield(opts = {}) {
+  const { dividends = [], price, nowMs = Date.now(), windowDays = 365 } = opts || {};
   const out = {
     trailingYield: null, forwardYield: null, periodsPerYear: null, payoutFrequency: null,
     medianSpacingDays: null, dividendCount: 0, trailingSum: null, lastDividend: null,
@@ -578,7 +580,7 @@ function parseStooq(csvText, parseCSV = baseHttp.parseCSV) {
 
 /** Median, used for typical daily volume so one frantic session does not set it. */
 function median(list) {
-  const v = list.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
+  const v = (Array.isArray(list) ? list : []).filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
   if (!v.length) return null;
   return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
 }
@@ -598,7 +600,12 @@ function analyzeSeries(series, { nowMs = Date.now(), fallbackYield = null } = {}
 
   stats.price = num(series.price);
   stats.currency = series.currency || 'USD';
-  stats.dataAsOf = Number.isFinite(series.lastTsMs) ? new Date(series.lastTsMs).toISOString() : null;
+  // A corrupt bar (a timestamp already in ms, or plain garbage) can land outside
+  // the range Date can represent, and new Date(...).toISOString() THROWS there.
+  // Unguarded that takes the whole source down over one bad symbol.
+  stats.dataAsOf = Number.isFinite(series.lastTsMs) && Math.abs(series.lastTsMs) <= MAX_TIME
+    ? new Date(series.lastTsMs).toISOString()
+    : null;
 
   const vol = computeVolatility(series.adj);
   if (vol) {
@@ -627,7 +634,7 @@ function analyzeSeries(series, { nowMs = Date.now(), fallbackYield = null } = {}
     stats.notes.push('Price is live but the feed carried no dividend events, so the yield is the bundled snapshot figure.');
   }
 
-  const vols = series.volume?.slice(-30) || [];
+  const vols = Array.isArray(series.volume) ? series.volume.slice(-30) : [];
   const medVol = median(vols);
   if (medVol !== null && stats.price) stats.dollarVolume = medVol * stats.price;
 
@@ -645,11 +652,14 @@ function buildOpportunity(entry, stats, { schema = baseSchema, C = baseC, dataAs
   const assetClass = entry.assetClass || cat.assetClass;
   const taxTreatment = entry.taxTreatment || cat.taxTreatment;
 
+  const forward = num(stats?.forwardYield);
   const notes = [cat.note];
   if (entry.note) notes.push(entry.note);
-  if (Number.isFinite(num(stats?.forwardYield)) && Math.abs(stats.forwardYield - trailing) > 1) {
+  // Compare and format the COERCED figure: a string "12.5" is finite once parsed
+  // but has no .toFixed, and throwing here loses the whole row over a note.
+  if (forward !== null && Math.abs(forward - trailing) > 1) {
     notes.push(`Headline is the trailing 12-month yield (${trailing.toFixed(2)}%). Annualising the latest payment instead `
-      + `gives ${stats.forwardYield.toFixed(2)}% — the gap is the payout changing, not free money.`);
+      + `gives ${forward.toFixed(2)}% — the gap is the payout changing, not free money.`);
   }
   if (['cef', 'bdc', 'mortgage_reit'].includes(entry.category)) {
     notes.push('Premium/discount to NAV, return-of-capital share and distribution coverage are left blank rather than '
@@ -676,7 +686,7 @@ function buildOpportunity(entry, stats, { schema = baseSchema, C = baseC, dataAs
     region: 'US',
     currency: stats?.currency || 'USD',
 
-    apy: { total: trailing, forward: num(stats?.forwardYield) },
+    apy: { total: trailing, forward },
     yieldKind: C.YIELD_KIND.TRAILING,
     payoutFrequency: stats?.payoutFrequency || entry.payoutFrequency || null,
 

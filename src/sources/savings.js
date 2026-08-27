@@ -225,7 +225,16 @@ function buildRow(item, { dataAsOf, schema, C }) {
 
   // Curated confidence is a ceiling, not a floor: whichever is lower, our cap or
   // the age decay schema just applied, is the honest number.
-  const cap = Number.isFinite(toNum(item.confidence)) ? toNum(item.confidence) : CURATED_CONFIDENCE;
+  //
+  // A confidence stated on the row may only lower that ceiling, never raise it,
+  // and has to stay inside the 0..1 range normalize() guarantees. Without both
+  // clamps a rates file carrying `confidence: 0.95` outranks a live market feed
+  // by typing a number, and `confidence: -1` writes a negative confidence onto
+  // the row that normalize() had already clamped away.
+  const stated = toNum(item.confidence);
+  const cap = stated === null
+    ? CURATED_CONFIDENCE
+    : Math.max(0, Math.min(stated, CURATED_CONFIDENCE));
   out.confidence = Number(Math.min(out.confidence ?? cap, cap).toFixed(3));
   return out;
 }
@@ -291,7 +300,11 @@ function parseFdicInstitution(payload) {
   const d = first?.data && typeof first.data === 'object' ? first.data : first;
   if (!d || typeof d !== 'object') return null;
 
-  const cert = toNum(d.CERT ?? d.cert);
+  // Only a number or a string is a certificate number. Coercing whatever else
+  // turns up would let CERT:[57803] read as a valid cert and NAME:{} print as
+  // "[object Object]" inside an insurance claim.
+  const certRaw = d.CERT ?? d.cert;
+  const cert = typeof certRaw === 'number' || typeof certRaw === 'string' ? toNum(certRaw) : null;
   if (cert === null || cert <= 0) return null;
 
   const activeRaw = d.ACTIVE ?? d.active;
@@ -299,8 +312,11 @@ function parseFdicInstitution(payload) {
     ? null
     : !(activeRaw === 0 || activeRaw === '0' || activeRaw === false || activeRaw === 'N');
 
-  const name = d.NAME ?? d.name;
-  return { name: name ? String(name).trim() : null, cert, active };
+  const nameRaw = d.NAME ?? d.name;
+  const name = typeof nameRaw === 'string' || typeof nameRaw === 'number'
+    ? String(nameRaw).trim() || null
+    : null;
+  return { name, cert, active };
 }
 
 /**
@@ -316,24 +332,38 @@ function parseFdicInstitution(payload) {
 function applyFdicVerification(opportunities, lookups, byName = {}) {
   const nameFor = (id) => (lookups instanceof Map ? lookups.get(id) : lookups?.[id]);
   const summary = { verified: 0, unmatched: [], inactive: [] };
+  // Anything that is not a lookup table checked nothing, which is not the same
+  // as having looked and found nothing: leave every row untouched.
+  const table = byName && typeof byName === 'object' ? byName : {};
 
   for (const o of Array.isArray(opportunities) ? opportunities : []) {
-    const legal = nameFor(o?.id);
-    if (!legal || !Object.prototype.hasOwnProperty.call(byName, legal)) continue;
+    if (!o || typeof o !== 'object') continue;
+    const legal = nameFor(o.id);
+    if (!legal || !Object.prototype.hasOwnProperty.call(table, legal)) continue;
 
-    const hit = byName[legal];
+    const hit = table[legal];
     if (!hit) {
       summary.unmatched.push(legal);
       o.notes = appendNote(o.notes, `FDIC register has no exact match for "${legal}", so insurance is unverified here — check the bank's own disclosure.`);
       continue;
     }
+    // A hit with no usable certificate number is not a confirmation. A stale or
+    // hand-edited cache entry must never be able to print "certificate
+    // #undefined" as proof of insurance — that is the one claim on this row a
+    // reader is entitled to take at face value.
+    const cert = typeof hit === 'object' ? toNum(hit.cert) : null;
+    if (cert === null || cert <= 0) {
+      summary.unmatched.push(legal);
+      o.notes = appendNote(o.notes, `FDIC lookup for "${legal}" came back without a certificate number, so insurance is unverified here — check the bank's own disclosure.`);
+      continue;
+    }
     if (hit.active === false) {
       summary.inactive.push(legal);
-      o.notes = appendNote(o.notes, `FDIC cert #${hit.cert} is marked INACTIVE — ${legal} has merged or closed. Find out who holds these deposits now before funding anything.`);
+      o.notes = appendNote(o.notes, `FDIC cert #${cert} is marked INACTIVE — ${legal} has merged or closed. Find out who holds these deposits now before funding anything.`);
       continue;
     }
     summary.verified += 1;
-    o.notes = appendNote(o.notes, `FDIC insured, certificate #${hit.cert} (${hit.name || legal}), confirmed against the FDIC register.`);
+    o.notes = appendNote(o.notes, `FDIC insured, certificate #${cert} (${hit.name || legal}), confirmed against the FDIC register.`);
   }
   return summary;
 }
