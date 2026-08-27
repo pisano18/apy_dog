@@ -1,0 +1,2047 @@
+{
+  "meta": {
+    "source": "deals",
+    "dataAsOf": "2026-08-01",
+    "origin": "Hand-curated from the providers' own referral, rewards and offer pages. No public API publishes any of this: referral tiers, card welcome offers and portal rates live on landing pages, run at several levels simultaneously, are frequently targeted to individual customers, and change weekly.",
+    "note": "Offline snapshot of real, recurring programme styles at plausible levels for the stated date. Not a quote and not an offer. Every figure must be confirmed on the provider's own page before you invite anybody, apply for anything, or move any money — the amount, the qualifying conditions and the deadline all move independently.",
+    "fieldNotes": {
+      "kind": "referral | card_signup | card_category | cashback_app | transfer_promo | credit_promo | fintech_promo | found_money. The kind decides the maths and the denominator.",
+      "perReferral / referralsNeeded / cap": "Referrals only. What one funded friend is worth, how many the headline assumes, and the ceiling the programme puts on a year of referral earnings. The cap is a cap on what you can be PAID, not on money you deposit.",
+      "bonusPoints / pointValueCents / bonusCash": "Card sign-up bonuses. Points are converted at a conservative, stated cents-per-point; that conversion is an assumption about redemption, not a price.",
+      "spendRequired / windowDays / annualFee": "The spend that earns the bonus, the days you have to do it in, and the fee that comes off it. The fee is what turns some of these negative and it is netted before ranking.",
+      "rate / baselineRate / spendCap / capPeriod / referenceSpend / membershipFee": "Category and cash-back rows. The honest number is the increment over the everyday card you would otherwise use, applied only to spend inside the cap. referenceSpend is a stated modelling assumption, never a requirement.",
+      "bonus / requiredAssets / holdDays / scales": "Transfer promotions, the only rows here where capital is genuinely committed and therefore the only ones with a real annualised rate. scales:true marks a percentage match, which is proportional rather than capped.",
+      "introDays / feePct / parkRate / amount": "Intro-APR carry. The transfer fee is paid once and its annualised cost depends entirely on how long the 0% window runs.",
+      "payoutAmount / referenceSpend / payoutBasis": "Flat promotions and money already yours. payoutAmount is the dollars; where a reference spend is stated the row also reports the return on that spend.",
+      "expiresAt / startsAt": "Real, structural deadlines only — an activation cut-off, a quarter end, a calendar-year qualification window. Never a guess at when an offer might be pulled.",
+      "reach": "everyone | common | niche | obscure. How widely advertised it is. Obscurity is shown, not scored.",
+      "series": "Approximate public offer level over recent years, in dollars of estimated value. Hand-assembled and coarse — it exists to show whether the current offer is high or low by its own history, so you can see when it is worth waiting."
+    },
+    "userFileShape": "Same shape as this file: {\"items\": [ ... ]}. An item whose id matches one here REPLACES it field by field; a new id is ADDED. Set dataAsOf on a row you refresh so the app trusts it more than the bundled snapshot. The same shape can be served over HTTP and pointed at with settings.dealsFeedUrl."
+  },
+  "items": [
+    {
+      "id": "acorns-referral-five-friends",
+      "kind": "referral",
+      "name": "Acorns invite-five-friends promotional tier",
+      "provider": "Acorns Grow Incorporated",
+      "perReferral": 300,
+      "referralsNeeded": 5,
+      "cap": 1500,
+      "qualifyingDays": 45,
+      "payoutForm": "cash into your Acorns account",
+      "reach": "common",
+      "url": "https://www.acorns.com/invite/",
+      "accessNotes": "Share the personal invite link from the Acorns app under Profile and Settings, then Invite Friends. Each friend has to open an account through your link, choose a paid subscription tier, fund it, and stay past the qualifying window before anything is paid to either of you.",
+      "requirements": [
+        "Five separate friends must each open and fund an Acorns account through your link",
+        "Both of you need an active paid Acorns subscription, which starts around $3 a month",
+        "The bonus is credited inside your Acorns account, not sent to your bank",
+        "Acorns runs this as a promotional ladder and moves the rungs — outside a promotion the everyday rate has been closer to $5 to $20 a friend"
+      ],
+      "notes": "This is the offer people mean when they say Acorns pays $1,500 for five friends. It is the top rung of a promotional ladder and it pays nothing until the fifth friend funds: two friends is $600, not $1,500. Your own subscription runs about $36 a year while you wait."
+    },
+    {
+      "id": "acorns-referral-standard",
+      "kind": "referral",
+      "name": "Acorns everyday refer-a-friend",
+      "provider": "Acorns Grow Incorporated",
+      "perReferral": 5,
+      "referralsNeeded": 1,
+      "cap": 1500,
+      "qualifyingDays": 45,
+      "payoutForm": "cash into your Acorns account",
+      "reach": "common",
+      "url": "https://www.acorns.com/invite/",
+      "accessNotes": "The same invite link, outside a promotional window. One friend opens and funds an account and a small bonus lands in your Acorns balance.",
+      "requirements": [
+        "Friend must open an Acorns account through your link and start investing",
+        "Paid subscription on both sides"
+      ],
+      "notes": "The unglamorous baseline the headline tiers are built on. Worth listing because it is what the programme pays most of the time, and because the gap between $5 and $300 a friend is entirely a question of when you happen to ask."
+    },
+    {
+      "id": "robinhood-referral-free-stock",
+      "kind": "referral",
+      "name": "Robinhood refer-a-friend free stock",
+      "provider": "Robinhood Markets, Inc.",
+      "perReferral": 15,
+      "referralsNeeded": 1,
+      "cap": 1500,
+      "qualifyingDays": 30,
+      "payoutForm": "a randomly selected fractional share",
+      "reach": "everyone",
+      "url": "https://robinhood.com/referral/",
+      "accessNotes": "Invite from the app, friend signs up through the link and links a bank account and funds it. Both sides get a randomly drawn fractional share deposited into the brokerage account.",
+      "requirements": [
+        "Friend must sign up through your link, be approved, and fund the account",
+        "The reward is a lottery draw over a stated range — most draws are near the bottom of it",
+        "Robinhood caps referral rewards at roughly $1,500 of stock per year",
+        "The share has a short holding period before it can be sold"
+      ],
+      "notes": "The advertised range runs into the hundreds and the realistic expectation is single digits: the distribution is heavily weighted to the cheap end, which is what makes the promotion affordable to run."
+    },
+    {
+      "id": "webull-referral-free-shares",
+      "kind": "referral",
+      "name": "Webull refer-a-friend free shares",
+      "provider": "Webull Financial LLC",
+      "perReferral": 20,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "fractional shares",
+      "reach": "niche",
+      "url": "https://www.webull.com/activity",
+      "accessNotes": "Generate a referral link in the app, friend opens and funds a brokerage account through it. Shares are credited to both accounts once the deposit settles and clears the promotional holding period.",
+      "requirements": [
+        "Friend must open a Webull brokerage account through your link and fund it to the stated minimum",
+        "Share value is randomly drawn; the headline figure is the top of the range, not the middle",
+        "Promotional terms change several times a year"
+      ],
+      "notes": "Webull runs stacked promotions almost continuously, so the referral is usually the smallest part of what a new account can collect. Check what the funding promotion pays before deciding the referral is the reason to open it."
+    },
+    {
+      "id": "sofi-referral",
+      "kind": "referral",
+      "name": "SoFi refer-a-friend",
+      "provider": "SoFi Technologies, Inc.",
+      "perReferral": 75,
+      "referralsNeeded": 1,
+      "cap": 1000,
+      "qualifyingDays": 30,
+      "payoutForm": "cash",
+      "reach": "common",
+      "url": "https://www.sofi.com/refer/",
+      "accessNotes": "Referral links are per product and generated in the app. The friend has to complete the product's own qualifying step — usually a direct deposit for checking, or funding for invest — before either side is paid.",
+      "requirements": [
+        "Friend must open the specific SoFi product your link is for",
+        "A qualifying direct deposit is normally required on the banking products",
+        "Annual limits apply to how much referral income one account can collect"
+      ],
+      "notes": "The friend's side of this is a separate new-account bonus that is listed under account bonuses; this row is only what the referrer collects. Do not count the same money twice."
+    },
+    {
+      "id": "chime-referral",
+      "kind": "referral",
+      "name": "Chime refer-a-friend",
+      "provider": "Chime Financial, Inc.",
+      "perReferral": 100,
+      "referralsNeeded": 1,
+      "cap": 1000,
+      "qualifyingDays": 45,
+      "payoutForm": "cash",
+      "reach": "everyone",
+      "url": "https://www.chime.com/referrals/",
+      "accessNotes": "Share your Chime referral link from the app. The friend opens an account and must receive a qualifying direct deposit from an employer or benefits provider within the stated window.",
+      "requirements": [
+        "Friend must receive a qualifying direct deposit, typically $200 or more, within the window",
+        "Transfers from another bank or from a peer-to-peer app usually do not count as a direct deposit",
+        "Chime caps how much referral income one account can earn in a year"
+      ],
+      "notes": "The direct deposit requirement is the whole difficulty: it means your friend has to redirect their paycheck, which most people will not do for you. Referrals that only open the account pay nothing."
+    },
+    {
+      "id": "cash-app-referral",
+      "kind": "referral",
+      "name": "Cash App invite-a-friend",
+      "provider": "Block, Inc.",
+      "perReferral": 5,
+      "referralsNeeded": 1,
+      "qualifyingDays": 14,
+      "payoutForm": "cash",
+      "reach": "everyone",
+      "url": "https://cash.app/help/us/en-us/33107-invite-friends-earn-money",
+      "accessNotes": "Send your invite code from the app. The friend has to install Cash App, link a debit card, and send a qualifying payment within a short window, usually two weeks.",
+      "requirements": [
+        "Friend must be new to Cash App and use your code at sign-up",
+        "A qualifying payment has to be sent inside the window",
+        "The amount changes frequently and is sometimes zero"
+      ],
+      "notes": "Small, fast, and the single easiest referral on this list to actually complete, which is the trade being made: no direct deposit, no funding, and correspondingly little money."
+    },
+    {
+      "id": "coinbase-referral",
+      "kind": "referral",
+      "name": "Coinbase refer-a-friend",
+      "provider": "Coinbase, Inc.",
+      "perReferral": 10,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "bitcoin",
+      "reach": "everyone",
+      "url": "https://www.coinbase.com/invite",
+      "accessNotes": "Invite link from the Coinbase app or website. The friend signs up, completes identity verification, and buys or sells a qualifying amount of crypto — typically $100 — inside the window.",
+      "requirements": [
+        "Friend must complete identity verification and trade the qualifying amount",
+        "Payment is made in crypto, so its dollar value moves after it is credited",
+        "Coinbase publishes limits on total referral earnings; confirm the current one"
+      ],
+      "notes": "Paid in bitcoin, which means the $10 is $10 on the day it lands and something else afterwards. The friend also pays Coinbase's retail spread on the qualifying trade, which is often more than the referral is worth to them."
+    },
+    {
+      "id": "kraken-referral",
+      "kind": "referral",
+      "name": "Kraken refer-a-friend",
+      "provider": "Payward, Inc. (Kraken)",
+      "perReferral": 20,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "crypto",
+      "reach": "niche",
+      "url": "https://www.kraken.com/features/referrals",
+      "accessNotes": "Referral link from your Kraken account. The friend has to verify their account and trade a qualifying volume before either side is credited.",
+      "requirements": [
+        "Friend must complete verification and hit a minimum trading volume",
+        "Availability and amount vary by country and by promotion",
+        "Paid in crypto rather than cash"
+      ],
+      "notes": "Exchange referral terms are among the most volatile on this list; several exchanges have suspended their programmes entirely and restarted them at different numbers months later."
+    },
+    {
+      "id": "gemini-referral",
+      "kind": "referral",
+      "name": "Gemini refer-a-friend",
+      "provider": "Gemini Trust Company, LLC",
+      "perReferral": 20,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "bitcoin",
+      "reach": "niche",
+      "url": "https://www.gemini.com/referral",
+      "accessNotes": "Share the referral link from the Gemini app. Both sides are credited in bitcoin once the friend trades the qualifying amount, historically around $100, within the window.",
+      "requirements": [
+        "Friend must be a new Gemini user and trade the qualifying amount",
+        "Credited in bitcoin, and the value moves after it lands",
+        "Programme has been paused and restarted at different amounts more than once"
+      ],
+      "notes": "One of the older crypto referral programmes still running. Treat the amount as approximate: it has been $10, $20 and $75 at different points."
+    },
+    {
+      "id": "rakuten-referral",
+      "kind": "referral",
+      "name": "Rakuten refer-a-friend",
+      "provider": "Rakuten Rewards",
+      "perReferral": 30,
+      "referralsNeeded": 1,
+      "cap": 250,
+      "qualifyingDays": 90,
+      "payoutForm": "cash, paid on the quarterly cheque",
+      "reach": "everyone",
+      "url": "https://www.rakuten.com/referafriend",
+      "accessNotes": "Share your referral link. The friend signs up and makes a qualifying purchase through Rakuten — usually around $30 within 90 days — and the bonus lands on the next quarterly payout, not immediately.",
+      "requirements": [
+        "Friend must be new to Rakuten and shop through the portal within the window",
+        "Bonuses pay out on Rakuten's quarterly schedule, so the money can be three months away",
+        "Annual limit on how many referral bonuses one account can collect"
+      ],
+      "notes": "The quarterly payment schedule is the part people forget: a referral completed in October is money you see in February. It is real, it is just slow."
+    },
+    {
+      "id": "ibotta-referral",
+      "kind": "referral",
+      "name": "Ibotta refer-a-friend",
+      "provider": "Ibotta, Inc.",
+      "perReferral": 10,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "cash in your Ibotta balance",
+      "reach": "common",
+      "url": "https://home.ibotta.com/refer/",
+      "accessNotes": "Share your referral code from the app. The friend installs Ibotta, uses the code at sign-up, and redeems a qualifying rebate.",
+      "requirements": [
+        "Friend must use the code at sign-up and redeem at least one offer",
+        "Bonus sits in your Ibotta balance until you reach the withdrawal minimum",
+        "Amount is promotional and changes constantly"
+      ],
+      "notes": "Withdrawal minimums matter here: a few dollars of referral money you cannot cash out yet is not the same as a few dollars."
+    },
+    {
+      "id": "fetch-referral",
+      "kind": "referral",
+      "name": "Fetch refer-a-friend",
+      "provider": "Fetch Rewards, Inc.",
+      "perReferral": 2,
+      "referralsNeeded": 1,
+      "qualifyingDays": 14,
+      "payoutForm": "Fetch points, redeemable for gift cards",
+      "reach": "common",
+      "url": "https://fetch.com/",
+      "accessNotes": "Give your referral code to a friend who enters it at sign-up and scans their first receipt. Both sides get a points bonus redeemable for gift cards.",
+      "requirements": [
+        "Friend must enter the code at sign-up and scan a qualifying receipt",
+        "Paid in points, which redeem for gift cards rather than cash",
+        "Typically around 2,000 points, worth about $2"
+      ],
+      "notes": "Listed at its real size rather than its advertised point total. Two thousand points sounds like a lot and buys two dollars of gift card, which is the entire lesson of points-denominated rewards."
+    },
+    {
+      "id": "upside-referral",
+      "kind": "referral",
+      "name": "Upside refer-a-friend",
+      "provider": "Upside Services, Inc.",
+      "perReferral": 5,
+      "referralsNeeded": 1,
+      "qualifyingDays": 60,
+      "payoutForm": "cash back on your own fill-ups",
+      "reach": "niche",
+      "url": "https://www.upside.com/",
+      "accessNotes": "Share your invite code. When the friend claims an offer and fills up, you earn an ongoing bonus on their gallons for a period, credited to your Upside balance.",
+      "requirements": [
+        "Friend must use the code and complete a qualifying transaction",
+        "Your share accrues per gallon over time rather than arriving as one payment",
+        "Cash-out fees apply to some withdrawal methods"
+      ],
+      "notes": "Structured as a trickle rather than a payment, so the figure here is an approximation of what one active referred driver produces over the first year."
+    },
+    {
+      "id": "uber-driver-referral",
+      "kind": "referral",
+      "name": "Uber driver referral",
+      "provider": "Uber Technologies, Inc.",
+      "perReferral": 300,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "cash into your driver earnings",
+      "reach": "niche",
+      "url": "https://www.uber.com/us/en/drive/referrals/",
+      "accessNotes": "Only available to active drivers. Share your driver referral code; the new driver must complete onboarding, pass the background check, and finish a stated number of trips inside 30 days.",
+      "requirements": [
+        "You must be an active Uber driver to have a code at all",
+        "The referred driver has to pass a background check and complete the full trip count",
+        "The amount varies enormously by city and by week, from under $100 to four figures",
+        "Nothing is paid if they stop one trip short"
+      ],
+      "notes": "The largest per-referral figures anywhere on this list and the least reliable: they are demand-driven, city-specific, and revised weekly. Confirm the number in your own market before promising anybody anything."
+    },
+    {
+      "id": "lyft-driver-referral",
+      "kind": "referral",
+      "name": "Lyft driver referral",
+      "provider": "Lyft, Inc.",
+      "perReferral": 250,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "cash into your driver earnings",
+      "reach": "niche",
+      "url": "https://www.lyft.com/drivers/referrals",
+      "accessNotes": "Active drivers get a referral code in the Lyft Driver app. The new driver must be approved and complete the stated number of rides within the window.",
+      "requirements": [
+        "You must be an approved, active Lyft driver",
+        "Referred driver must complete the full ride requirement inside the window",
+        "Amount is market-specific and changes with local driver supply"
+      ],
+      "notes": "Same shape as the Uber programme and usually a little smaller. Both pay only on completion, so a friend who drives for two weeks and quits pays you nothing."
+    },
+    {
+      "id": "doordash-dasher-referral",
+      "kind": "referral",
+      "name": "DoorDash Dasher referral",
+      "provider": "DoorDash, Inc.",
+      "perReferral": 200,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "cash into your Dasher earnings",
+      "reach": "niche",
+      "url": "https://dasher.doordash.com/en-us/referral",
+      "accessNotes": "Active Dashers get a referral link in the app. The referred Dasher signs up, is activated, and completes a stated number of deliveries inside the window.",
+      "requirements": [
+        "You must be an active Dasher",
+        "Referred Dasher must complete the full delivery count in the window",
+        "Amounts are set per market and change frequently"
+      ],
+      "notes": "Delivery-count requirements are usually higher than they look — a hundred-plus deliveries in thirty days is a part-time job, not a favour."
+    },
+    {
+      "id": "instacart-shopper-referral",
+      "kind": "referral",
+      "name": "Instacart shopper referral",
+      "provider": "Maplebear Inc. (Instacart)",
+      "perReferral": 100,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "cash into your shopper earnings",
+      "reach": "niche",
+      "url": "https://shoppers.instacart.com/",
+      "accessNotes": "Shopper referral codes are issued in the shopper app where the programme is running. The referred shopper must be approved and complete a batch requirement.",
+      "requirements": [
+        "You must be an approved Instacart shopper",
+        "Referred shopper must complete the stated number of batches",
+        "The programme is not live in every market at every time"
+      ],
+      "notes": "Availability is the constraint rather than the amount: this programme switches on and off by region depending on how badly Instacart needs shoppers there."
+    },
+    {
+      "id": "amex-refer-a-friend",
+      "kind": "referral",
+      "name": "American Express Refer a Friend",
+      "provider": "American Express",
+      "perReferral": 150,
+      "referralsNeeded": 1,
+      "cap": 550,
+      "qualifyingDays": 90,
+      "payoutForm": "Membership Rewards points, valued at 1 cent each",
+      "reach": "everyone",
+      "url": "https://www.americanexpress.com/en-us/referral/",
+      "accessNotes": "Log in at americanexpress.com and generate a referral link for a card you actually hold. The friend applies through that link, is approved, and meets the card's own welcome-offer spend before your points post.",
+      "requirements": [
+        "You must already hold the card you are referring",
+        "Friend must be approved and complete the card's welcome-offer spend",
+        "Capped at roughly 55,000 Membership Rewards points per card per calendar year",
+        "Referral rewards are reported to the IRS on a 1099-MISC — unlike ordinary card rewards, this is taxable income"
+      ],
+      "notes": "The 1099 is the part people miss. Ordinary card rewards are treated as a rebate and are not taxed; referral rewards from an issuer generally are, and Amex reports them. Value the points at what you will actually redeem them for, not at a blogger's valuation."
+    },
+    {
+      "id": "chase-refer-a-friend-sapphire",
+      "kind": "referral",
+      "name": "Chase Refer a Friend, Ultimate Rewards cards",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "perReferral": 187.5,
+      "referralsNeeded": 1,
+      "cap": 937.5,
+      "qualifyingDays": 90,
+      "payoutForm": "Ultimate Rewards points, valued at 1.25 cents each",
+      "reach": "everyone",
+      "url": "https://www.chase.com/personal/credit-cards/refer-a-friend",
+      "accessNotes": "Generate the referral link from your Chase account for the card you hold. Points post after the referred person is approved and meets their own spend requirement.",
+      "requirements": [
+        "You must hold the card you are referring",
+        "Friend must be approved and complete their welcome-offer spend",
+        "Usually capped at five successful referrals per calendar year",
+        "Referral points are generally reported as taxable income"
+      ],
+      "notes": "Fifteen thousand points a referral, five a year. Valued here at 1.25 cents through the Chase travel portal; as a straight statement credit they are worth 1 cent, which is a quarter less."
+    },
+    {
+      "id": "chase-refer-a-friend-cash",
+      "kind": "referral",
+      "name": "Chase Refer a Friend, cash-back cards",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "perReferral": 100,
+      "referralsNeeded": 1,
+      "cap": 500,
+      "qualifyingDays": 90,
+      "payoutForm": "cash back",
+      "reach": "everyone",
+      "url": "https://www.chase.com/personal/credit-cards/refer-a-friend",
+      "accessNotes": "Same referral flow as the points cards, but the Freedom family pays cash. Posts as a statement credit once the friend meets their spend requirement.",
+      "requirements": [
+        "You must hold the card you are referring",
+        "Friend must be approved and hit their own spend requirement",
+        "Annual cap on successful referrals"
+      ],
+      "notes": "Simpler than the points version and easier to value: a hundred dollars is a hundred dollars, with no redemption assumption in the middle."
+    },
+    {
+      "id": "capital-one-refer-a-friend",
+      "kind": "referral",
+      "name": "Capital One Refer a Friend",
+      "provider": "Capital One, N.A.",
+      "perReferral": 100,
+      "referralsNeeded": 1,
+      "cap": 500,
+      "qualifyingDays": 90,
+      "payoutForm": "cash or miles",
+      "reach": "everyone",
+      "url": "https://www.capitalone.com/credit-cards/refer-a-friend/",
+      "accessNotes": "Referral links are issued from your Capital One account and are card-specific. The bonus posts after the referred applicant is approved and, on most cards, spends.",
+      "requirements": [
+        "You must hold the card being referred",
+        "Friend must be approved — not every applicant is",
+        "Annual cap on total referral rewards",
+        "Reported as taxable income"
+      ],
+      "notes": "Capital One's approval rates are the binding constraint: a referral that is declined pays nothing, and you find out nothing about why."
+    },
+    {
+      "id": "discover-refer-a-friend",
+      "kind": "referral",
+      "name": "Discover Refer a Friend",
+      "provider": "Discover Bank",
+      "perReferral": 50,
+      "referralsNeeded": 1,
+      "cap": 500,
+      "qualifyingDays": 90,
+      "payoutForm": "statement credit",
+      "reach": "everyone",
+      "url": "https://www.discover.com/credit-cards/refer-a-friend/",
+      "accessNotes": "Send a referral from your Discover account. Both you and the friend get a statement credit once they are approved and make a qualifying purchase.",
+      "requirements": [
+        "Friend must be approved and make a purchase",
+        "Capped at ten successful referrals a year",
+        "Both sides are paid, which makes it an easier ask than most"
+      ],
+      "notes": "One of the few programmes where the friend's side is as good as yours, which is why it converts better than the ones where you collect and they do not."
+    },
+    {
+      "id": "citi-refer-a-friend",
+      "kind": "referral",
+      "name": "Citi Refer a Friend",
+      "provider": "Citibank, N.A.",
+      "perReferral": 100,
+      "referralsNeeded": 1,
+      "cap": 500,
+      "qualifyingDays": 90,
+      "payoutForm": "ThankYou points, valued at 1 cent each",
+      "reach": "common",
+      "url": "https://www.citi.com/credit-cards/refer-a-friend",
+      "accessNotes": "Referral links come from your Citi account and are specific to the card you hold. Points post once the referred applicant is approved and meets their spend.",
+      "requirements": [
+        "You must hold the card being referred",
+        "Friend must be approved and meet the spend requirement",
+        "Annual cap on referral points"
+      ],
+      "notes": "ThankYou points are worth about a cent as a statement credit and more if you transfer them to an airline partner, which most people never do. Valued conservatively here."
+    },
+    {
+      "id": "wise-referral",
+      "kind": "referral",
+      "name": "Wise invite-three-friends bonus",
+      "provider": "Wise Payments Limited",
+      "perReferral": 25,
+      "referralsNeeded": 3,
+      "cap": 75,
+      "qualifyingDays": 90,
+      "payoutForm": "cash into your Wise balance",
+      "reach": "niche",
+      "url": "https://wise.com/invite",
+      "accessNotes": "Share your Wise invite link. Each friend has to make a first international transfer above the qualifying amount; the reward pays once the required number of them have done so.",
+      "requirements": [
+        "Three separate friends must each send a qualifying first transfer",
+        "Transfers below the minimum do not count towards the total",
+        "Amounts and thresholds differ by country"
+      ],
+      "notes": "A genuine all-or-nothing structure: two friends who transfer pays exactly nothing until the third does. Useful mostly if you already know people who send money abroad."
+    },
+    {
+      "id": "varo-referral",
+      "kind": "referral",
+      "name": "Varo Bank refer-a-friend",
+      "provider": "Varo Bank, N.A.",
+      "perReferral": 50,
+      "referralsNeeded": 1,
+      "cap": 500,
+      "qualifyingDays": 45,
+      "payoutForm": "cash",
+      "reach": "niche",
+      "url": "https://www.varomoney.com/refer/",
+      "accessNotes": "Invite from the Varo app. The friend opens an account and must receive qualifying direct deposits inside the window before either side is paid.",
+      "requirements": [
+        "Friend must receive qualifying direct deposits, typically a few hundred dollars",
+        "Peer-to-peer transfers do not count",
+        "Annual limit on referral payments"
+      ],
+      "notes": "Same direct-deposit gate as Chime, and it fails for the same reason: asking someone to move their paycheck is a much bigger favour than asking them to install an app."
+    },
+    {
+      "id": "current-referral",
+      "kind": "referral",
+      "name": "Current refer-a-friend",
+      "provider": "Current (Finco Services, Inc.)",
+      "perReferral": 50,
+      "referralsNeeded": 1,
+      "qualifyingDays": 45,
+      "payoutForm": "cash",
+      "reach": "niche",
+      "url": "https://current.com/",
+      "accessNotes": "Share the referral code from the Current app; the friend opens an account and completes the qualifying direct deposit or spend requirement.",
+      "requirements": [
+        "Friend must complete the qualifying activity, usually a direct deposit",
+        "Promotional amount changes several times a year",
+        "Not a bank itself — deposits are held at partner banks"
+      ],
+      "notes": "Current is a programme manager rather than a bank, so the FDIC coverage on the friend's account is pass-through via partner banks. That matters more to them than to you, but it is worth saying before you recommend it."
+    },
+    {
+      "id": "m1-finance-referral",
+      "kind": "referral",
+      "name": "M1 Finance refer-a-friend",
+      "provider": "M1 Finance LLC",
+      "perReferral": 30,
+      "referralsNeeded": 1,
+      "qualifyingDays": 60,
+      "payoutForm": "cash into your M1 account",
+      "reach": "niche",
+      "url": "https://m1.com/refer/",
+      "accessNotes": "Referral link from the M1 app. The friend opens a brokerage account and funds it to the stated minimum, then both sides are credited after the funds settle.",
+      "requirements": [
+        "Friend must fund to the promotional minimum, which is often several thousand dollars",
+        "Funds usually have to stay for a stated period",
+        "Amount is promotional and has ranged from $10 to $75"
+      ],
+      "notes": "The funding minimum is what makes this hard: a referral that requires your friend to move $10,000 is a much bigger ask than one that requires a $5 deposit, and the payout does not scale with it."
+    },
+    {
+      "id": "public-referral",
+      "kind": "referral",
+      "name": "Public.com refer-a-friend",
+      "provider": "Public Holdings, Inc.",
+      "perReferral": 20,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "a fractional share, value randomly drawn",
+      "reach": "niche",
+      "url": "https://public.com/refer",
+      "accessNotes": "Invite from the app; the friend opens a brokerage account through your link and funds it. Both sides receive a slice of stock drawn from a stated range.",
+      "requirements": [
+        "Friend must open and fund a Public brokerage account",
+        "Reward is a randomly drawn fractional share",
+        "Holding period applies before the share can be sold"
+      ],
+      "notes": "Same lottery structure as Robinhood and Webull. The advertised ceiling is real and rare; plan on the floor."
+    },
+    {
+      "id": "stash-referral",
+      "kind": "referral",
+      "name": "Stash refer-a-friend",
+      "provider": "Stash Financial, Inc.",
+      "perReferral": 20,
+      "referralsNeeded": 1,
+      "qualifyingDays": 30,
+      "payoutForm": "cash into your Stash account",
+      "reach": "niche",
+      "url": "https://www.stash.com/refer",
+      "accessNotes": "Referral link from the Stash app. The friend signs up for a paid Stash plan and funds the account before either side is credited.",
+      "requirements": [
+        "Friend must start a paid subscription — Stash has no free tier",
+        "Funding minimum applies",
+        "Bonus is credited inside the Stash account"
+      ],
+      "notes": "You are asking a friend to start paying a monthly subscription. That is a real cost to them, and it should factor into whether the referral is worth making at all."
+    },
+    {
+      "id": "paypal-referral",
+      "kind": "referral",
+      "name": "PayPal refer-a-friend",
+      "provider": "PayPal, Inc.",
+      "perReferral": 10,
+      "referralsNeeded": 1,
+      "cap": 100,
+      "qualifyingDays": 30,
+      "payoutForm": "cash into your PayPal balance",
+      "reach": "common",
+      "url": "https://www.paypal.com/us/digital-wallet/refer-a-friend",
+      "accessNotes": "Invite link from the PayPal app when the offer is live. The friend signs up, links a funding source, and sends or spends a qualifying amount.",
+      "requirements": [
+        "Offer is not always running — it appears and disappears",
+        "Friend must be new to PayPal and complete a qualifying transaction",
+        "Annual cap on referral earnings"
+      ],
+      "notes": "An intermittent programme rather than a permanent one. Worth checking when you already have somebody to refer, not worth waiting for."
+    },
+    {
+      "id": "tmobile-referral",
+      "kind": "referral",
+      "name": "T-Mobile refer-a-friend",
+      "provider": "T-Mobile US, Inc.",
+      "perReferral": 50,
+      "referralsNeeded": 1,
+      "cap": 500,
+      "qualifyingDays": 60,
+      "payoutForm": "prepaid Mastercard",
+      "reach": "niche",
+      "url": "https://www.t-mobile.com/offers/refer-a-friend",
+      "accessNotes": "Generate a referral link from your T-Mobile account. The friend has to activate a new qualifying line and keep it active past the stated period before the prepaid card is issued.",
+      "requirements": [
+        "Friend must activate a new qualifying line, not a plan change",
+        "Line must stay active for the stated period, usually 60 days or more",
+        "Paid as a prepaid Mastercard, not cash, and those cards expire",
+        "Annual cap on how many referrals count"
+      ],
+      "notes": "A genuinely under-used programme: people switch carriers all the time and almost nobody remembers there is $50 attached. The prepaid card has an expiry date, so spend it promptly."
+    },
+    {
+      "id": "moomoo-referral",
+      "kind": "referral",
+      "name": "moomoo refer-a-friend",
+      "provider": "Moomoo Financial Inc.",
+      "perReferral": 20,
+      "referralsNeeded": 1,
+      "qualifyingDays": 60,
+      "payoutForm": "free shares",
+      "reach": "obscure",
+      "url": "https://www.moomoo.com/us",
+      "accessNotes": "Referral link from the app; the friend opens and funds a moomoo brokerage account and holds the deposit for the stated period.",
+      "requirements": [
+        "Friend must open and fund to the promotional tier",
+        "Deposit normally has to stay for a stated number of days",
+        "Reward shares are drawn from a range"
+      ],
+      "notes": "moomoo runs some of the most aggressive new-account promotions in the US brokerage market, which is exactly why the terms move so often. Read the current promotion page rather than trusting any figure more than a week old."
+    },
+
+    {
+      "id": "chase-sapphire-preferred-signup",
+      "kind": "card_signup",
+      "name": "Chase Sapphire Preferred welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 60000,
+      "pointValueCents": 1.25,
+      "pointProgram": "Chase Ultimate Rewards",
+      "spendRequired": 5000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "everyone",
+      "series": [750, 750, 750, 938, 750, 750, 1000, 750],
+      "url": "https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred",
+      "accessNotes": "Apply online or through a referral link from someone who holds the card. Points post one to two statements after the spend requirement is met.",
+      "requirements": [
+        "$5,000 of spend in the first three months, which is about $1,667 a month",
+        "Chase declines applicants who have opened five or more cards at any issuer in 24 months",
+        "Not available if you have received a Sapphire bonus in the last 48 months",
+        "$95 annual fee, charged immediately and every year after"
+      ],
+      "notes": "The default answer to 'which travel card' for a decade, and the spend requirement is the reason it is not for everyone: $1,667 a month of genuine spend. Points valued at 1.25 cents through Chase's travel portal; as a statement credit they are worth 1 cent and the whole calculation gets 20% worse."
+    },
+    {
+      "id": "chase-sapphire-reserve-signup",
+      "kind": "card_signup",
+      "name": "Chase Sapphire Reserve welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 100000,
+      "pointValueCents": 1.25,
+      "pointProgram": "Chase Ultimate Rewards",
+      "spendRequired": 5000,
+      "windowDays": 90,
+      "annualFee": 795,
+      "reach": "everyone",
+      "series": [750, 938, 750, 750, 1125, 938, 1250, 1250],
+      "url": "https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve",
+      "accessNotes": "Apply online. The card carries a large annual fee that is charged at once, and a travel credit that is only worth anything if you actually travel.",
+      "requirements": [
+        "$5,000 of spend in the first three months",
+        "Annual fee is charged up front, in full, before you have earned anything",
+        "Same 5/24 and 48-month Sapphire rules as the Preferred",
+        "The travel credit only offsets the fee if you spend on qualifying travel anyway"
+      ],
+      "notes": "The clearest illustration of why the fee belongs on the row: a $1,250 bonus against a $795 fee is $455 of first-year value, not $1,250. The published travel credit can claw back a few hundred more, but only against travel you were going to buy — a credit you have to spend to use is a discount, not a rebate."
+    },
+    {
+      "id": "chase-freedom-unlimited-signup",
+      "kind": "card_signup",
+      "name": "Chase Freedom Unlimited welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 500,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "everyone",
+      "series": [200, 200, 200, 200, 250, 200, 200, 200],
+      "url": "https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited",
+      "accessNotes": "Apply online or through a referral link. The statement credit posts within a couple of cycles of hitting the spend.",
+      "requirements": [
+        "$500 of spend in the first three months",
+        "Subject to Chase's 5/24 rule",
+        "No annual fee, so the bonus is the whole return"
+      ],
+      "notes": "The cleanest arithmetic in this file: $200 on $500 of spend you were making anyway, no fee, inside three months. Nothing in a yield table does 40% on money that was never at risk."
+    },
+    {
+      "id": "chase-freedom-flex-signup",
+      "kind": "card_signup",
+      "name": "Chase Freedom Flex welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 500,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://creditcards.chase.com/cash-back-credit-cards/freedom/flex",
+      "accessNotes": "Apply online or through a referral link. Same structure as the Unlimited, plus the rotating 5% categories that are listed separately here.",
+      "requirements": [
+        "$500 of spend in the first three months",
+        "Subject to Chase's 5/24 rule",
+        "The 5% rotating categories need quarterly activation, which is a separate ongoing job"
+      ],
+      "notes": "The bonus and the rotating categories are two different opportunities on one piece of plastic, and only the bonus is one-off. They are listed as separate rows because they need completely different amounts of attention."
+    },
+    {
+      "id": "chase-ink-business-cash-signup",
+      "kind": "card_signup",
+      "name": "Chase Ink Business Cash welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusCash": 350,
+      "spendRequired": 3000,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "niche",
+      "url": "https://creditcards.chase.com/business-credit-cards/ink/cash",
+      "accessNotes": "A business card, but a sole proprietorship counts and most people who freelance, sell anything, or drive for a rideshare service qualify. Apply with your own name and taxpayer ID as a sole proprietor.",
+      "requirements": [
+        "$3,000 of business spend in three months, about $1,000 a month",
+        "You need a legitimate business activity, even a very small one",
+        "Business cards usually do not appear on your personal credit report, but the application is still a hard pull",
+        "Often runs a tiered version paying more for a larger spend"
+      ],
+      "notes": "Business cards are the single most under-used category on this list, because most people assume they need an incorporated company. A sole proprietorship with real income qualifies, and the bonuses are consistently larger than the personal equivalents."
+    },
+    {
+      "id": "chase-ink-business-unlimited-signup",
+      "kind": "card_signup",
+      "name": "Chase Ink Business Unlimited welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusCash": 750,
+      "spendRequired": 6000,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "niche",
+      "url": "https://creditcards.chase.com/business-credit-cards/ink/unlimited",
+      "accessNotes": "Same sole-proprietor route as the Ink Cash. The larger bonus comes with a proportionally larger spend requirement over a longer window.",
+      "requirements": [
+        "$6,000 of business spend in six months, about $1,000 a month",
+        "Sole proprietors qualify; the business has to be real",
+        "No annual fee"
+      ],
+      "notes": "Twelve and a half percent of the required spend, with no fee, which is a better rate than the premium travel cards once their fees are netted off. The catch is finding $6,000 of genuine business spend."
+    },
+    {
+      "id": "chase-ink-business-preferred-signup",
+      "kind": "card_signup",
+      "name": "Chase Ink Business Preferred welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 90000,
+      "pointValueCents": 1.25,
+      "pointProgram": "Chase Ultimate Rewards",
+      "spendRequired": 8000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "niche",
+      "url": "https://creditcards.chase.com/business-credit-cards/ink/business-preferred",
+      "accessNotes": "Business application, sole proprietors eligible. Points land in the same Ultimate Rewards account as the personal Chase cards.",
+      "requirements": [
+        "$8,000 of spend in three months, about $2,667 a month",
+        "$95 annual fee",
+        "Sole proprietors qualify with a real business activity"
+      ],
+      "notes": "The largest routinely available Chase bonus, and the spend requirement is why: $2,667 a month for three months is a serious commitment, and paying for it with anything other than genuine spend costs more than the bonus."
+    },
+    {
+      "id": "amex-gold-signup",
+      "kind": "card_signup",
+      "name": "American Express Gold welcome offer",
+      "provider": "American Express",
+      "bonusPoints": 60000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Membership Rewards",
+      "spendRequired": 6000,
+      "windowDays": 180,
+      "annualFee": 325,
+      "reach": "everyone",
+      "series": [600, 600, 750, 600, 900, 600, 750, 600],
+      "url": "https://www.americanexpress.com/us/credit-cards/card/gold-card/",
+      "accessNotes": "Apply online or through someone's referral link, which pays them as well. Amex shows a targeted offer when you log in that is often better than the public one.",
+      "requirements": [
+        "$6,000 of spend in six months, about $1,000 a month",
+        "$325 annual fee, charged immediately",
+        "Amex pays a welcome bonus once per card per lifetime, and the check is automated",
+        "The dining and grocery credits are monthly, use-it-or-lose-it, and only useful if you already spend there"
+      ],
+      "notes": "Points valued at a conservative 1 cent. A $600 bonus against a $325 fee is $275 in year one, which is a completely different proposition from the advertised 60,000 points. The monthly credits can more than cover the fee, but only if you would have made those purchases anyway."
+    },
+    {
+      "id": "amex-platinum-signup",
+      "kind": "card_signup",
+      "name": "American Express Platinum welcome offer",
+      "provider": "American Express",
+      "bonusPoints": 80000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Membership Rewards",
+      "spendRequired": 8000,
+      "windowDays": 180,
+      "annualFee": 895,
+      "reach": "everyone",
+      "series": [600, 750, 1000, 800, 1250, 1000, 1500, 800],
+      "url": "https://www.americanexpress.com/us/credit-cards/card/platinum/",
+      "accessNotes": "Apply online, through a referral, or from a targeted offer in your Amex account. The annual fee posts on the first statement.",
+      "requirements": [
+        "$8,000 of spend in six months, about $1,333 a month",
+        "$895 annual fee charged up front",
+        "One welcome bonus per card per lifetime",
+        "The fee is only recoverable through a long list of monthly and annual credits, each with its own conditions"
+      ],
+      "notes": "The row that proves why the annual fee has to be on the ranking rather than in the footnotes: an $800 bonus against an $895 fee is MINUS $95 in year one. It can still be worth holding — the airline, hotel, streaming and rideshare credits add up past the fee for the right traveller — but every dollar of that depends on spending you have to actually do. As a bonus play alone, this loses money."
+    },
+    {
+      "id": "amex-blue-cash-preferred-signup",
+      "kind": "card_signup",
+      "name": "Amex Blue Cash Preferred welcome offer",
+      "provider": "American Express",
+      "bonusCash": 250,
+      "spendRequired": 3000,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.americanexpress.com/us/credit-cards/card/blue-cash-preferred/",
+      "accessNotes": "Apply online. The annual fee is usually waived for the first year and charged from the second, so the year-one arithmetic below is the good year.",
+      "requirements": [
+        "$3,000 of spend in six months",
+        "$0 intro annual fee, then about $95 a year from year two",
+        "One welcome bonus per card per lifetime",
+        "The 6% supermarket rate is capped at $6,000 of grocery spend a year"
+      ],
+      "notes": "Year one is clean because the fee is waived; year two costs $95 and the card only earns that back if you buy roughly $1,600 of groceries a year more than a plain 2% card would reward. Diary the anniversary date."
+    },
+    {
+      "id": "amex-blue-cash-everyday-signup",
+      "kind": "card_signup",
+      "name": "Amex Blue Cash Everyday welcome offer",
+      "provider": "American Express",
+      "bonusCash": 200,
+      "spendRequired": 2000,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.americanexpress.com/us/credit-cards/card/blue-cash-everyday/",
+      "accessNotes": "Apply online or through a referral link. No annual fee at any point, so nothing has to be recovered later.",
+      "requirements": [
+        "$2,000 of spend in six months",
+        "One welcome bonus per card per lifetime",
+        "No annual fee"
+      ],
+      "notes": "A modest bonus with no fee attached and a long window, which makes it one of the few on this list that is genuinely low-effort rather than merely low-fee."
+    },
+    {
+      "id": "amex-hilton-honors-signup",
+      "kind": "card_signup",
+      "name": "Hilton Honors American Express welcome offer",
+      "provider": "American Express",
+      "bonusPoints": 100000,
+      "pointValueCents": 0.5,
+      "pointProgram": "Hilton Honors",
+      "spendRequired": 2000,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "common",
+      "url": "https://www.americanexpress.com/us/credit-cards/card/hilton-honors-card/",
+      "accessNotes": "Apply online. Points post to your Hilton Honors account after the spend requirement clears, and can only be spent at Hilton.",
+      "requirements": [
+        "$2,000 of spend in six months",
+        "No annual fee on this version of the card",
+        "Hilton points are worth about half a cent and cannot be transferred out",
+        "Hilton has devalued its award chart repeatedly and without notice"
+      ],
+      "notes": "A hundred thousand points sounds enormous and is worth about $500 at a realistic half a cent. Hotel points are the most aggressively devalued currency in this file, and they are only worth anything if you stay at that chain."
+    },
+    {
+      "id": "amex-delta-gold-signup",
+      "kind": "card_signup",
+      "name": "Delta SkyMiles Gold American Express welcome offer",
+      "provider": "American Express",
+      "bonusPoints": 70000,
+      "pointValueCents": 1.1,
+      "pointProgram": "Delta SkyMiles",
+      "spendRequired": 3000,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "common",
+      "url": "https://www.americanexpress.com/us/credit-cards/card/delta-skymiles-gold/",
+      "accessNotes": "Apply online. The annual fee is typically waived for the first year, then charged from the second.",
+      "requirements": [
+        "$3,000 of spend in six months",
+        "$0 first year, then about $150 a year",
+        "SkyMiles have no fixed value — Delta prices awards dynamically off the cash fare",
+        "One welcome bonus per card per lifetime"
+      ],
+      "notes": "SkyMiles are valued here at a conservative 1.1 cents, which is generous on a bad route and mean on a good one. Because Delta prices awards off cash fares, the miles are worth roughly what the ticket costs, which removes most of the arbitrage people expect from airline miles."
+    },
+    {
+      "id": "capital-one-venture-signup",
+      "kind": "card_signup",
+      "name": "Capital One Venture Rewards welcome offer",
+      "provider": "Capital One, N.A.",
+      "bonusPoints": 75000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Capital One miles",
+      "spendRequired": 4000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "everyone",
+      "series": [500, 600, 750, 750, 1000, 750, 750, 750],
+      "url": "https://www.capitalone.com/credit-cards/venture/",
+      "accessNotes": "Apply online; Capital One's pre-approval tool tells you your odds without a hard pull, which is unusual and worth using first.",
+      "requirements": [
+        "$4,000 of spend in three months, about $1,333 a month",
+        "$95 annual fee",
+        "Capital One miles can be used as a straight travel statement credit at 1 cent, which is the valuation used here"
+      ],
+      "notes": "The simplest premium travel card to value, because the miles have a floor: 1 cent against any travel purchase, no portal required. $750 of miles less the $95 fee is $655 in year one."
+    },
+    {
+      "id": "capital-one-venture-x-signup",
+      "kind": "card_signup",
+      "name": "Capital One Venture X welcome offer",
+      "provider": "Capital One, N.A.",
+      "bonusPoints": 75000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Capital One miles",
+      "spendRequired": 4000,
+      "windowDays": 90,
+      "annualFee": 395,
+      "reach": "common",
+      "url": "https://www.capitalone.com/credit-cards/venture-x/",
+      "accessNotes": "Apply online. The $395 fee is largely offset by an annual travel credit and an anniversary miles deposit, but both of those arrive later and one requires you to book travel through their portal.",
+      "requirements": [
+        "$4,000 of spend in three months",
+        "$395 annual fee charged up front",
+        "The $300 travel credit only works through Capital One Travel, which is not always the cheapest place to book",
+        "10,000 anniversary miles arrive at the first renewal, not now"
+      ],
+      "notes": "Netted honestly this is $750 of miles less $395, or $355 in year one. Count the travel credit only if you would have booked that travel there anyway; otherwise it is a discount on a purchase you were talked into."
+    },
+    {
+      "id": "capital-one-savorone-signup",
+      "kind": "card_signup",
+      "name": "Capital One SavorOne welcome offer",
+      "provider": "Capital One, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 500,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.capitalone.com/credit-cards/savorone-dining-cash-rewards/",
+      "accessNotes": "Apply online after checking the pre-approval tool. Cash bonus posts as a statement credit once the spend clears.",
+      "requirements": [
+        "$500 of spend in three months",
+        "No annual fee"
+      ],
+      "notes": "Another 40%-of-required-spend row with no fee. These small no-fee bonuses are the highest-return, lowest-risk items in the entire app, and they are limited only by how many cards you are willing to open."
+    },
+    {
+      "id": "capital-one-quicksilver-signup",
+      "kind": "card_signup",
+      "name": "Capital One Quicksilver welcome offer",
+      "provider": "Capital One, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 500,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.capitalone.com/credit-cards/quicksilver/",
+      "accessNotes": "Apply online, pre-approval tool available. Statement credit after the qualifying spend.",
+      "requirements": [
+        "$500 of spend in three months",
+        "No annual fee"
+      ],
+      "notes": "Identical arithmetic to the SavorOne with a different everyday earn structure. If you are opening one, there is rarely a reason to open both at once."
+    },
+    {
+      "id": "citi-strata-premier-signup",
+      "kind": "card_signup",
+      "name": "Citi Strata Premier welcome offer",
+      "provider": "Citibank, N.A.",
+      "bonusPoints": 75000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Citi ThankYou",
+      "spendRequired": 4000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "common",
+      "series": [600, 750, 750, 800, 750, 1000, 750, 750],
+      "url": "https://www.citi.com/credit-cards/citi-strata-premier-credit-card",
+      "accessNotes": "Apply online. Citi applies its own family rules about how recently you have opened or closed other ThankYou cards.",
+      "requirements": [
+        "$4,000 of spend in three months",
+        "$95 annual fee",
+        "Citi restricts new bonuses if you have opened or closed a card in the same family within 24 months"
+      ],
+      "notes": "ThankYou points are valued here at 1 cent as a statement credit. Transferring them to airline partners can beat that considerably and requires work most people never do, so the conservative number is the one that belongs on the row."
+    },
+    {
+      "id": "citi-double-cash-signup",
+      "kind": "card_signup",
+      "name": "Citi Double Cash welcome offer",
+      "provider": "Citibank, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 1500,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.citi.com/credit-cards/citi-double-cash-credit-card",
+      "accessNotes": "Apply online. Bonus posts as ThankYou points convertible to cash once the spend requirement is met.",
+      "requirements": [
+        "$1,500 of spend in six months",
+        "No annual fee",
+        "Citi family rules apply to the bonus eligibility"
+      ],
+      "notes": "The card itself is the standard 2% everyday baseline that most of the category rows here are measured against, so it is a reasonable anchor to own regardless of the bonus."
+    },
+    {
+      "id": "citi-custom-cash-signup",
+      "kind": "card_signup",
+      "name": "Citi Custom Cash welcome offer",
+      "provider": "Citibank, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 1500,
+      "windowDays": 180,
+      "annualFee": 0,
+      "reach": "common",
+      "url": "https://www.citi.com/credit-cards/citi-custom-cash-credit-card",
+      "accessNotes": "Apply online. The bonus is separate from the card's automatic 5% top-category feature, which is listed as its own row.",
+      "requirements": [
+        "$1,500 of spend in six months",
+        "No annual fee",
+        "Citi family rules apply"
+      ],
+      "notes": "Pairs with the ongoing 5% top-category row: one is a one-off worth $200, the other is a small recurring rebate. Different kinds of money on the same card."
+    },
+    {
+      "id": "wells-fargo-active-cash-signup",
+      "kind": "card_signup",
+      "name": "Wells Fargo Active Cash welcome offer",
+      "provider": "Wells Fargo Bank, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 500,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://creditcards.wellsfargo.com/active-cash-credit-card",
+      "accessNotes": "Apply online. Statement credit after the qualifying spend clears.",
+      "requirements": [
+        "$500 of spend in three months",
+        "No annual fee",
+        "Wells Fargo limits how frequently one customer can collect card bonuses"
+      ],
+      "notes": "Another clean 40%-of-spend, no-fee row. The card's ongoing 2% flat rate also makes it a reasonable baseline card to keep afterwards rather than close."
+    },
+    {
+      "id": "wells-fargo-autograph-signup",
+      "kind": "card_signup",
+      "name": "Wells Fargo Autograph welcome offer",
+      "provider": "Wells Fargo Bank, N.A.",
+      "bonusPoints": 20000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Wells Fargo Rewards",
+      "spendRequired": 1000,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "common",
+      "url": "https://creditcards.wellsfargo.com/autograph-visa-credit-card",
+      "accessNotes": "Apply online. Points post after the spend requirement and redeem for a statement credit at a cent each.",
+      "requirements": [
+        "$1,000 of spend in three months",
+        "No annual fee"
+      ],
+      "notes": "Twenty percent of the required spend with no fee. Wells Fargo's points redeem cleanly for cash, so there is no redemption assumption hiding in the valuation."
+    },
+    {
+      "id": "bofa-customized-cash-signup",
+      "kind": "card_signup",
+      "name": "Bank of America Customized Cash Rewards welcome offer",
+      "provider": "Bank of America, N.A.",
+      "bonusCash": 200,
+      "spendRequired": 1000,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.bankofamerica.com/credit-cards/products/cash-back-credit-cards/",
+      "accessNotes": "Apply online. If you hold qualifying balances at Bank of America or Merrill, the Preferred Rewards tier multiplies everything this card earns afterwards — that is a separate row here.",
+      "requirements": [
+        "$1,000 of spend in 90 days",
+        "No annual fee",
+        "The 3% choice category is capped at $2,500 of combined spend per quarter"
+      ],
+      "notes": "Worth pairing with the Preferred Rewards row: the same card earns 25% to 75% more for customers with balances at the bank, which is one of the few genuinely large rewards multipliers still available."
+    },
+    {
+      "id": "bofa-premium-rewards-signup",
+      "kind": "card_signup",
+      "name": "Bank of America Premium Rewards welcome offer",
+      "provider": "Bank of America, N.A.",
+      "bonusPoints": 60000,
+      "pointValueCents": 1.0,
+      "pointProgram": "Bank of America points",
+      "spendRequired": 5000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "common",
+      "url": "https://www.bankofamerica.com/credit-cards/products/premium-rewards-credit-card/",
+      "accessNotes": "Apply online. Points redeem at a cent each for cash or travel with no portal requirement.",
+      "requirements": [
+        "$5,000 of spend in 90 days",
+        "$95 annual fee",
+        "An airline incidental credit offsets part of the fee, but only against fees you actually incur"
+      ],
+      "notes": "$600 of points less the $95 fee is $505 in year one. With Preferred Rewards status the ongoing earn rate on this card becomes one of the best flat rates available, which is a separate calculation from the bonus."
+    },
+    {
+      "id": "us-bank-cash-plus-signup",
+      "kind": "card_signup",
+      "name": "U.S. Bank Cash+ welcome offer",
+      "provider": "U.S. Bank National Association",
+      "bonusCash": 200,
+      "spendRequired": 1000,
+      "windowDays": 120,
+      "annualFee": 0,
+      "reach": "common",
+      "url": "https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html",
+      "accessNotes": "Apply online. The bonus is separate from the card's choose-your-own 5% categories, which have to be selected every quarter and are listed separately.",
+      "requirements": [
+        "$1,000 of spend in 120 days",
+        "No annual fee",
+        "The 5% categories must be re-selected every quarter or they lapse to nothing"
+      ],
+      "notes": "A four-month window rather than three, which makes the spend requirement noticeably easier than the headline suggests."
+    },
+    {
+      "id": "united-explorer-signup",
+      "kind": "card_signup",
+      "name": "United Explorer welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 60000,
+      "pointValueCents": 1.2,
+      "pointProgram": "United MileagePlus",
+      "spendRequired": 3000,
+      "windowDays": 90,
+      "annualFee": 0,
+      "reach": "common",
+      "url": "https://creditcards.chase.com/travel-credit-cards/united/explorer",
+      "accessNotes": "Apply online. The annual fee is typically waived for the first year and charged from the second.",
+      "requirements": [
+        "$3,000 of spend in three months",
+        "$0 first year, then about $150",
+        "Subject to Chase's 5/24 rule",
+        "MileagePlus awards are dynamically priced, so the value of a mile moves with the cash fare"
+      ],
+      "notes": "Airline miles are valued conservatively at 1.2 cents. The free checked bag benefit is worth more than most people credit if you fly United twice a year with luggage, and worth nothing otherwise."
+    },
+    {
+      "id": "southwest-priority-signup",
+      "kind": "card_signup",
+      "name": "Southwest Rapid Rewards Priority welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 50000,
+      "pointValueCents": 1.3,
+      "pointProgram": "Southwest Rapid Rewards",
+      "spendRequired": 1000,
+      "windowDays": 90,
+      "annualFee": 149,
+      "reach": "common",
+      "url": "https://creditcards.chase.com/travel-credit-cards/southwest/priority",
+      "accessNotes": "Apply online. Rapid Rewards points are priced off the cash fare, which makes them unusually easy to value: roughly 1.3 cents on Wanna Get Away fares.",
+      "requirements": [
+        "$1,000 of spend in three months",
+        "$149 annual fee, offset partly by a $75 travel credit",
+        "Subject to Chase's 5/24 rule",
+        "Points earned here count towards Companion Pass, which is listed separately and is worth far more than the bonus"
+      ],
+      "notes": "The bonus itself is $650 of points less $149. The real reason people open this card is that the points count towards Companion Pass qualification — see that row, which is where the actual money is."
+    },
+    {
+      "id": "marriott-boundless-signup",
+      "kind": "card_signup",
+      "name": "Marriott Bonvoy Boundless welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 105000,
+      "pointValueCents": 0.7,
+      "pointProgram": "Marriott Bonvoy",
+      "spendRequired": 3000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "common",
+      "url": "https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless",
+      "accessNotes": "Apply online. The welcome offer is often expressed as free night awards rather than points; converted here at a conservative valuation.",
+      "requirements": [
+        "$3,000 of spend in three months",
+        "$95 annual fee every year",
+        "Free night certificates carry a points ceiling and expire twelve months after issue",
+        "Marriott prices awards dynamically"
+      ],
+      "notes": "Hotel certificates come with an expiry date and a cap, so an unused one is worth exactly zero. Valued at 0.7 cents a point, which is realistic for Marriott and well below what the marketing implies."
+    },
+    {
+      "id": "ihg-premier-signup",
+      "kind": "card_signup",
+      "name": "IHG One Rewards Premier welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 140000,
+      "pointValueCents": 0.5,
+      "pointProgram": "IHG One Rewards",
+      "spendRequired": 3000,
+      "windowDays": 90,
+      "annualFee": 99,
+      "reach": "niche",
+      "url": "https://creditcards.chase.com/travel-credit-cards/ihg/premier",
+      "accessNotes": "Apply online. IHG points are the cheapest currency in this file per point and the fourth night free benefit on award stays is where most of the ongoing value sits.",
+      "requirements": [
+        "$3,000 of spend in three months",
+        "$99 annual fee",
+        "IHG points are worth about half a cent",
+        "The anniversary free night has a points ceiling"
+      ],
+      "notes": "A hundred and forty thousand points is a genuinely large number of nearly worthless points: about $700 at half a cent, less the $99 fee. Fine if you stay at Holiday Inns; meaningless otherwise."
+    },
+    {
+      "id": "world-of-hyatt-signup",
+      "kind": "card_signup",
+      "name": "World of Hyatt welcome offer",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonusPoints": 30000,
+      "pointValueCents": 1.7,
+      "pointProgram": "World of Hyatt",
+      "spendRequired": 3000,
+      "windowDays": 90,
+      "annualFee": 95,
+      "reach": "niche",
+      "url": "https://creditcards.chase.com/travel-credit-cards/world-of-hyatt-credit-card",
+      "accessNotes": "Apply online. Hyatt still uses a published award chart, which is why its points are worth several times a Hilton or IHG point.",
+      "requirements": [
+        "$3,000 of spend in three months",
+        "$95 annual fee",
+        "Hyatt has a small footprint — the points are only useful where they have hotels",
+        "Subject to Chase's 5/24 rule"
+      ],
+      "notes": "The one hotel currency in this file worth more than a cent, because Hyatt still prices awards from a fixed chart rather than off the cash rate. Thirty thousand points is a smaller headline and more actual money than IHG's hundred and forty thousand."
+    },
+    {
+      "id": "discover-it-signup",
+      "kind": "card_signup",
+      "name": "Discover it welcome offer, first-year cash-back match",
+      "provider": "Discover Bank",
+      "bonusCash": 228,
+      "spendRequired": 12000,
+      "windowDays": 365,
+      "annualFee": 0,
+      "reach": "everyone",
+      "url": "https://www.discover.com/credit-cards/cash-back/it-card.html",
+      "accessNotes": "Apply online. There is no spend threshold to hit: Discover simply doubles all the cash back you earn in your first twelve months, paid at the end of that year.",
+      "requirements": [
+        "No minimum spend, but the value scales entirely with how much you put on the card",
+        "The match is paid at the end of the first year, so it is twelve months away",
+        "The figure here models $12,000 of annual spend at Discover's blended earn rate — scale it to your own spending",
+        "No annual fee"
+      ],
+      "notes": "Structurally different from every other row here: there is no threshold and no deadline, just a doubling. The dollar figure is a model, not a promise, and the honest way to read it is as a rate — Discover's first year is worth roughly double whatever the card would otherwise earn you."
+    },
+
+    {
+      "id": "chase-freedom-flex-5pct-q3-2026",
+      "kind": "card_category",
+      "name": "Chase Freedom 5% rotating categories, current quarter",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "spendCap": 1500,
+      "capPeriod": "quarter",
+      "referenceSpend": 1500,
+      "expiresAt": "2026-09-14",
+      "reach": "everyone",
+      "url": "https://creditcards.chase.com/cash-back-credit-cards/freedom/flex",
+      "accessNotes": "Log in and activate the quarter's categories, then use the card for that spend only. Activation is mandatory and the deadline is roughly two weeks before the quarter ends — miss it and the whole quarter pays the base rate.",
+      "requirements": [
+        "Must be activated every quarter, before the mid-quarter-end deadline",
+        "5% applies only to the first $1,500 of combined spend in the quarter's categories",
+        "Categories are announced by Chase each quarter and are not always useful to you",
+        "Spend above the cap earns the ordinary rate"
+      ],
+      "notes": "The activation deadline is the reason this row has a countdown: the categories are worthless without it and Chase does not chase you. Four quarters at the full cap is the ceiling on the whole programme."
+    },
+    {
+      "id": "chase-freedom-flex-5pct-q4-2026",
+      "kind": "card_category",
+      "name": "Chase Freedom 5% rotating categories, fourth quarter",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "spendCap": 1500,
+      "capPeriod": "quarter",
+      "referenceSpend": 1500,
+      "startsAt": "2026-10-01",
+      "expiresAt": "2026-12-14",
+      "reach": "everyone",
+      "url": "https://creditcards.chase.com/cash-back-credit-cards/freedom/flex",
+      "accessNotes": "The fourth-quarter categories open on 1 October and have to be activated separately from the current quarter. Chase announces them in advance, and the fourth quarter has historically been the most generally useful of the four.",
+      "requirements": [
+        "Opens 1 October — activation is not available before then",
+        "Separate activation from the current quarter",
+        "$1,500 cap resets with the new quarter",
+        "Categories confirmed by Chase closer to the date"
+      ],
+      "notes": "Listed as an upcoming window rather than a live one: the cap resets, so a quarter you miss is money that does not roll over. Diary the first of October."
+    },
+    {
+      "id": "discover-it-5pct-q3-2026",
+      "kind": "card_category",
+      "name": "Discover it 5% rotating categories, current quarter",
+      "provider": "Discover Bank",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "spendCap": 1500,
+      "capPeriod": "quarter",
+      "referenceSpend": 1500,
+      "expiresAt": "2026-09-30",
+      "reach": "everyone",
+      "url": "https://www.discover.com/credit-cards/cash-back/it-card.html",
+      "accessNotes": "Activate the quarter's categories in your Discover account or by text, then use the card for that spend. Discover allows activation right up to the end of the quarter, and applies it retroactively to that quarter's spend.",
+      "requirements": [
+        "Activation required, though Discover applies it retroactively within the quarter",
+        "5% on the first $1,500 of category spend per quarter",
+        "Categories are set by Discover each quarter",
+        "In your first year the cash-back match doubles this, which is a separate row"
+      ],
+      "notes": "More forgiving than Chase's version because activation applies retroactively inside the quarter. The cap is identical, and so is the ceiling on what the programme can pay."
+    },
+    {
+      "id": "discover-it-5pct-q4-2026",
+      "kind": "card_category",
+      "name": "Discover it 5% rotating categories, fourth quarter",
+      "provider": "Discover Bank",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "spendCap": 1500,
+      "capPeriod": "quarter",
+      "referenceSpend": 1500,
+      "startsAt": "2026-10-01",
+      "expiresAt": "2026-12-31",
+      "reach": "everyone",
+      "url": "https://www.discover.com/credit-cards/cash-back/it-card.html",
+      "accessNotes": "The fourth-quarter categories open on 1 October with a fresh $1,500 cap. Discover publishes the year's calendar in advance, so the categories are usually knowable before the quarter starts.",
+      "requirements": [
+        "Opens 1 October",
+        "Fresh $1,500 quarterly cap",
+        "Activation required for the new quarter"
+      ],
+      "notes": "An upcoming window rather than a live one. Worth knowing in advance because fourth-quarter categories are usually the widely-useful ones and a lot of the year's spending lands in them."
+    },
+    {
+      "id": "citi-custom-cash-5pct",
+      "kind": "card_category",
+      "name": "Citi Custom Cash automatic 5% top category",
+      "provider": "Citibank, N.A.",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "spendCap": 500,
+      "capPeriod": "month",
+      "reach": "common",
+      "url": "https://www.citi.com/credit-cards/citi-custom-cash-credit-card",
+      "accessNotes": "Nothing to activate. The card automatically pays 5% in whichever eligible category you spent most in that billing cycle, on the first $500.",
+      "requirements": [
+        "5% applies to the first $500 of spend per billing cycle in your top eligible category",
+        "Only one category counts per cycle — the rest earn 1%",
+        "The list of eligible categories is fixed by Citi"
+      ],
+      "notes": "The no-effort version of a rotating category card: no activation, no calendar, and a smaller cap. $500 a month at 5% is the whole programme, which is $300 a year gross and about $210 more than a 1.5% card would have paid."
+    },
+    {
+      "id": "us-bank-cash-plus-5pct",
+      "kind": "card_category",
+      "name": "U.S. Bank Cash+ choose-your-own 5% categories",
+      "provider": "U.S. Bank National Association",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "spendCap": 2000,
+      "capPeriod": "quarter",
+      "expiresAt": "2026-09-30",
+      "reach": "niche",
+      "url": "https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html",
+      "accessNotes": "You pick two 5% categories from their list each quarter, in your online account. If you do not choose, you earn nothing extra for that quarter — the previous selection does not carry over automatically in all cases.",
+      "requirements": [
+        "Two categories must be selected every quarter, before the quarter ends",
+        "5% on the first $2,000 of combined spend in those categories per quarter",
+        "Category list is fixed and includes some unusually good ones, such as utilities and home security"
+      ],
+      "notes": "The largest quarterly cap of the mainstream 5% cards, and the only one where you choose the categories rather than being told them. Utilities as a 5% category is genuinely unusual and is why this card has a following."
+    },
+    {
+      "id": "bofa-customized-cash-3pct",
+      "kind": "card_category",
+      "name": "Bank of America Customized Cash 3% choice category",
+      "provider": "Bank of America, N.A.",
+      "rate": 3,
+      "baselineRate": 1.5,
+      "spendCap": 2500,
+      "capPeriod": "quarter",
+      "expiresAt": "2026-08-31",
+      "reach": "common",
+      "url": "https://www.bankofamerica.com/credit-cards/products/cash-back-credit-cards/",
+      "accessNotes": "Choose one 3% category in your online account. You can change it once each calendar month, and the change takes effect for the rest of that month — so the practical deadline is the end of the month.",
+      "requirements": [
+        "One choice category, changeable once a calendar month",
+        "3% and 2% rates apply to the first $2,500 of combined spend per quarter",
+        "Preferred Rewards status multiplies this rate by 25% to 75%"
+      ],
+      "notes": "Small on its own and considerably larger for Bank of America Preferred Rewards customers, who earn up to 75% more on the same spend. The monthly change window is why this row carries a date."
+    },
+    {
+      "id": "amazon-prime-visa-5pct",
+      "kind": "card_category",
+      "name": "Prime Visa 5% at Amazon and Whole Foods",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "rate": 5,
+      "baselineRate": 2,
+      "referenceSpend": 3000,
+      "reach": "everyone",
+      "url": "https://www.chase.com/personal/credit-cards/amazon",
+      "accessNotes": "Requires an active Amazon Prime membership. Rewards post as Amazon points usable at checkout, or as a statement credit at the same rate.",
+      "requirements": [
+        "Prime membership required, currently around $139 a year",
+        "5% applies at Amazon and Whole Foods with no cap",
+        "Rewards default to spending at Amazon, which is convenient and slightly sticky"
+      ],
+      "notes": "Uncapped, which is rare, and modelled here on $3,000 of Amazon spend a year against a 2% baseline. The Prime fee is not charged against it because most holders buy Prime for shipping regardless; if you would not, subtract $139 and the row goes negative below about $4,600 of Amazon spend."
+    },
+    {
+      "id": "target-circle-card-5pct",
+      "kind": "card_category",
+      "name": "Target Circle Card 5% at Target",
+      "provider": "TD Bank USA, N.A. for Target",
+      "rate": 5,
+      "baselineRate": 1.5,
+      "referenceSpend": 3000,
+      "reach": "everyone",
+      "url": "https://www.target.com/circlecard",
+      "accessNotes": "Available as a credit card or as a debit card linked to your own checking account. The discount is applied at the register rather than paid as cash back.",
+      "requirements": [
+        "Only works at Target and Target.com",
+        "The debit version needs no credit check at all, which is unusual",
+        "Some purchases, including gift cards and prescriptions, are excluded"
+      ],
+      "notes": "The debit version is the interesting one: a 5% discount with no credit application, no interest risk and no annual fee. If you shop at Target at all, it is close to free money."
+    },
+    {
+      "id": "costco-anywhere-visa-gas",
+      "kind": "card_category",
+      "name": "Costco Anywhere Visa 4% on gas",
+      "provider": "Citibank, N.A.",
+      "rate": 4,
+      "baselineRate": 1.5,
+      "spendCap": 7000,
+      "capPeriod": "year",
+      "reach": "common",
+      "url": "https://www.citi.com/credit-cards/costco-anywhere-visa-credit-card",
+      "accessNotes": "Requires a Costco membership. Rewards are paid once a year as a certificate redeemable in warehouse, not as cash into your account.",
+      "requirements": [
+        "Costco membership required, from about $65 a year",
+        "4% on the first $7,000 of gas and EV charging each year, then 1%",
+        "Rewards arrive annually as a Costco certificate, usable in store or for cash at the register",
+        "One year's certificate expires if you do not redeem it"
+      ],
+      "notes": "One of the better gas rates available and a genuinely annoying payout mechanism: a once-a-year certificate you have to physically use. Membership is not charged against this row because members buy it to shop there."
+    },
+    {
+      "id": "costco-executive-membership",
+      "kind": "card_category",
+      "name": "Costco Executive membership 2% reward",
+      "provider": "Costco Wholesale Corporation",
+      "rate": 2,
+      "baselineRate": 0,
+      "spendCap": 62500,
+      "capPeriod": "year",
+      "referenceSpend": 5000,
+      "membershipFee": 65,
+      "reach": "common",
+      "url": "https://www.costco.com/executive-membership.html",
+      "accessNotes": "Upgrade an existing Gold Star membership online or at the counter. The extra fee buys a 2% annual reward on most Costco purchases, paid as a certificate at renewal.",
+      "requirements": [
+        "Costs about $65 a year more than the standard membership",
+        "2% reward is capped at $1,250 a year",
+        "Reward arrives as a certificate at renewal, not as cash during the year",
+        "Costco refunds the difference if the reward does not cover the upgrade, which caps your downside at zero"
+      ],
+      "notes": "Pure breakeven arithmetic and the reason this row exists: the upgrade pays for itself at about $3,250 of annual Costco spend and is a loss below it. Costco will refund the difference if you fall short, which is unusually honest and worth knowing."
+    },
+    {
+      "id": "bilt-rewards-rent",
+      "kind": "card_category",
+      "name": "Bilt Rewards points on rent",
+      "provider": "Bilt Rewards / Wells Fargo Bank, N.A.",
+      "rate": 1.5,
+      "baselineRate": 0,
+      "spendCap": 100000,
+      "capPeriod": "year",
+      "referenceSpend": 21600,
+      "reach": "niche",
+      "url": "https://www.biltrewards.com/",
+      "accessNotes": "Pay rent through the Bilt app or card and earn points with no processing fee, which no other card allows. You must make five card transactions in a statement period for that month's rent points to post.",
+      "requirements": [
+        "Five card transactions per statement period, or the rent points do not post at all",
+        "Points capped at 100,000 a year from rent",
+        "Your landlord does not need to accept cards — Bilt sends a cheque or ACH",
+        "Points are worth around 1.25 to 2 cents transferred to airline partners, and much less as cash"
+      ],
+      "notes": "The largest recurring expense most people have, earning rewards for the first time. Modelled on $1,800 a month of rent. The five-transaction requirement catches people out every month, and the valuation depends entirely on transferring points rather than cashing them."
+    },
+
+    {
+      "id": "rakuten-portal",
+      "kind": "cashback_app",
+      "name": "Rakuten shopping portal",
+      "provider": "Rakuten Rewards",
+      "rate": 4,
+      "baselineRate": 0,
+      "referenceSpend": 3000,
+      "reach": "everyone",
+      "url": "https://www.rakuten.com/",
+      "accessNotes": "Click through to the retailer from Rakuten's site or browser extension before buying, and the cash back is credited to your Rakuten account. Paid quarterly by cheque or PayPal.",
+      "requirements": [
+        "You must start the purchase from Rakuten's link or extension every time",
+        "Rates vary by retailer, from 1% to 15%, and change constantly",
+        "Payments are quarterly, so money earned in October arrives in February",
+        "Stacks on top of whatever your credit card earns"
+      ],
+      "notes": "Modelled on $3,000 a year of online shopping at an average 4%. This stacks with card rewards rather than replacing them, which is why it is worth the click even though the rate looks unremarkable."
+    },
+    {
+      "id": "topcashback-portal",
+      "kind": "cashback_app",
+      "name": "TopCashback shopping portal",
+      "provider": "TopCashback USA",
+      "rate": 5,
+      "baselineRate": 0,
+      "referenceSpend": 3000,
+      "reach": "niche",
+      "url": "https://www.topcashback.com/",
+      "accessNotes": "Same click-through mechanism as Rakuten, with generally higher rates because the site keeps less of the commission. Payouts are on demand rather than quarterly.",
+      "requirements": [
+        "Purchase must start from their link",
+        "Rates are usually higher than Rakuten's for the same retailer — compare before clicking",
+        "Missing-cashback claims are common and have to be filed manually"
+      ],
+      "notes": "Consistently pays more than the better-known portals for the same purchase because it passes on nearly all of the merchant commission. Checking two portals before a large purchase takes thirty seconds and often finds a couple of percent."
+    },
+    {
+      "id": "capital-one-shopping",
+      "kind": "cashback_app",
+      "name": "Capital One Shopping",
+      "provider": "Capital One, N.A.",
+      "rate": 2,
+      "baselineRate": 0,
+      "referenceSpend": 3000,
+      "reach": "common",
+      "url": "https://capitaloneshopping.com/",
+      "accessNotes": "A browser extension that applies coupon codes automatically and pays rewards at participating retailers. Free, and does not require a Capital One card or account.",
+      "requirements": [
+        "Rewards are paid as gift cards rather than cash",
+        "Coverage and rates are thinner than the dedicated portals",
+        "Extension has to be installed and watching your browsing"
+      ],
+      "notes": "The coupon-finding is worth more than the cash back for most people. Paid in gift cards, which is a real haircut if you would not otherwise shop there."
+    },
+    {
+      "id": "ibotta-grocery",
+      "kind": "cashback_app",
+      "name": "Ibotta grocery rebates",
+      "provider": "Ibotta, Inc.",
+      "rate": 2,
+      "baselineRate": 0,
+      "referenceSpend": 6000,
+      "reach": "common",
+      "url": "https://home.ibotta.com/",
+      "accessNotes": "Add offers in the app before shopping, then scan the receipt or link your loyalty card. Cash accumulates in the app and withdraws to PayPal or a gift card once you clear the minimum.",
+      "requirements": [
+        "Offers must be added before you shop — a receipt alone earns nothing",
+        "Offers are brand-specific, so it rewards buying what they are promoting",
+        "Withdrawal minimum applies before you can take the money out"
+      ],
+      "notes": "Modelled at 2% of $6,000 of grocery spend, which assumes reasonable diligence. The honest hazard is behavioural: it pays you to buy the promoted brand, which frequently costs more than the rebate."
+    },
+    {
+      "id": "fetch-rewards",
+      "kind": "cashback_app",
+      "name": "Fetch receipt scanning",
+      "provider": "Fetch Rewards, Inc.",
+      "rate": 0.75,
+      "baselineRate": 0,
+      "referenceSpend": 8000,
+      "reach": "common",
+      "url": "https://fetch.com/",
+      "accessNotes": "Photograph any receipt in the app and collect points, with larger amounts for participating brands. Points redeem for gift cards.",
+      "requirements": [
+        "Points redeem for gift cards, not cash",
+        "The base rate on a non-brand receipt is close to nothing",
+        "Requires scanning every receipt to be worth anything"
+      ],
+      "notes": "The lowest hourly rate in this file by a wide margin — a few tens of dollars a year for scanning everything you buy. Listed because it is real money and because seeing it next to a $200 card bonus is the most useful thing this app can show you about where an hour is best spent."
+    },
+    {
+      "id": "upside-fuel",
+      "kind": "cashback_app",
+      "name": "Upside fuel and grocery cash back",
+      "provider": "Upside Services, Inc.",
+      "rate": 3,
+      "baselineRate": 0,
+      "referenceSpend": 2400,
+      "reach": "common",
+      "url": "https://www.upside.com/",
+      "accessNotes": "Claim an offer in the app before filling up or shopping, pay as normal, then upload the receipt or let the linked card do it. Cash out to a bank account, PayPal or a gift card.",
+      "requirements": [
+        "Offer must be claimed before the transaction, not after",
+        "Rates vary by station and change daily",
+        "Cashing out to a bank account carries a fee on some options; gift cards do not"
+      ],
+      "notes": "Modelled on about $2,400 of annual fuel spend. Genuinely stacks with a 4% gas card, and the per-gallon offers are largest at stations that are trying to take share from a competitor across the road."
+    },
+
+    {
+      "id": "public-transfer-promo",
+      "kind": "transfer_promo",
+      "name": "Public.com account transfer bonus",
+      "provider": "Public Holdings, Inc.",
+      "bonus": 500,
+      "requiredAssets": 50000,
+      "holdDays": 365,
+      "scales": true,
+      "reach": "niche",
+      "url": "https://public.com/transfer",
+      "accessNotes": "Start an ACAT transfer from your existing broker inside the Public app. The bonus is a percentage of what you move and pays after the assets have been held for the stated period.",
+      "requirements": [
+        "Assets must arrive by ACAT transfer from another brokerage, not as a cash deposit",
+        "Positions must stay for the full holding period or the bonus is clawed back",
+        "Your old broker may charge an outgoing ACAT fee, commonly $75 to $100",
+        "Percentage match, so it scales with the size of the transfer"
+      ],
+      "notes": "A transfer bonus is the least disruptive money in this file: your positions move in kind, so you stay invested throughout and never realise a gain. Net the outgoing ACAT fee your current broker charges — on a small transfer it can eat most of the bonus."
+    },
+    {
+      "id": "m1-finance-transfer-promo",
+      "kind": "transfer_promo",
+      "name": "M1 Finance account transfer bonus",
+      "provider": "M1 Finance LLC",
+      "bonus": 250,
+      "requiredAssets": 25000,
+      "holdDays": 365,
+      "reach": "niche",
+      "url": "https://m1.com/transfer",
+      "accessNotes": "Initiate the ACAT transfer from inside M1 and submit the promotion form if one is required. The bonus posts after the assets have been held for the stated period.",
+      "requirements": [
+        "Tiered flat amounts by transfer size rather than a percentage",
+        "Assets must remain for the full holding period",
+        "Outgoing transfer fee at your old broker is your cost",
+        "Promotion forms sometimes have to be submitted separately — missing that is the usual reason people are not paid"
+      ],
+      "notes": "Tiered rather than proportional, so transferring just under a tier boundary is the most common way to leave money behind here. Check the tier table before you start."
+    },
+    {
+      "id": "moomoo-transfer-promo",
+      "kind": "transfer_promo",
+      "name": "moomoo account transfer bonus",
+      "provider": "Moomoo Financial Inc.",
+      "bonus": 200,
+      "requiredAssets": 20000,
+      "holdDays": 180,
+      "reach": "obscure",
+      "url": "https://www.moomoo.com/us",
+      "accessNotes": "Transfer positions or cash in from another broker and register for the current promotion. Bonuses are often paid partly in shares rather than cash.",
+      "requirements": [
+        "Registration for the specific promotion is usually required",
+        "Assets must stay for the holding period",
+        "Some of the reward may be paid in stock rather than cash",
+        "Terms change several times a year"
+      ],
+      "notes": "Among the most aggressive promotions in the US brokerage market, which cuts both ways: the amounts are large and the terms are the least stable of any provider in this file."
+    },
+    {
+      "id": "firstrade-transfer-promo",
+      "kind": "transfer_promo",
+      "name": "Firstrade account transfer bonus",
+      "provider": "Firstrade Securities Inc.",
+      "bonus": 250,
+      "requiredAssets": 25000,
+      "holdDays": 365,
+      "reach": "obscure",
+      "url": "https://www.firstrade.com/content/en-us/promotion",
+      "accessNotes": "Open the account, submit the transfer request and the promotion form. Firstrade also reimburses the outgoing transfer fee your old broker charges, up to a stated limit.",
+      "requirements": [
+        "Promotion form must be submitted, usually within a short window of the transfer",
+        "Assets must be held for the stated period",
+        "Transfer-fee reimbursement requires sending them the statement showing the charge"
+      ],
+      "notes": "The fee reimbursement is worth as much as the bonus on a small transfer and is the part people forget to claim. It requires you to email them a statement, which takes five minutes and is worth about $75."
+    },
+    {
+      "id": "ally-invest-transfer-promo",
+      "kind": "transfer_promo",
+      "name": "Ally Invest transfer bonus",
+      "provider": "Ally Bank / Ally Invest Securities LLC",
+      "bonus": 250,
+      "requiredAssets": 25000,
+      "holdDays": 90,
+      "reach": "niche",
+      "url": "https://www.ally.com/invest/",
+      "accessNotes": "Open or fund an Ally Invest account with new money or an incoming transfer and register for the current cash bonus tier.",
+      "requirements": [
+        "Tiered by the size of the new money brought in",
+        "Funds must remain for the qualifying period",
+        "New money only — moving cash between your own Ally accounts does not count"
+      ],
+      "notes": "A short holding period compared with the year most brokerages require, which makes the annualised figure look large. It is still one payment, and it is still one per customer."
+    },
+    {
+      "id": "sofi-invest-transfer-match",
+      "kind": "transfer_promo",
+      "name": "SoFi Invest transfer match",
+      "provider": "SoFi Securities LLC",
+      "bonus": 200,
+      "requiredAssets": 20000,
+      "holdDays": 730,
+      "scales": true,
+      "reach": "niche",
+      "url": "https://www.sofi.com/invest/",
+      "accessNotes": "Transfer in from another brokerage and SoFi credits a percentage match on what arrives. The match has a long holding requirement measured in years, not months.",
+      "requirements": [
+        "Percentage match, proportional to what you move",
+        "Assets must stay roughly two years or the match is clawed back",
+        "A SoFi Plus subscription is required for the higher match rates"
+      ],
+      "notes": "The two-year clawback is the whole trade: a 1% match that locks you in for two years is worth about half a percent a year, and it costs you the option to move if the platform stops suiting you."
+    },
+    {
+      "id": "betterment-transfer-fee-waiver",
+      "kind": "transfer_promo",
+      "name": "Betterment managed-fee waiver for transfers",
+      "provider": "Betterment LLC",
+      "bonus": 125,
+      "requiredAssets": 50000,
+      "holdDays": 365,
+      "scales": true,
+      "reach": "niche",
+      "url": "https://www.betterment.com/",
+      "accessNotes": "Transfer or deposit new money and Betterment waives its management fee for a period based on the amount. The value is the fee you do not pay rather than cash you receive.",
+      "requirements": [
+        "Paid as a fee waiver, not as cash — you never see a deposit",
+        "Waiver period scales with the amount transferred",
+        "The account still bears the underlying fund expenses, which are not waived"
+      ],
+      "notes": "A waived 0.25% management fee on $50,000 is $125 a year of real money, and it is the cleanest kind of promotion there is because it cannot be clawed back — it is a cost you simply do not incur."
+    },
+    {
+      "id": "robinhood-gold-deposit-match",
+      "kind": "transfer_promo",
+      "name": "Robinhood Gold taxable brokerage deposit match",
+      "provider": "Robinhood Markets, Inc.",
+      "bonus": 200,
+      "requiredAssets": 20000,
+      "holdDays": 730,
+      "scales": true,
+      "reach": "common",
+      "url": "https://robinhood.com/gold/",
+      "accessNotes": "Gold subscribers get a percentage match on deposits and incoming transfers into a taxable brokerage account. Distinct from the retirement-account match, which is listed under account bonuses.",
+      "requirements": [
+        "Requires a Robinhood Gold subscription, currently about $5 a month",
+        "Matched funds must stay roughly two years or the match is taken back",
+        "Percentage match, so it scales with what you move",
+        "Cancelling Gold during the period can forfeit the match"
+      ],
+      "notes": "Two years of Gold at about $5 a month is $120 of subscription against a $200 match on $20,000, so the real net is closer to $80 unless you were paying for Gold anyway. That subtraction is the entire calculation and it is nowhere in the advertisement."
+    },
+
+    {
+      "id": "citi-simplicity-bt-carry",
+      "kind": "credit_promo",
+      "name": "Citi Simplicity 0% balance-transfer carry",
+      "provider": "Citibank, N.A.",
+      "introDays": 640,
+      "feePct": 5,
+      "parkRate": 4.0,
+      "amount": 10000,
+      "reach": "niche",
+      "url": "https://www.citi.com/credit-cards/citi-simplicity-credit-card",
+      "accessNotes": "Transfer a balance at the promotional rate, keep the equivalent cash in a high-yield savings account, pay the minimum every month and clear the whole balance before the promotional period ends. The spread between the savings rate and the annualised transfer fee is the entire return.",
+      "requirements": [
+        "A balance transfer fee, typically 3% to 5%, is charged up front on the whole amount",
+        "One late payment ends the promotional rate on most cards",
+        "The balance must be cleared in full before the intro period ends, or the reverting APR applies to what is left",
+        "The transferred balance raises your credit utilisation, which lowers your credit score while it runs",
+        "You need somewhere safe and liquid to park the money — this only works against an insured savings account or T-bills"
+      ],
+      "notes": "This is leverage on a consumer credit line and it is included because it is real, not because it is easy. At a 5% fee over 21 months the fee costs about 2.9% a year against a 4% parking rate, leaving roughly 1.1% — thin, and one missed payment turns it into a mid-20s APR that costs more in two months than the trade earns in a year. Do not do this with money you might need to spend."
+    },
+    {
+      "id": "bankamericard-bt-carry",
+      "kind": "credit_promo",
+      "name": "BankAmericard 0% balance-transfer carry",
+      "provider": "Bank of America, N.A.",
+      "introDays": 540,
+      "feePct": 3,
+      "parkRate": 4.0,
+      "amount": 10000,
+      "reach": "niche",
+      "url": "https://www.bankofamerica.com/credit-cards/products/bankamericard-credit-card/",
+      "accessNotes": "Same structure as any 0% carry: transfer, park the cash somewhere insured, pay the minimum, clear it before the promotional window closes. The lower transfer fee is what makes this version work better than a 5% one.",
+      "requirements": [
+        "3% transfer fee, usually only if the transfer is made in the first 60 days",
+        "Promotional period is counted in billing cycles, not months — check the exact end date",
+        "Late payment can end the promotional rate",
+        "Utilisation effect on your credit score is the same as any large balance"
+      ],
+      "notes": "The comparison with the 21-month, 5%-fee version is the point of listing both: a lower fee over a shorter window still wins, because the fee is paid once and the annualised cost of it is what actually matters. Nearly two percent a year here versus about one."
+    },
+
+    {
+      "id": "amex-offers-enrollment",
+      "kind": "fintech_promo",
+      "name": "Amex Offers targeted statement credits",
+      "provider": "American Express",
+      "payoutAmount": 250,
+      "referenceSpend": 5000,
+      "windowDays": 365,
+      "oneTime": false,
+      "reach": "niche",
+      "url": "https://www.americanexpress.com/en-us/benefits/amex-offers/",
+      "accessNotes": "Log in, open the Amex Offers section on each card you hold, and add every offer that could plausibly apply. Adding an offer costs nothing; only added offers pay, and they expire.",
+      "requirements": [
+        "Each offer must be added to the specific card before you spend",
+        "Offers are targeted — two people with the same card see different lists",
+        "Each offer has its own spend threshold and expiry",
+        "Credits usually post a few days to a few weeks after the qualifying purchase"
+      ],
+      "notes": "Modelled on $5,000 of spend that happens to match offers you had added. This is the most under-used feature on a premium card: it takes about two minutes a month and routinely pays more than the card's headline earn rate."
+    },
+    {
+      "id": "chase-offers-enrollment",
+      "kind": "fintech_promo",
+      "name": "Chase Offers merchant credits",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "payoutAmount": 150,
+      "referenceSpend": 3000,
+      "windowDays": 365,
+      "oneTime": false,
+      "reach": "common",
+      "url": "https://www.chase.com/personal/credit-cards/chase-offers",
+      "accessNotes": "Offers appear in the Chase app under each card. Tap to add before you spend at that merchant; the credit posts automatically afterwards.",
+      "requirements": [
+        "Must be added before the purchase",
+        "Targeted per card and per customer",
+        "Each offer expires and many are single-use"
+      ],
+      "notes": "The same idea as Amex Offers with smaller amounts and broader merchant coverage. Two minutes a month, and it stacks on top of the card's normal rewards and any shopping portal."
+    },
+    {
+      "id": "discover-first-year-match",
+      "kind": "fintech_promo",
+      "name": "Discover first-year cash-back match",
+      "provider": "Discover Bank",
+      "payoutAmount": 228,
+      "referenceSpend": 12000,
+      "windowDays": 365,
+      "reach": "everyone",
+      "url": "https://www.discover.com/credit-cards/cash-back/it-card.html",
+      "accessNotes": "Automatic on new Discover cards: everything you earn in the first twelve months is doubled, paid as a lump statement credit at the end of that year. Nothing to activate.",
+      "requirements": [
+        "Applies to a new cardholder's first twelve months only",
+        "Paid at the end of the year, not as you go",
+        "Scales entirely with your own spending — the figure here models $12,000 of spend",
+        "Stacks with the rotating 5% categories, which is where most of the value comes from"
+      ],
+      "notes": "Uncapped and automatic, which almost nothing else here is. Combined with maxing the 5% quarterly categories it is the largest first-year return available on a no-fee card."
+    },
+    {
+      "id": "southwest-companion-pass",
+      "kind": "fintech_promo",
+      "name": "Southwest Companion Pass qualification",
+      "provider": "Southwest Airlines Co.",
+      "payoutAmount": 1200,
+      "payoutBasis": "conservative value of flying one companion free for the rest of this year and all of next",
+      "expiresAt": "2026-12-31",
+      "effort": "hoops",
+      "reach": "niche",
+      "url": "https://www.southwest.com/rapidrewards/companion-pass/",
+      "accessNotes": "Earn the qualifying number of Rapid Rewards points in a single calendar year — currently around 135,000 — and a companion flies with you for the price of taxes on every flight for the rest of that year and the whole of the next. Credit card welcome bonuses count towards the total.",
+      "requirements": [
+        "Qualifying points must be earned inside one calendar year — the count resets on 1 January and nothing carries over",
+        "Realistically requires two co-branded card bonuses plus spend, or a great deal of flying",
+        "The companion still pays taxes and fees, usually a few dollars each way",
+        "You can change the companion a limited number of times a year"
+      ],
+      "notes": "The single largest recurring value in consumer travel, and it has a hard calendar deadline: points earned on 2 January count for a much longer pass than points earned in November, because qualification is per calendar year and the pass runs through the following one. Valued conservatively at $1,200; for a household that flies Southwest monthly it is worth several times that."
+    },
+    {
+      "id": "card-retention-offer",
+      "kind": "fintech_promo",
+      "name": "Credit card retention offer",
+      "provider": "Major US card issuers",
+      "payoutAmount": 150,
+      "payoutBasis": "typical statement credit or points offer for asking before paying an annual fee",
+      "effort": "light",
+      "reach": "obscure",
+      "url": "https://www.consumerfinance.gov/consumer-tools/credit-cards/",
+      "accessNotes": "When an annual fee posts, call the number on the back of the card or use secure message, say plainly that you are deciding whether the fee is worth it, and ask whether there are any retention offers on the account. Issuers keep a budget for this and the systems will tell the agent within seconds whether you have one.",
+      "requirements": [
+        "You have to ask — nothing is offered automatically",
+        "Offers are targeted by account profitability; many accounts have nothing available",
+        "Often conditional on spending a stated amount within three months",
+        "Accepting one usually resets your eligibility for another for twelve months"
+      ],
+      "notes": "Almost nobody does this and it takes ten minutes. The realistic outcomes are a statement credit, a points offer, a spend-based bonus, or nothing at all, and asking costs nothing beyond the call. The figure here is a plausible mid-range result, not a promise."
+    },
+    {
+      "id": "amex-transfer-bonus-window",
+      "kind": "fintech_promo",
+      "name": "Amex Membership Rewards transfer bonus window",
+      "provider": "American Express",
+      "payoutAmount": 300,
+      "payoutBasis": "extra value from a 30% transfer bonus on a 100,000-point transfer to an airline partner",
+      "effort": "light",
+      "reach": "obscure",
+      "url": "https://www.americanexpress.com/en-us/rewards/membership-rewards/",
+      "accessNotes": "Amex periodically runs limited-time transfer bonuses to individual airline partners, typically 20% to 40% extra points for a few weeks. Transfers are irreversible: once points leave Membership Rewards they are the airline's, subject to the airline's rules.",
+      "requirements": [
+        "Windows are announced with no notice and typically run four to eight weeks",
+        "Transfers are one-way and cannot be undone",
+        "Only worth doing against a specific award you have already found availability for",
+        "Airlines devalue award charts without warning, including immediately after a transfer bonus"
+      ],
+      "notes": "The classic trap in reverse: transferring speculatively because there is a bonus is how people end up with 130,000 points in a programme they never use. The bonus is real money only when you already know the flight you want."
+    },
+    {
+      "id": "bofa-preferred-rewards",
+      "kind": "fintech_promo",
+      "name": "Bank of America Preferred Rewards rewards multiplier",
+      "provider": "Bank of America, N.A. / Merrill",
+      "payoutAmount": 337,
+      "requiredAssets": 100000,
+      "holdDays": 365,
+      "oneTime": false,
+      "effort": "light",
+      "liquidity": "daily",
+      "reach": "niche",
+      "url": "https://www.bankofamerica.com/preferred-rewards/",
+      "accessNotes": "Hold a qualifying three-month average balance across Bank of America deposit accounts and Merrill investment accounts, and every credit card reward you earn is multiplied by 25%, 50% or 75% depending on the tier. The investments can be index funds you already own — they do not have to be cash.",
+      "requirements": [
+        "Tiers begin at $20,000, then $50,000, then $100,000 of combined three-month average balance",
+        "Balances can be invested rather than in cash, so the opportunity cost is small if you were investing anyway",
+        "The multiplier applies to card rewards, not to interest",
+        "Falling below the tier threshold drops the multiplier"
+      ],
+      "notes": "Modelled as a 75% boost on about $450 of annual card rewards at the top tier, which is roughly $337 a year on a $100,000 balance — a third of a percent. That is small as a rate and real as dollars, and it costs nothing if the money was going to sit in a brokerage account anyway. This is the rare row here where the capital is genuine, which is why it carries a real annualised figure instead of a payout."
+    },
+
+    {
+      "id": "state-unclaimed-property",
+      "kind": "found_money",
+      "name": "State unclaimed property search",
+      "provider": "US state treasuries (NAUPA / MissingMoney)",
+      "payoutAmount": 100,
+      "payoutBasis": "typical successful claim; many people have nothing and some have thousands",
+      "effort": "light",
+      "reach": "common",
+      "url": "https://unclaimed.org/",
+      "accessNotes": "Search the official state site for every state you have lived in, plus states where you have held a job or an account. Claims are filed directly with the state and are free; the state will ask for identification and proof of the old address.",
+      "requirements": [
+        "Search each state separately — there is no single national database that covers everything",
+        "Claims require identity documents and sometimes proof of a former address",
+        "Processing takes weeks to months",
+        "States never charge a fee. Any site asking for a percentage is a finder taking money that is already yours"
+      ],
+      "notes": "Forgotten deposits, uncashed final paychecks, insurance refunds and closed-account balances get handed to the state after a few years of dormancy. It is not an investment and it is not a promotion; it is money that is already yours sitting in a government account, and searching costs twenty minutes."
+    },
+    {
+      "id": "treasury-hunt-savings-bonds",
+      "kind": "found_money",
+      "name": "Treasury Hunt for matured savings bonds",
+      "provider": "US Department of the Treasury",
+      "payoutAmount": 100,
+      "payoutBasis": "typical matured savings bond found; some are worth several thousand",
+      "effort": "light",
+      "reach": "obscure",
+      "url": "https://treasuryhunt.gov/",
+      "accessNotes": "Search Treasury Hunt by Social Security number for matured, unredeemed savings bonds registered to you. Bonds found there are redeemed directly with the Treasury.",
+      "requirements": [
+        "Covers savings bonds that have stopped earning interest and were never cashed",
+        "Search is by Social Security number and only finds bonds registered electronically in their records",
+        "Paper bonds inherited from relatives frequently do not appear and have to be claimed separately",
+        "Free — the Treasury never charges to look or to redeem"
+      ],
+      "notes": "Series EE and I bonds stop paying interest after 30 years and an enormous number are never cashed. If a grandparent bought bonds in your name in the 1980s or 1990s, this is where they are, and they have been earning nothing for years."
+    }
+  ]
+}

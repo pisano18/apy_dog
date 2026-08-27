@@ -174,12 +174,16 @@ const optNum = (v) => (v === null || v === undefined || v === '' ? 0 : toNum(v))
 
 const money = (n) => {
   const frac = Math.abs(n % 1) > 1e-9 ? 2 : 0;
-  return `$${n.toLocaleString('en-US', { minimumFractionDigits: frac, maximumFractionDigits: frac })}`;
+  // A negative payout is a real answer here — an annual fee larger than the
+  // welcome bonus — and "$-95" reads like a typo where "-$95" reads like a loss.
+  const sign = n < 0 ? '-' : '';
+  return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: frac, maximumFractionDigits: frac })}`;
 };
 
 const pct = (n) => `${n.toFixed(Math.abs(n) >= 100 ? 0 : Math.abs(n) >= 10 ? 1 : 2)}%`;
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const IRREGULAR = { person: 'people' };
+const plural = (n, word) => `${n} ${n === 1 ? word : IRREGULAR[word] || `${word}s`}`;
 
 /**
  * A date we are willing to hand to the rest of the app.
@@ -577,17 +581,23 @@ function valueOf(item, kind) {
         membershipFee: item.membershipFee,
       });
       if (!rb) return null;
+      // Whether the figure is limited by the programme's cap or by the spending
+      // assumption changes what the number MEANS, so the sentence says which.
+      const capBinds = rb.cappedAnnualSpend !== null && rb.spendCounted >= rb.cappedAnnualSpend;
+      const period = String(item.capPeriod || 'year');
       const basis = [
         `${pct(rb.rate)} back`,
         rb.baselineRate > 0 ? `against a ${pct(rb.baselineRate)} everyday card, so ${pct(rb.incrementalRate)} is the part at stake` : null,
-        rb.cappedAnnualSpend !== null
-          ? `capped at ${money(rb.cappedAnnualSpend / rb.periodsPerYear)} of spend per ${item.capPeriod || 'year'}`
-          : `modelled on ${money(rb.spendCounted)} of spend a year`,
+        capBinds
+          ? `capped at ${money(rb.cappedAnnualSpend / rb.periodsPerYear)} of spend per ${period}`
+          : `modelled on ${money(rb.spendCounted)} of spend${rb.cappedAnnualSpend !== null ? `, inside a ${money(rb.cappedAnnualSpend / rb.periodsPerYear)}-per-${period} cap` : ' a year'}`,
         rb.membershipFee > 0 ? `less the ${money(rb.membershipFee)} membership` : null,
       ].filter(Boolean).join(', ');
       return {
-        math: { kind: 'rebate', ...rb },
-        payout: { amount: rb.netAnnual, currency, basis, perYear: true },
+        // perYear only where the counted spend really is a year of it. A row
+        // scoped to one quarter's cap must not print its figure as annual.
+        math: { kind: 'rebate', ...rb, annual: capBinds || rb.periodsPerYear === 1 },
+        payout: { amount: rb.netAnnual, currency, basis, perYear: capBinds || rb.periodsPerYear === 1 },
         apyTotal: null,
         capitalRequired: toNum(item.minInvestment) ?? 0,
         capDollars: rb.spendCounted,
@@ -840,7 +850,7 @@ function buildRow(item, { dataAsOf, schema, C }) {
       notes.push(`The honest figure is the increment: ${pct(m.rate)} against the ${pct(m.baselineRate)} you would earn anyway is ${pct(m.incrementalRate)} of new money.`);
     }
     if (m.cappedAnnualSpend !== null) {
-      notes.push(`Capped: ${money(m.cappedAnnualSpend / m.periodsPerYear)} of spend per ${m.periodsPerYear === 12 ? 'month' : m.periodsPerYear === 4 ? 'quarter' : 'year'} counts and not a dollar more, so the ceiling is ${money(m.grossAnnual)} a year however much you spend.`);
+      notes.push(`Capped: ${money(m.cappedAnnualSpend / m.periodsPerYear)} of spend per ${m.periodsPerYear === 12 ? 'month' : m.periodsPerYear === 4 ? 'quarter' : 'year'} counts and not a dollar more, so the most this can pay on the ${money(m.spendCounted)} of spend it counts is ${money(m.grossAnnual)} — spending beyond the cap earns the ordinary rate.`);
     }
     if (m.membershipFee > 0) {
       notes.push(`It costs ${money(m.membershipFee)} a year, so it is negative until you spend ${money(m.breakevenSpend)} in the category. Below that line this is a subscription, not a rebate.`);
@@ -860,15 +870,32 @@ function buildRow(item, { dataAsOf, schema, C }) {
     notes.push(`The ${money(valued.capDollars)} ceiling is a cap on what the program will PAY you, not on money you deposit — there is no deposit here.`);
   }
 
-  notes.push(oneTime
-    ? 'One-off and not repeatable: it pays once per customer and there is no version of this where the money keeps arriving.'
-    : 'Recurring while the program lasts, but the provider sets the rate and the categories and can change either at any time.');
+  notes.push(kind.subType === 'unclaimed_funds'
+    ? 'A one-time find rather than a return: once it is claimed there is nothing left to claim, and it is worth re-checking only every year or two.'
+    : oneTime
+      ? 'One-off and not repeatable: it pays once per customer and there is no version of this where the money keeps arriving.'
+      : 'Recurring while the program lasts, but the provider sets the rate and the categories and can change either at any time.');
 
   notes.push(valued.capitalRequired > 0
-    ? `Requires ${money(valued.capitalRequired)} of your own money to be in place.`
-    : 'No capital required, which is why the rate column cannot say anything useful about it.');
+    ? `Requires ${money(valued.capitalRequired)} of your own money to be in place, and that money carries whatever risk it is invested in.`
+    : (Number.isFinite(valued.spendDenominator)
+      // A percentage IS shown on these rows, so the sentence has to say what it
+      // is a percentage OF rather than claim the column is meaningless.
+      ? `No capital at risk: the percentage on this row is a percentage of the ${money(valued.spendDenominator)} you route through it, not of money you own.`
+      : 'No capital required at all, which is why the rate column reads zero — there is nothing for a return to be a return ON. The money is the payout.'));
 
-  notes.push('Taxable: cash referral and promotional payments are generally reported on a 1099-MISC and bank-style payments on a 1099-INT. Credit card rewards earned by spending are normally treated as a rebate and not taxed, but referral rewards from an issuer usually are — a distinction that surprises people every February.');
+  // Tax is genuinely different across these kinds, and the difference is money.
+  // A spending rebate is not income; a referral payment usually is; and money
+  // that was always yours is not a payment at all.
+  if (kind.subType === 'unclaimed_funds') {
+    notes.push('Not income: this is your own money being returned, so the principal is not taxable. Any interest the state or the Treasury paid while it sat there can be, and they will tell you if so.');
+  } else if (kind.subType === 'referral_bonus') {
+    notes.push('Taxable: referral payments are income, not a rebate, and issuers and platforms report them on a 1099-MISC once you pass the reporting threshold. Set aside roughly a third depending on your bracket.');
+  } else if (kind.subType === 'signup_bonus' || kind.subType === 'category_bonus' || kind.subType === 'cashback_program') {
+    notes.push('Generally not taxable: rewards earned by spending are treated as a rebate on the purchase rather than as income, which is why card bonuses are worth more after tax than an equivalent bank bonus. Rewards paid without any spending requirement can be treated differently.');
+  } else {
+    notes.push('Usually taxable: cash promotional payments are reported on a 1099-MISC, and brokerage bonuses on a 1099-MISC or 1099-INT depending on the firm. Set aside roughly a third depending on your bracket.');
+  }
 
   if (String(item.notes || '').trim()) notes.push(String(item.notes).trim());
 
@@ -911,7 +938,9 @@ function buildRow(item, { dataAsOf, schema, C }) {
     minInvestment: valued.capitalRequired,
     maxInvestment: valued.capDollars ?? null,
 
-    liquidity: item.liquidity || kind.liquidity,
+    // A hand-edited row must not be able to invent a liquidity value: an unknown
+    // string fails schema.validate() and drops the row from the whole app.
+    liquidity: Object.values(C.LIQUIDITY).includes(item.liquidity) ? item.liquidity : kind.liquidity,
 
     risk: {
       // Nothing here is insured, and most of it has nothing to insure.

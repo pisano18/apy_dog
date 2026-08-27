@@ -157,8 +157,33 @@ const toNum = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
-const pct = (n) => `${n.toFixed(Math.abs(n) >= 10 ? 1 : 2)}%`;
+const money = (n) => (Number.isFinite(n) ? `$${Math.round(n).toLocaleString('en-US')}` : 'an unstated amount');
+const pct = (n) => (Number.isFinite(n) ? `${n.toFixed(Math.abs(n) >= 10 ? 1 : 2)}%` : 'an unknown rate');
+
+/**
+ * A tax profile we can do arithmetic on.
+ *
+ * resolveProfile() merges the user's settings over its defaults, which means an
+ * explicitly null bracket in a saved settings file OVERRIDES the default with
+ * null rather than falling back to it. Every rate in this file is then computed
+ * from that null. Repairing it here keeps one bad settings value from emptying
+ * the whole source.
+ */
+function safeProfile(input) {
+  const p = resolveProfile(input && typeof input === 'object' && !Array.isArray(input) ? input : {});
+  const fix = (v, d) => {
+    const n = toNum(v);
+    return n === null || n < 0 || n > 100 ? d : n;
+  };
+  return {
+    ...p,
+    federalOrdinary: fix(p.federalOrdinary, 24),
+    federalLtcg: fix(p.federalLtcg, 15),
+    stateRate: fix(p.stateRate, 0),
+    state: typeof p.state === 'string' && /^[A-Za-z]{2}$/.test(p.state) ? p.state.toUpperCase() : 'your state',
+    niitApplies: !!p.niitApplies,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Dates. Every window here is an ANNUAL recurrence, so it is computed as the
@@ -360,7 +385,11 @@ function resolveWindow(spec, nowMs) {
  *
  * @returns {{employeeContribution, employerMatch, returnPct, cappedByLimit}|null}
  */
-function matchValue({ salary, matchPercent, matchLimitPercent, deferralLimit = null } = {}) {
+function matchValue(args) {
+  // Destructuring a default only guards `undefined`; an explicit null still
+  // throws, and null is exactly what a caller reading a half-filled form passes.
+  if (args === null || args === undefined || typeof args !== 'object') return null;
+  const { salary, matchPercent, matchLimitPercent, deferralLimit = null } = args;
   const s = toNum(salary);
   const m = toNum(matchPercent);
   const lim = toNum(matchLimitPercent);
@@ -404,10 +433,12 @@ function matchValue({ salary, matchPercent, matchLimitPercent, deferralLimit = n
  *
  * @returns {{againstGains, againstOrdinary, carryforward, taxSaved, effectiveRatePct}|null}
  */
-function harvestValue({
-  lossRealised, federalRate, stateRate,
-  gainsOffset = 0, gainsRate = null, ordinaryCap = 3000,
-} = {}) {
+function harvestValue(args) {
+  if (args === null || args === undefined || typeof args !== 'object') return null;
+  const {
+    lossRealised, federalRate, stateRate,
+    gainsOffset = 0, gainsRate = null, ordinaryCap = 3000,
+  } = args;
   const loss = toNum(lossRealised);
   const fed = toNum(federalRate);
   const state = toNum(stateRate);
@@ -457,7 +488,9 @@ function harvestValue({
  *
  * @returns {{deducted, taxSaved, effectiveRatePct, cappedOut}|null}
  */
-function stateDeductionValue({ contribution, stateRate, cap = null } = {}) {
+function stateDeductionValue(args) {
+  if (args === null || args === undefined || typeof args !== 'object') return null;
+  const { contribution, stateRate, cap = null } = args;
   const c = toNum(contribution);
   const r = toNum(stateRate);
   const limit = toNum(cap);
@@ -644,7 +677,15 @@ function benefitRate(benefit, profile) {
     }
 
     case 'state_529': {
-      const entry = STATE_529[p.state] || { kind: 'none' };
+      const entry = STATE_529[p.state];
+      if (!entry) {
+        // An unrecognised state code must not silently inherit another state's
+        // rules, and it must not throw either.
+        rate = 0;
+        maxInvestment = null;
+        basis.push(`no 529 rules on file for "${p.state}" — set a state in Settings and this row computes itself`);
+        break;
+      }
       const filingCap = entry.capMfj && benefit.married ? entry.capMfj : entry.cap;
       if (entry.kind === 'no_income_tax') {
         rate = 0;
@@ -750,8 +791,12 @@ function buildRow(item, { dataAsOf, schema, C, profile, nowMs }) {
     : C.LIQUIDITY.INSTANT;
 
   const settingsDependent = computed.basis.length > 0;
+  // "The cap" means something specific and worth stating plainly: money beyond it
+  // does not earn this rate AT ALL, so the whole opportunity is bounded in
+  // dollars however much capital you have. That is also what score.js uses to
+  // blend the headline down over a larger budget.
   const capSentence = Number.isFinite(maxInvestment) && maxInvestment > 0
-    ? `Capped at ${money(maxInvestment)} a year. Past that the rate on the next dollar is zero, so this is worth ${money(maxInvestment * (computed.rate / 100))} at most in a year and no more, however much money you have.`
+    ? `Capped at ${money(maxInvestment)} a year: money beyond that does not earn this rate at all, so the whole thing is worth at most ${money(maxInvestment * (computed.rate / 100))} in a year, however much you have.`
     : (maxInvestment === null && item.uncappedNote ? String(item.uncappedNote) : '');
 
   const computedSentence = settingsDependent
@@ -760,11 +805,19 @@ function buildRow(item, { dataAsOf, schema, C, profile, nowMs }) {
 
   const rateOn = String(item.rateOn || '').trim();
   const rateSentence = rateOn
-    ? `${pct(computed.rate)} on ${rateOn} — a rate ON that money, not on your portfolio. There is no salary in this app, so the row is a rate rather than a dollar figure; multiply it by what you actually put in.`
+    ? `${pct(computed.rate)} on ${rateOn} — a rate ON that money, not on anything you already hold. Multiply it by what you actually put in.`
     : `${pct(computed.rate)}, as a return on the money this specific action moves rather than on anything you already hold.`;
+
+  // The rows whose dollar value depends on a salary this app has never been
+  // told. Quoting a dollar figure for those would be inventing one, so they are
+  // rates and they say what the rate is against.
+  const salarySentence = item.salaryBased
+    ? 'The dollars depend on your pay, which this app does not know and does not ask for — work them out from your own salary and the percentage above.'
+    : '';
 
   const notes = [
     rateSentence,
+    salarySentence,
     computedSentence,
     capSentence,
     win.sentence,
@@ -859,7 +912,7 @@ function buildRows(items, ctx = {}) {
   const schema = ctx.schema || baseSchema;
   const C = ctx.C || baseC;
   const dataAsOf = ctx.dataAsOf || FALLBACK_AS_OF;
-  const profile = resolveProfile(ctx.taxProfile || {});
+  const profile = safeProfile(ctx.taxProfile);
   const nowMs = safeNow(ctx.now);
 
   const opportunities = [];
@@ -995,6 +1048,7 @@ module.exports = {
   buildRow,
   buildRows,
   resolveWindow,
+  safeProfile,
   nextAnnual,
   annualWindow,
   nextMonthEnd,

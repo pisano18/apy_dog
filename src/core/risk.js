@@ -187,9 +187,19 @@ function scoreRisk(o) {
   // --- the rate itself is evidence -----------------------------------------
   // Nothing pays 40% because the market forgot. Above the risk-free rate, extra
   // yield is compensation for risk, so let the number inform its own score.
+  //
+  // But only where a market set the number. A contractual return is owed by a
+  // counterparty regardless of what markets do: an employer 401(k) match is a
+  // guaranteed 100% on the contribution and a sign-up bonus is a fixed payment
+  // the bank is obliged to make. Charging those a risk premium for being large
+  // reads a promise as though it were a price, and it graded a dollar-for-dollar
+  // employer match as riskier than a junk bond fund. Their real risks — vesting,
+  // failing the requirements, the offer being withdrawn — are captured by the
+  // trap flags and the effort rating, not by this.
+  const marketPriced = ![C.YIELD_KIND.CONTRACTUAL].includes(o.yieldKind);
   const rate = o.apy?.total ?? o.expected?.annualReturn;
   const rf = Number.isFinite(o.__riskFree) ? o.__riskFree : 4.0;
-  if (Number.isFinite(rate) && rate > rf) {
+  if (marketPriced && Number.isFinite(rate) && rate > rf) {
     const excess = rate - rf;
     const pts = clamp(9 * Math.log10(1 + excess / 2.2), 0, 30);
     if (pts > 0.5) add(pts, `Pays ${excess.toFixed(1)}pp over risk-free — the market is pricing that risk`);

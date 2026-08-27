@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "source": "structural",
+    "dataAsOf": "not a date at all",
+    "note": "Hand-authored damage. Every item here is broken in a way a real hand-edited file gets broken, and the parser must skip each one and keep going rather than taking the source down. The last two items are intact and must survive."
+  },
+  "items": [
+    null,
+    "a string where an object should be",
+    [1, 2, 3],
+    { "id": "no-kind", "name": "Missing kind", "benefit": { "type": "fixed", "rate": 10 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "unknown-kind", "kind": "wishful_thinking", "name": "Kind that does not exist", "benefit": { "type": "fixed", "rate": 10 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "kind": "tax_rule", "name": "", "benefit": { "type": "fixed", "rate": 10 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "no-url", "kind": "tax_rule", "name": "No link", "benefit": { "type": "fixed", "rate": 10 }, "accessNotes": "x", "appliesTo": "y" },
+    { "id": "no-access", "kind": "tax_rule", "name": "No access notes", "benefit": { "type": "fixed", "rate": 10 }, "url": "https://example.gov/", "appliesTo": "y" },
+    { "id": "no-applies-to", "kind": "tax_rule", "name": "Does not say who it is for", "benefit": { "type": "fixed", "rate": 10 }, "url": "https://example.gov/", "accessNotes": "x" },
+    { "id": "no-benefit", "kind": "tax_rule", "name": "No benefit spec", "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "benefit-not-an-object", "kind": "tax_rule", "name": "Benefit is a string", "benefit": "50%", "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "unknown-benefit-type", "kind": "tax_rule", "name": "Benefit type nobody implemented", "benefit": { "type": "vibes" }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "rate-not-a-number", "kind": "tax_rule", "name": "Rate is prose", "benefit": { "type": "fixed", "rate": "quite a lot" }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "rate-infinite", "kind": "tax_rule", "name": "Infinite rate", "benefit": { "type": "fixed", "rate": 1e400 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "rate-absurd", "kind": "tax_rule", "name": "Nine hundred percent", "benefit": { "type": "fixed", "rate": 900 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "rate-negative", "kind": "tax_rule", "name": "Negative rate", "benefit": { "type": "fixed", "rate": -12 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    { "id": "spend-bonus-zero-spend", "kind": "provider_policy", "name": "Divide by zero", "benefit": { "type": "spend_bonus", "bonusValue": 500, "requiredSpend": 0 }, "url": "https://example.gov/", "accessNotes": "x", "appliesTo": "y" },
+    {
+      "id": "poisoned-window",
+      "kind": "tax_rule",
+      "name": "Window with an unparseable start date",
+      "benefit": { "type": "fixed", "rate": 5 },
+      "window": { "type": "fixed_start", "date": "2027-13-45" },
+      "url": "https://example.gov/",
+      "accessNotes": "Survives, but with no start date.",
+      "appliesTo": "anyone testing the date guard"
+    },
+    {
+      "id": "overflow-window",
+      "kind": "tax_rule",
+      "name": "Window dated past the end of representable time",
+      "benefit": { "type": "fixed", "rate": 5 },
+      "window": { "type": "fixed_start", "date": "+275761-09-13T00:00:00.000Z" },
+      "url": "https://example.gov/",
+      "accessNotes": "Survives, but with no start date.",
+      "appliesTo": "anyone testing the RangeError guard"
+    },
+    {
+      "id": "duplicate-id",
+      "kind": "tax_rule",
+      "name": "First of two with the same id",
+      "benefit": { "type": "fixed", "rate": 7 },
+      "url": "https://example.gov/",
+      "accessNotes": "Kept.",
+      "appliesTo": "the first one wins"
+    },
+    {
+      "id": "duplicate-id",
+      "kind": "tax_rule",
+      "name": "Second of two with the same id",
+      "benefit": { "type": "fixed", "rate": 9 },
+      "url": "https://example.gov/",
+      "accessNotes": "Dropped as a duplicate.",
+      "appliesTo": "the second one loses"
+    },
+    {
+      "id": "intact-computed-row",
+      "kind": "tax_rule",
+      "name": "A perfectly good row after all that damage",
+      "benefit": { "type": "ordinary", "fica": true },
+      "rateOn": "money the parser managed to reach",
+      "maxInvestment": 3300,
+      "window": { "type": "year_end" },
+      "url": "https://www.irs.gov/publications/p969",
+      "accessNotes": "Nothing here is real; this row exists to prove the parser kept going.",
+      "appliesTo": "the test suite",
+      "requirements": ["A requirement that is not the eligibility line"],
+      "notes": "Deliberately last, so a parser that stops at the first bad record fails this test."
+    }
+  ]
+}

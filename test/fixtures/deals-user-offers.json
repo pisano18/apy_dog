@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "source": "deals",
+    "dataAsOf": "2026-08-20",
+    "note": "Hand-authored fixture. The first two items are what a careful user's own file looks like; everything after them is the kind of damage a hand-edited JSON file actually takes, and none of it may crash the adapter or reach the table."
+  },
+  "items": [
+    {
+      "id": "acorns-referral-five-friends",
+      "perReferral": 200,
+      "cap": 1000,
+      "dataAsOf": "2026-08-20"
+    },
+    {
+      "id": "my-credit-union-referral",
+      "kind": "referral",
+      "name": "My credit union member referral",
+      "provider": "A real credit union",
+      "perReferral": 50,
+      "referralsNeeded": 2,
+      "cap": 200,
+      "qualifyingDays": 60,
+      "reach": "obscure",
+      "url": "https://example.invalid/refer",
+      "accessNotes": "Branch staff issue a referral form; the new member has to open a share account and keep it open for sixty days.",
+      "requirements": ["New member must fund a share account"],
+      "notes": "A row a user added themselves after seeing it on a branch poster."
+    },
+
+    { "id": "no-kind-at-all", "name": "Missing kind", "perReferral": 10, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "unknown-kind", "kind": "pyramid_scheme", "name": "Not a kind we know", "payoutAmount": 500, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "no-url", "kind": "referral", "name": "No link", "perReferral": 25, "accessNotes": "Nothing to click through to." },
+    { "id": "no-access-notes", "kind": "referral", "name": "No access notes", "perReferral": 25, "url": "https://example.invalid/x" },
+    { "kind": "referral", "name": "", "perReferral": 25, "url": "https://example.invalid/x", "accessNotes": "No id and no name." },
+    { "id": "negative-referral", "kind": "referral", "name": "Pays a negative amount", "perReferral": -100, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "absurd-referral", "kind": "referral", "name": "Pays a million dollars", "perReferral": 1000000, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "too-many-friends", "kind": "referral", "name": "Needs two hundred friends", "perReferral": 10, "referralsNeeded": 200, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "words-where-numbers-go", "kind": "referral", "name": "Amount written in words", "perReferral": "twenty five dollars", "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "divide-by-zero-card", "kind": "card_signup", "name": "Bonus on no spend at all", "bonusCash": 200, "spendRequired": 0, "windowDays": 90, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "impossible-card-return", "kind": "card_signup", "name": "Pays ten times the spend", "bonusCash": 5000, "spendRequired": 100, "windowDays": 90, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "card-with-no-value", "kind": "card_signup", "name": "Points with no valuation", "bonusPoints": 60000, "spendRequired": 4000, "windowDays": 90, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "unreadable-fee", "kind": "card_signup", "name": "Annual fee is a sentence", "bonusCash": 200, "spendRequired": 1000, "windowDays": 90, "annualFee": "ninety five dollars", "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "decade-long-window", "kind": "card_signup", "name": "Ten years to hit the spend", "bonusCash": 200, "spendRequired": 1000, "windowDays": 3650, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "rebate-with-no-basis", "kind": "cashback_app", "name": "A rate and nothing to apply it to", "rate": 4, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "rebate-rate-typo", "kind": "card_category", "name": "Five hundred percent back", "rate": 500, "referenceSpend": 1000, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "transfer-with-no-assets", "kind": "transfer_promo", "name": "Bonus on nothing", "bonus": 500, "requiredAssets": 0, "holdDays": 365, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "transfer-forever", "kind": "transfer_promo", "name": "Held for a century", "bonus": 500, "requiredAssets": 50000, "holdDays": 40000, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "carry-that-loses-money", "kind": "credit_promo", "name": "Fee larger than the carry", "introDays": 180, "feePct": 5, "parkRate": 4, "amount": 10000, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    { "id": "carry-with-absurd-park-rate", "kind": "credit_promo", "name": "Park it at forty percent", "introDays": 540, "feePct": 3, "parkRate": 40, "amount": 10000, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+
+    {
+      "id": "dates-from-hell",
+      "kind": "fintech_promo",
+      "name": "Every date field is broken",
+      "provider": "Test",
+      "payoutAmount": 100,
+      "expiresAt": "2026-13-45",
+      "startsAt": 8.7e18,
+      "dataAsOf": "not a date",
+      "reach": "not-a-reach",
+      "effort": "not-an-effort",
+      "liquidity": "not-a-liquidity",
+      "series": [1, "two", null, 3, {}, 1e999],
+      "url": "https://example.invalid/x",
+      "accessNotes": "The row itself is fine; every date and enum on it is not."
+    },
+    { "id": "nested-array-item", "kind": "referral", "name": ["not", "a", "string"], "perReferral": 20, "url": "https://example.invalid/x", "accessNotes": "n/a" },
+    null,
+    "a bare string where an object should be",
+    42,
+    [],
+    { "id": "acorns-referral-five-friends" }
+  ]
+}
