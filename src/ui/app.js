@@ -622,6 +622,32 @@ function renderSources() {
   }).join('')}
     </section>
 
+    <section><h3>What this does not look at</h3>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin:0 0 12px;max-width:820px">
+        No screener sees everything, and one that implies it does is lying by omission. These are the money-making
+        venues this app knowingly does not cover, so you know where its blind spots are rather than assuming it
+        found nothing there.</p>
+      <ul class="gaps">
+        <li><b>Options chains.</b> Rows say which vehicles exist and what capital each needs, but nothing here
+          prices a contract or scans for mispriced premium. Treat the vehicle list as "this is expressible", not
+          "this is currently a good trade".</li>
+        <li><b>Prediction markets and event contracts.</b> Kalshi, Polymarket and the rest. Real venues with real
+          returns and a risk model nothing else here shares.</li>
+        <li><b>Private credit, P2P lending and real-estate crowdfunding.</b> Mostly no public rate API, frequently
+          accredited-only, and historically the source of the widest gap between advertised and realised yield.</li>
+        <li><b>Individual corporate and municipal bonds.</b> Covered through funds; the retail bond desk, where
+          the markup is, is not.</li>
+        <li><b>Structured notes, annuities, and anything sold rather than bought.</b> Priced per-issue and
+          per-customer, so a published number would be fiction.</li>
+        <li><b>Non-US accounts, rates and tax treatment.</b> The entire tax engine assumes a US filer.</li>
+        <li><b>Anything requiring a job, a business, or an asset you do not have.</b> This app finds places to put
+          money, not ways to earn it.</li>
+      </ul>
+      <div class="sectionnote">Two more honest limits. Rates are what each provider published, not what you will
+        be offered — bonuses in particular are frequently targeted per-customer. And a bundled snapshot is a
+        starting point, not a quote: refresh before acting on any of it.</div>
+    </section>
+
     <section><h3>Your own rates</h3>
       <p class="lead" style="margin-bottom:10px">No free API publishes retail deposit rates or promotional offers, so
         those ship curated. Keep your own current numbers in a JSON file and they are merged over the bundled ones.</p>

@@ -13,6 +13,52 @@ APY Dog is built around the other three:
 | **◈ Movement** | Things whose return is price. What is about to move, and how hard. Never given a fake expected return. |
 | **★ Deals** | Bounded money — sign-up bonuses, referrals, employer matches, tax elections. Often the highest return per dollar in the app, and always capped. |
 | **▣ Calendar** | Dated things that move all of the above. |
+| **▶ Plan** | What to do first, second, third — with your money and your patience as the constraints. |
+
+---
+
+## It works when you are not looking at it
+
+A deal that closes on Friday is worth nothing to someone who opens the app on Saturday. So closing the window
+leaves a tray icon showing what shuts this week, and a deadline check runs every fifteen minutes — reading the
+clock, not the feeds, because nothing in the data changes on the morning a window closes.
+
+Two rules are on by default, since a deadline feature nobody enables is not a feature:
+
+- Warn me **7 days** before anything I watch closes
+- Tell me when a new deal worth **$200+** appears
+
+Each rule speaks **once** per opportunity and re-arms only when the condition lapses. A test runs 96 timer ticks
+across a five-day window and asserts exactly one notification, because the alternative — one every minute — is
+how people learn to turn notifications off, taking the one that mattered with them.
+
+The app also updates its own code now, not just its data. A screener frozen at whatever shipped goes stale (dead
+endpoints, moved rate tiers, last year's tax numbers) while looking exactly as authoritative as the day it was
+built.
+
+---
+
+## Plan: ordering, not ranking
+
+Every other view ranks. Ranking is the wrong shape for the real question, which is not "what pays the most" but
+"given this much money and this much patience, what do I do first" — and the answer is frequently not the top row.
+
+A dollar-for-dollar employer match is a 100% return the day you make it. Comparing a 5.4% CD against a 4.9% one
+while leaving a match on the table is optimising the wrong decimal by two orders of magnitude, and a sorted table
+cannot say so because both are just numbers in one column.
+
+```
+1  Take the whole employer match          rate only    A
+2  Pay down $3,000 of card balance        $750         A+   guaranteed 25%, tax-free
+3  Put the buffer somewhere that pays     $409         A+   $10,500 committed
+4  Commuter benefits — closes in 4 days   $1,291       A+   $2,582/hour for the work
+5  Chase Ink Business Preferred           $1,030       A+   ⚠ only on spend you already make
+```
+
+It allocates **capital and time** down the tiers until one runs out, orders bounded offers by what an hour of
+your time earns, and refuses three things: it does not guess the facts it needs (it asks, and lists what it still
+does not know), it does not add money your capital earns to money an action saves, and it does not propose a step
+without its catch.
 
 ---
 
@@ -146,6 +192,11 @@ thousand price fetches per refresh is not a reasonable thing to do to your machi
 measured say **not measured** and sort last — open one and it measures just that one. The app never implies it
 looked at something it did not.
 
+**On what it does not cover:** no screener sees everything, and one that implies it does is lying by omission.
+The Sources view names the blind spots outright — options pricing, prediction markets, private credit and P2P,
+individual corporate and municipal bonds, structured notes and annuities, anything non-US, and anything requiring
+a job or a business rather than capital. Knowing where it is blind is more useful than a claim of completeness.
+
 **On the things with no ticker:** a 50% employer match is a larger, safer, more certain return than anything else
 in this app, and it is invisible to every yield table ever built because there is nothing to buy. Same for the
 $1,500 Acorns pays for five funded referrals — and the row says plainly that it is a threshold, so four friends
@@ -202,6 +253,13 @@ npm run probe       # which upstream feeds are reachable, and still the right sh
 
 ## What it will not do
 
+**It will not make you rich, and nothing that says otherwise is telling the truth.** What it does is narrower and
+real: it finds bounded, time-limited money that no screener lists, tells you before the window shuts rather than
+after, puts the moves in the order that actually matters, and is honest about the size of each one. A $300 bonus
+is $300. A 100% employer match on 3% of your pay is worth exactly 3% of your pay. Those add up to a materially
+better year, not a different life, and an app that blurred that line would be the most expensive thing on your
+computer.
+
 It will not tell you which way anything is going. Heat means something is unusually likely to happen soon, which
 is as often a reason to stay away as to buy. Expected-move bands are arithmetic on past volatility, not
 forecasts. The direction lean returns **none** for most things most of the time, because that is the honest
@@ -241,7 +299,7 @@ are frequently targeted to individual customers. The offer on your own screen is
 ```
 electron/          main process (network, disk, IPC, per-source refresh cadence) + sandboxed preload bridge
 src/core/          schema · opportunity-kinds · tracks · rating · risk · tail · tax · traps · score
-                   vehicles · catalyst · movement · filters · aggregate · history · store · export
+                   plan · vehicles · catalyst · movement · filters · aggregate · history · store · export
 src/sources/       one adapter per feed, auto-discovered, contract in _contract.js
 src/ui/            index.html · styles.css · format.js · filters-def.js · render.js · app.js
 data/seed/         bundled offline snapshots
