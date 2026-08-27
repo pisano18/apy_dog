@@ -156,6 +156,9 @@ function normalize(raw, ctx = {}) {
     provider: str(raw.provider),
     assetClass: str(raw.assetClass) || C.ASSET_CLASS.CASH,
     subType: str(raw.subType),
+    // Which question this row answers: "what pays me" or "what's about to move".
+    // Some things honestly answer both and are not forced into one.
+    track: str(raw.track) || inferTrack(raw),
     chain: str(raw.chain),
     region: str(raw.region) || 'US',
     currency: str(raw.currency) || 'USD',
@@ -182,6 +185,11 @@ function normalize(raw, ctx = {}) {
     exposure: str(raw.exposure),                      // 'single' | 'multi'
     poolMeta: str(raw.poolMeta),
     underlying: arr(raw.underlying),
+
+    // Movement-track inputs. Adapters that fetch price history fill these; the
+    // movement engine reads them instead of re-deriving from raw series.
+    movementStats: raw.movementStats && typeof raw.movementStats === 'object' ? raw.movementStats : null,
+    events: arr(raw.events),
 
     // Fund descriptors — these decide whether a big distribution is real income
     rocShare: num(raw.rocShare),                      // fraction that is return of capital
@@ -218,6 +226,38 @@ function normalize(raw, ctx = {}) {
 
   if (out.confidence === null) out.confidence = defaultConfidence(out);
   return out;
+}
+
+/**
+ * Which track a row belongs to.
+ *
+ * The test is where the return actually comes from, not what the thing is called.
+ * A Treasury bill's return is entirely its yield. A growth stock's is entirely
+ * price. A REIT's is genuinely both, and pretending otherwise in either direction
+ * misleads — so BOTH is a real answer, not a cop-out.
+ */
+function inferTrack(raw) {
+  const cls = raw.assetClass;
+  if (raw.yieldKind === C.YIELD_KIND.EXPECTED) return 'movement';
+
+  const incomeOnly = ['cash', 'cd', 'govt_bond', 'muni_bond', 'annuity', 'rwa', 'p2p_lending',
+    'crypto_lending', 'crypto_staking', 'crypto_lp'];
+  if (incomeOnly.includes(cls)) return 'income';
+
+  const bothClasses = ['reit', 'bdc', 'cef', 'preferred', 'corp_bond'];
+  if (bothClasses.includes(cls)) return 'both';
+
+  if (cls === 'speculative') return 'movement';
+
+  // Funds and equities: the yield decides. A 9% covered-call ETF is an income
+  // holding; a 0.4% growth ETF is not, whatever its dividend technically is.
+  const y = num(raw.apy?.total ?? raw.apy);
+  if (Number.isFinite(y)) {
+    if (y >= 4) return 'both';
+    if (y >= 1.5) return 'both';
+    return 'movement';
+  }
+  return 'movement';
 }
 
 function inferTermKind(raw, days, maturity) {
@@ -283,7 +323,7 @@ function headlineRate(o) {
 }
 
 module.exports = {
-  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination,
+  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination, inferTrack,
   aprToApy, apyToApr, discountToApy, annualize,
   _helpers: { num, str, bool, clamp, arr },
 };
