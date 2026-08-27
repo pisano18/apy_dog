@@ -1,0 +1,75 @@
+{
+  "_comment": "Hand-authored samples of https://banks.data.fdic.gov/api/institutions?filters=NAME:%22...%22&fields=NAME,CERT,ACTIVE&limit=1 . Keys are scenarios, values are verbatim-shaped upstream payloads.",
+
+  "ally": {
+    "meta": {
+      "total": 1,
+      "index": "institutions",
+      "parameters": {
+        "filters": "NAME:\"Ally Bank\"",
+        "fields": "NAME,CERT,ACTIVE",
+        "limit": 1,
+        "format": "json"
+      }
+    },
+    "data": [
+      {
+        "data": { "NAME": "Ally Bank", "CERT": 57803, "ACTIVE": 1 },
+        "score": 1.0
+      }
+    ],
+    "totals": { "count": 1 }
+  },
+
+  "goldman_string_fields": {
+    "meta": { "total": 1, "index": "institutions" },
+    "data": [
+      {
+        "data": { "NAME": "Goldman Sachs Bank USA", "CERT": "33124", "ACTIVE": "1" },
+        "score": 1.0
+      }
+    ],
+    "totals": { "count": 1 }
+  },
+
+  "flat_shape": {
+    "meta": { "total": 1, "index": "institutions" },
+    "data": [
+      { "NAME": "Synchrony Bank", "CERT": 27314, "ACTIVE": 1 }
+    ],
+    "totals": { "count": 1 }
+  },
+
+  "inactive": {
+    "meta": { "total": 1, "index": "institutions" },
+    "data": [
+      {
+        "data": { "NAME": "Silicon Valley Bank", "CERT": 24735, "ACTIVE": "0" },
+        "score": 1.0
+      }
+    ],
+    "totals": { "count": 1 }
+  },
+
+  "no_match": {
+    "meta": {
+      "total": 0,
+      "index": "institutions",
+      "parameters": { "filters": "NAME:\"Wealthfront Brokerage LLC\"" }
+    },
+    "data": [],
+    "totals": { "count": 0 }
+  },
+
+  "renamed_fields": {
+    "meta": { "total": 1 },
+    "data": [
+      { "data": { "INSTITUTION_NAME": "Ally Bank", "FDIC_CERT": 57803 }, "score": 1.0 }
+    ]
+  },
+
+  "not_the_api_at_all": {
+    "error": "Service Unavailable",
+    "status": 503
+  }
+}

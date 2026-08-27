@@ -10,7 +10,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "scan": "node scripts/scan.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
@@ -32,9 +32,29 @@
       "!**/*.test.js",
       "!test/**/*"
     ],
-    "directories": { "output": "release", "buildResources": "build" },
-    "mac": { "category": "public.app-category.finance", "target": ["dmg", "zip"] },
-    "win": { "target": ["nsis", "portable"] },
-    "linux": { "target": ["AppImage", "deb"], "category": "Office" }
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "mac": {
+      "category": "public.app-category.finance",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office"
+    }
   }
 }

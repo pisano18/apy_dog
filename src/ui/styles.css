@@ -222,6 +222,7 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 .badge.spec { background: rgba(90,169,255,.16); color: var(--info); }
 .badge.real { background: rgba(61,220,151,.14); color: var(--pos); }
 .badge.ins { background: rgba(61,220,151,.14); color: var(--pos); }
+.badge.cryp { background: rgba(255,179,64,.15); color: var(--brand); }
 
 .apy { font-weight: 700; font-size: 14px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .apy.hi { color: var(--pos); }

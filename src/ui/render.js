@@ -60,6 +60,7 @@ R.row = (o, { watched, change, selected, classes }) => {
     spec ? '<span class="badge spec" title="A modelled expectation, not a yield">estimate</span>' : '',
     o.subType === 'tips' ? '<span class="badge real" title="This is a REAL (inflation-adjusted) yield, not nominal">real</span>' : '',
     ['fdic', 'ncua', 'us_gov'].includes(o.risk?.insurance) ? `<span class="badge ins" title="${window.F.insurance(o.risk.insurance)}">insured</span>` : '',
+    o.denomination === 'crypto' ? `<span class="badge cryp" title="Principal and yield are denominated in ${esc(o.symbol || 'a volatile crypto asset')}, not dollars. The price of that asset dominates your actual return.">in ${esc((o.symbol || 'crypto').split('-')[0])}</span>` : '',
   ].filter(Boolean).join('');
 
   const meta = [classes[o.assetClass] || o.assetClass, o.provider || o.chain || o.sourceLabel]
@@ -126,6 +127,7 @@ R.PRESETS = [
   { key: 'max', label: 'Max APY', sub: 'everything, raw', q: { sortBy: 'apy', hideTraps: false, includeSpeculative: false } },
   { key: 'safe', label: 'Safe & liquid', sub: 'insured, no lockup', q: { insuredOnly: true, termPreset: 'liquid', sortBy: 'afterTax' } },
   { key: 'aftertax', label: 'Best after tax', sub: 'your bracket', q: { sortBy: 'afterTax', hideTraps: true } },
+  { key: 'dollars', label: 'Dollar yield', sub: 'no crypto price risk', q: { denominations: ['usd'], sortBy: 'afterTax', hideTraps: true } },
   { key: 'lock', label: 'Lock a rate', sub: 'fixed-term', q: { liquidity: ['locked'], sortBy: 'apy' } },
   { key: 'upside', label: 'High upside', sub: 'uncertain', q: { onlySpeculative: true, sortBy: 'apy', hideTraps: false } },
 ];
@@ -202,6 +204,16 @@ R.sidebar = (q, facets, boot, activePreset) => {
     <label class="check"><input type="checkbox" id="q-hideTraps" ${q.hideTraps ? 'checked' : ''} /> Hide likely yield traps${facets?.trapsHidden ? ` <span style="color:var(--text-faint)">(${facets.trapsHidden})</span>` : ''}</label>
     <div class="field"><label>Minimum confidence: <b id="lbl-minConfidence">${q.minConfidence ? `${Math.round(q.minConfidence * 100)}%` : 'any'}</b></label>
       <input type="range" id="q-minConfidence" min="0" max="95" step="5" value="${(q.minConfidence ?? 0) * 100}" /></div>
+  </div></details>
+
+  <details class="fgroup" open><summary>Paid in</summary><div class="body">
+    <div class="chips">${chips([
+    ['usd', 'Dollars', facets?.byDenomination?.usd],
+    ['stable', 'Stablecoins', facets?.byDenomination?.stable],
+    ['crypto', 'Crypto', facets?.byDenomination?.crypto],
+  ].filter((x) => x[2] !== 0), q.denominations, 'denom')}</div>
+    <span style="font-size:10.5px;color:var(--text-faint);line-height:1.45">A yield paid in a volatile asset is only
+      additive if you already wanted to hold that asset.</span>
   </div></details>
 
   <details class="fgroup"><summary>Access</summary><div class="body">
@@ -310,6 +322,17 @@ R.drawer = (detail, ctx) => {
   <div class="dsection">
     <div class="bignum">${big.map(([, v, k]) => `<div class="item"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
     ${spec ? bands(o.expected) : ''}
+    ${o.denomination === 'crypto' ? `<div class="warnbox mild" style="margin-top:12px">
+      <div class="ttl">Not paid in dollars</div>
+      Both your principal and this yield are denominated in ${esc(o.symbol || 'a volatile crypto asset')}. If that asset
+      falls 30%, earning ${window.F.pct(o.apy?.total, 1)} on it does not save you. This number is only additive on top of
+      a decision you have already made to hold ${esc((o.symbol || 'it').split('-')[0])}.
+    </div>` : ''}
+    ${o.denomination === 'stable' ? `<div class="warnbox mild" style="margin-top:12px">
+      <div class="ttl">Depends on a peg</div>
+      Denominated in a stablecoin. The dollar value holds only while the peg does, and there is no deposit insurance
+      behind it.
+    </div>` : ''}
     ${o.notes ? `<div class="infobox" style="margin-top:12px">${esc(o.notes)}</div>` : ''}
   </div>
 

@@ -46,6 +46,7 @@ const DEFAULT_QUERY = {
   liquidity: [],                // subset of constants.LIQUIDITY
   maxLockupDays: null,
 
+  denominations: [],            // 'usd' | 'stable' | 'crypto' — what you get paid in
   minTvl: null,                 // pool TVL / fund AUM floor
   minConfidence: null,          // 0..1
 
@@ -112,6 +113,7 @@ function matches(o, q, unknownPasses) {
   if (!inSet(q.regions, o.region)) return false;
   if (!inSet(q.taxTreatments, o.taxTreatment)) return false;
   if (!inSet(q.liquidity, o.liquidity)) return false;
+  if (!inSet(q.denominations, o.denomination)) return false;
   if (q.riskTiers?.length && !q.riskTiers.includes(o.risk?.tier)) return false;
 
   // --- rate ----------------------------------------------------------------
@@ -232,6 +234,8 @@ function facets(list, query = {}) {
   for (const key of Object.values(C.ASSET_CLASS)) {
     byAssetClass[key] = count({ assetClasses: [key] });
   }
+  const byDenomination = {};
+  for (const d of ['usd', 'stable', 'crypto']) byDenomination[d] = count({ denominations: [d] });
   const bySource = {};
   for (const s of new Set(list.map((o) => o.source))) bySource[s] = count({ sources: [s] });
   const byTier = {};
@@ -240,7 +244,7 @@ function facets(list, query = {}) {
   for (const ch of new Set(list.map((o) => o.chain).filter(Boolean))) byChain[ch] = count({ chains: [ch] });
 
   return {
-    byAssetClass, bySource, byTier, byChain,
+    byAssetClass, bySource, byTier, byChain, byDenomination,
     total: list.length,
     matching: applyQuery(list, query).length,
     trapsHidden: q.hideTraps ? list.filter((o) => o.scores?.traps?.verdict === 'likely_trap').length : 0,
@@ -262,6 +266,9 @@ function describeQuery(q = {}) {
   if (has(q.minInvestmentMax)) bits.push(`entry under $${Number(q.minInvestmentMax).toLocaleString()}`);
   if (has(q.priceMin) || has(q.priceMax)) {
     bits.push(`price ${has(q.priceMin) ? `$${q.priceMin}` : 'any'}–${has(q.priceMax) ? `$${q.priceMax}` : 'any'}`);
+  }
+  if (q.denominations?.length) {
+    bits.push(q.denominations.map((d) => ({ usd: 'paid in dollars', stable: 'paid in stablecoins', crypto: 'paid in crypto' }[d] || d)).join(' or '));
   }
   if (q.onlySpeculative) bits.push('high-upside only');
   else if (q.includeSpeculative) bits.push('including high-upside');

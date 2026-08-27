@@ -159,6 +159,10 @@ function normalize(raw, ctx = {}) {
 
     // DeFi / pool descriptors that materially change the risk picture
     stablecoin: bool(raw.stablecoin, false),          // principal denominated in a peg
+    // What the yield and the principal are actually denominated in. A 7% yield
+    // paid in SOL is a fundamentally different product from 7% paid in dollars:
+    // the first is only additive if you already wanted to hold SOL.
+    denomination: str(raw.denomination) || inferDenomination(raw),
     ilRisk: str(raw.ilRisk),                          // 'yes' | 'no' — impermanent loss
     exposure: str(raw.exposure),                      // 'single' | 'multi'
     poolMeta: str(raw.poolMeta),
@@ -199,6 +203,15 @@ function normalize(raw, ctx = {}) {
 
   if (out.confidence === null) out.confidence = defaultConfidence(out);
   return out;
+}
+
+/** USD unless the position is in a volatile crypto asset. */
+function inferDenomination(raw) {
+  const cls = raw.assetClass;
+  const isCrypto = ['crypto_staking', 'crypto_lending', 'crypto_lp'].includes(cls);
+  if (!isCrypto) return 'usd';
+  if (raw.stablecoin) return 'stable';
+  return 'crypto';
 }
 
 function termLabel(days) {
@@ -246,7 +259,7 @@ function headlineRate(o) {
 }
 
 module.exports = {
-  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel,
+  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination,
   aprToApy, apyToApr, discountToApy, annualize,
   _helpers: { num, str, bool, clamp, arr },
 };

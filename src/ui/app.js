@@ -413,6 +413,7 @@ function wire() {
     if (act === 'class') toggleIn(q.assetClasses, val);
     else if (act === 'tier') toggleIn(q.riskTiers, val);
     else if (act === 'liq') toggleIn(q.liquidity, val);
+    else if (act === 'denom') toggleIn(q.denominations, val);
     else if (act === 'chain') toggleIn(q.chains, val);
     else if (act === 'source') toggleIn(q.sources, val);
     else if (act === 'term') { q.termPreset = val === 'any' ? null : val; if (val === 'any') { q.termMinDays = null; q.termMaxDays = null; q.includeOpenEnded = true; } }

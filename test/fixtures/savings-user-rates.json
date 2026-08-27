@@ -1,0 +1,36 @@
+{
+  "_comment": "What a user's own rates file looks like after they refresh a few numbers. Same shape as data/seed/savings.json. Matching id replaces, new id is added.",
+  "items": [
+    {
+      "id": "ally-online-savings",
+      "apy": 4.05,
+      "dataAsOf": "2026-08-26"
+    },
+    {
+      "id": "synchrony-cd-3mo",
+      "apy": 3.4,
+      "dataAsOf": "2026-08-26"
+    },
+    {
+      "id": "my-local-credit-union-13mo",
+      "kind": "cd",
+      "name": "Star One Credit Union 13 Month Certificate",
+      "provider": "Star One Credit Union",
+      "apy": 4.1,
+      "termDays": 396,
+      "earlyExitPenalty": "90 days dividends",
+      "insurance": "ncua",
+      "minInvestment": 1000,
+      "url": "https://www.starone.org/rates/certificates",
+      "requirements": ["Membership required — Santa Clara County residents and select employers"],
+      "accessNotes": "Join online if eligible, then open the certificate in online banking.",
+      "dataAsOf": "2026-08-26"
+    },
+    {
+      "id": "typo-row",
+      "kind": "savings",
+      "name": "Fat fingered rate",
+      "apy": 400
+    }
+  ]
+}
