@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none';" />
+  <title>APY Dog</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="titlebar">
+      <div class="brand"><span class="mark">🐕</span><span class="name">APY Dog</span><span class="ver" id="ver"></span></div>
+
+      <div class="search">
+        <span style="color:var(--text-faint)">⌕</span>
+        <input id="q-text" type="text" placeholder="Search name, ticker, protocol, chain…" spellcheck="false" />
+        <span class="hint" id="search-hint">⌘K</span>
+      </div>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-view="find">Find</button>
+        <button class="tab" data-view="watch">Watchlist <span class="count" id="watch-count">0</span></button>
+        <button class="tab" data-view="sources">Sources <span class="count" id="src-count">–</span></button>
+        <button class="tab" data-view="settings">Settings</button>
+      </nav>
+
+      <span class="spacer"></span>
+
+      <button class="btn ghost icon" id="btn-sidebar" title="Toggle filters">◧</button>
+      <button class="btn ghost icon" id="btn-theme" title="Toggle theme">◐</button>
+      <button class="btn ghost" id="btn-export" title="Export current results">Export</button>
+      <button class="btn primary" id="btn-refresh"><span id="refresh-label">Refresh</span></button>
+    </header>
+
+    <div class="notice hidden" id="notice">
+      <span id="notice-text"></span>
+      <span class="spacer"></span>
+      <button class="btn sm" id="notice-action"></button>
+      <button class="btn ghost sm" id="notice-close">✕</button>
+    </div>
+
+    <div class="main">
+      <aside class="sidebar" id="sidebar"></aside>
+
+      <div class="content" id="view-find">
+        <div class="resbar">
+          <span class="desc" id="res-desc"></span>
+          <span class="spacer"></span>
+          <label style="color:var(--text-faint);font-size:11px">Rank by</label>
+          <select id="q-sort"></select>
+          <button class="btn ghost sm" id="btn-reset">Reset filters</button>
+        </div>
+        <div class="tablewrap" id="tablewrap"></div>
+      </div>
+
+      <div class="pane" id="view-watch" hidden></div>
+      <div class="pane" id="view-sources" hidden></div>
+      <div class="pane" id="view-settings" hidden></div>
+
+      <aside class="drawer hidden" id="drawer"></aside>
+    </div>
+  </div>
+
+  <div class="progress hidden" id="progress">
+    <span class="spin"></span>
+    <div class="bar"><i id="progress-bar" style="width:0%"></i></div>
+    <span class="txt" id="progress-text">Starting…</span>
+    <button class="btn ghost sm" id="progress-cancel">Cancel</button>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="format.js"></script>
+  <script src="render.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

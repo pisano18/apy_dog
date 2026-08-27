@@ -48,14 +48,50 @@ function volPoints(vol) {
 }
 
 /**
- * Volatility we assume when a source does not report one. Stablecoin-denominated
- * crypto positions are principal-stable, so they must not inherit crypto vol.
+ * Modified duration of a par-priced bond: the standard closed form, because
+ * using the maturity instead overstates a long bond's price risk badly (a 30-year
+ * bond has about 16 years of duration, not 30).
+ */
+function modifiedDuration(years, yieldDecimal) {
+  const y = Number.isFinite(yieldDecimal) && yieldDecimal > 0.0001 ? yieldDecimal : 0.045;
+  if (!Number.isFinite(years) || years <= 0) return 0;
+  if (years <= 1) return years;                      // a bill is a zero: duration = maturity
+  const macaulay = ((1 + y) / y) * (1 - 1 / Math.pow(1 + y, years));
+  return macaulay / (1 + y);
+}
+
+/**
+ * Volatility we assume when a source does not report one.
+ *
+ * Two cases need care or the model libels perfectly safe instruments:
+ *
+ * - Rate instruments with a known maturity. A 3-month T-bill held to maturity has
+ *   essentially no price risk; a 30-year bond has a great deal. Both are
+ *   "govt_bond", so a single class-wide figure is wrong for both. Price
+ *   volatility scales with duration, so derive it from the term instead: roughly
+ *   1% of price per year of duration per 100bp of yield volatility.
+ * - Stablecoin-denominated crypto. The principal is pegged, so it must not
+ *   inherit the volatility of the crypto asset class.
  */
 function assumedVolatility(o) {
   if (Number.isFinite(o?.risk?.volatility)) return o.risk.volatility;
+
   const isDefi = ['crypto_staking', 'crypto_lending', 'crypto_lp'].includes(o?.assetClass);
   if (o?.stablecoin && isDefi) return o.ilRisk === 'yes' ? 6 : 3;
   if (o?.stablecoin) return 2;
+
+  if (['govt_bond', 'muni_bond', 'corp_bond', 'cd', 'rwa'].includes(o?.assetClass)
+      && Number.isFinite(o?.term?.days) && o.term.days > 0) {
+    const years = o.term.days / 365.25;
+    const y = Number.isFinite(o.apy?.total) ? o.apy.total / 100 : 0.045;
+    const dur = modifiedDuration(years, y);
+    // Price volatility is duration times yield volatility. Treasury yields move
+    // about 1 percentage point a year, so duration in years is very nearly the
+    // percentage price volatility. Credit adds a spread-volatility component.
+    const creditSpread = { govt_bond: 0, rwa: 0.3, muni_bond: 0.8, corp_bond: 1.8, cd: 0 }[o.assetClass] ?? 0;
+    return Math.max(0.05, dur * 1.0 + creditSpread);
+  }
+
   return ASSUMED_VOL[o?.assetClass] ?? 25;
 }
 
@@ -96,7 +132,8 @@ function scoreRisk(o) {
   // --- duration -------------------------------------------------------------
   if (['govt_bond', 'muni_bond', 'corp_bond'].includes(o.assetClass) && Number.isFinite(o.term?.days)) {
     const years = o.term.days / 365.25;
-    if (years > 1) add(clamp((years - 1) * 1.05, 0, 16), `${years.toFixed(1)}yr duration — price falls if rates rise`);
+    const dur = modifiedDuration(years, Number.isFinite(o.apy?.total) ? o.apy.total / 100 : 0.045);
+    if (dur > 1) add(clamp((dur - 1) * 1.05, 0, 16), `${dur.toFixed(1)}yr duration — price falls if rates rise`);
   }
 
   // --- liquidity ------------------------------------------------------------
@@ -187,4 +224,4 @@ function scoreRisk(o) {
   };
 }
 
-module.exports = { scoreRisk, assumedVolatility, volPoints, BASE_BY_CLASS, ASSUMED_VOL };
+module.exports = { scoreRisk, assumedVolatility, volPoints, modifiedDuration, BASE_BY_CLASS, ASSUMED_VOL };

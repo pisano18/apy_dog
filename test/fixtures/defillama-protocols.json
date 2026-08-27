@@ -1,0 +1,16 @@
+[
+  { "id": "111", "name": "AAVE V3", "slug": "aave-v3", "category": "Lending", "audits": "3", "listedAt": 1647302400, "tvl": 24000000000, "url": "https://aave.com" },
+  { "id": "112", "name": "Lido", "slug": "lido", "category": "Liquid Staking", "audits": "3", "listedAt": 1607731200, "tvl": 31000000000, "url": "https://lido.fi" },
+  { "id": "113", "name": "Uniswap V3", "slug": "uniswap-v3", "category": "Dexes", "audits": "3", "listedAt": 1620864000, "tvl": 4100000000, "url": "https://uniswap.org" },
+  { "id": "114", "name": "Aerodrome V1", "slug": "aerodrome-v1", "category": "Dexes", "audits": "2", "listedAt": 1692057600, "tvl": 900000000, "url": "https://aerodrome.finance" },
+  { "id": "115", "name": "Pendle", "slug": "pendle", "category": "Yield", "audits": "2", "listedAt": 1622505600, "tvl": 3200000000, "url": "https://pendle.finance" },
+  { "id": "116", "name": "Curve DEX", "slug": "curve-dex", "category": "Dexes", "audits": "3", "listedAt": 1578096000, "tvl": 2200000000, "url": "https://curve.fi" },
+  { "id": "117", "name": "Venus Core Pool", "slug": "venus-core-pool", "category": "Lending", "audits": "0", "listedAt": 1601510400, "tvl": 1800000000, "url": "https://venus.io" },
+  { "id": "118", "name": "Jito Liquid Staking", "slug": "jito-liquid-staking", "category": "Liquid Staking", "audits": "2", "listedAt": 1667260800, "tvl": 2600000000, "url": "https://jito.network" },
+  { "id": "119", "name": "Compound V3", "slug": "compound-v3", "category": "Lending", "audits": "3", "listedAt": 1662940800, "tvl": 2400000000, "url": "https://compound.finance" },
+  { "id": "120", "name": "Morpho Blue", "slug": "morpho-blue", "category": "Lending", "audits": "2", "listedAt": 1704067200, "tvl": 3900000000, "url": "https://morpho.org" },
+  { "id": "121", "name": "Raydium AMM", "slug": "raydium-amm", "category": "Dexes", "audits": "2", "listedAt": 1613347200, "tvl": 1500000000, "url": "https://raydium.io" },
+  { "id": "122", "name": "Velodrome V2", "slug": "velodrome-v2", "category": "Dexes", "audits": "2", "listedAt": 1685577600, "tvl": 200000000, "url": "https://velodrome.finance" },
+  null,
+  { "name": "no slug protocol", "audits": "1" }
+]

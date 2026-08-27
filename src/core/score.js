@@ -4,6 +4,7 @@ const C = require('./constants');
 const { scoreRisk, assumedVolatility } = require('./risk');
 const { detectTraps } = require('./traps');
 const { applyTax } = require('./tax');
+const { catastrophicRisk, lossAversionWeight } = require('./tail');
 
 /**
  * Ranking.
@@ -15,8 +16,18 @@ const { applyTax } = require('./tax');
  * appetite slider. A cautious user and an aggressive one genuinely should get
  * different rankings from the same data, and this is the parameter that does it.
  *
- * Before that, the claimed return is haircut by trap score and confidence, so a
- * 240% emissions farm does not enter the utility calculation at 240%.
+ * Three corrections are applied before that, in order, and each one exists
+ * because without it the ranking actively misleads:
+ *
+ *   1. Trap and confidence haircuts, so a 240% emissions farm does not enter the
+ *      maths at 240%.
+ *   2. Catastrophic risk (see tail.js), subtracted as an expected loss rather
+ *      than as variance. Variance cannot see a jump to zero, which is exactly how
+ *      DeFi positions actually fail, so without this a 3%-volatility stablecoin
+ *      pool outranks a Treasury bill.
+ *   3. Loss aversion on that tail term, scaled by risk appetite, so "positive
+ *      expected value" cannot by itself argue someone into a coin flip on their
+ *      principal.
  */
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -61,8 +72,9 @@ function scoreOne(o, opts = {}) {
     amount = 10000,
   } = opts;
 
-  const withRf = { ...o, __riskFree: riskFree };
+  const withRf = { ...o, __riskFree: riskFree, __amount: amount };
   const risk = scoreRisk(withRf);
+  const tail = catastrophicRisk(withRf);
   const traps = detectTraps(o, { peerMedian });
   const tax = applyTax(o, taxProfile);
 
@@ -81,9 +93,29 @@ function scoreOne(o, opts = {}) {
   const mu = muRaw === null ? null : muRaw * trapHaircut * confHaircut;
 
   // --- certainty equivalent -------------------------------------------------
+  // You only collect the yield in the worlds where the thing survives the year,
+  // and in the worlds where it does not you lose principal. Both belong in the
+  // expected value, weighted by how much the user hates losing money.
   const A = riskAversion(appetite);
   const sigma = (Number.isFinite(vol) ? vol : assumedVolatility(o)) / 100;
-  let ce = mu === null ? null : mu - (A / 2) * sigma * sigma * 100;
+  const lossWeight = lossAversionWeight(appetite);
+  const tailDrag = tail.annualProbability * tail.lossGivenEvent * 100 * lossWeight;
+  const muSurvived = mu === null ? null : mu * (1 - tail.annualProbability);
+
+  // Mark-to-market volatility on a guaranteed instrument you intend to hold to
+  // maturity is noise you never realise: a 30-year Treasury returns par whatever
+  // its price does in between. Charge that price risk in full only when the user
+  // has told us they need the money back before it matures.
+  let variancePenalty = (A / 2) * sigma * sigma * 100;
+  let heldToMaturity = false;
+  const guaranteed = [C.INSURANCE.US_GOV, C.INSURANCE.FDIC, C.INSURANCE.NCUA].includes(o.risk?.insurance);
+  const fixedTerm = Number.isFinite(o.term?.days) && o.term.days > 0
+    && [C.YIELD_KIND.CONTRACTUAL, C.YIELD_KIND.MARKET].includes(o.yieldKind);
+  if (guaranteed && fixedTerm && (!Number.isFinite(horizonDays) || horizonDays >= o.term.days)) {
+    variancePenalty *= 0.25;   // residual: you might still change your mind
+    heldToMaturity = true;
+  }
+  let ce = mu === null ? null : muSurvived - tailDrag - variancePenalty;
 
   // --- horizon / liquidity fit ---------------------------------------------
   // Money you cannot reach when you need it is worth less than money you can.
@@ -129,6 +161,11 @@ function scoreOne(o, opts = {}) {
     riskAversionUsed: Math.round(A * 100) / 100,
     trapHaircut: Math.round(trapHaircut * 1000) / 1000,
     confidenceHaircut: Math.round(confHaircut * 1000) / 1000,
+    tail,
+    tailDrag: Math.round(tailDrag * 1000) / 1000,
+    variancePenalty: Math.round(variancePenalty * 1000) / 1000,
+    heldToMaturity,
+    lossAversionWeight: Math.round(lossWeight * 100) / 100,
     horizonPenalty: Math.round(horizonPenalty * 100) / 100,
     horizonNote,
     incomeYear1: yearOne === null ? null : Math.round(yearOne * 100) / 100,
