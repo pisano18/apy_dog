@@ -659,6 +659,16 @@ function buildAll(quotes, opts = {}) {
 const str = (v) => (v === null || v === undefined ? null : String(v).trim() || null);
 
 /**
+ * ctx.now, defensively. `new Date(x).toISOString()` throws a RangeError on an
+ * unusable clock value, and a throw here would escape fetchLive and take every
+ * row down — including the savings bonds, which need no network at all.
+ */
+function nowMsOf(ctx) {
+  const n = num(ctx?.now);
+  return n !== null && n > 0 ? n : Date.now();
+}
+
+/**
  * DefiLlama /pools -> quotes for the tokenized-treasury rows.
  *
  * Documented shape: { status, data: [{ pool, chain, project, symbol, tvlUsd,
@@ -798,7 +808,7 @@ async function fetchFundQuotes(ctx, notes, warnings) {
     return quotes;
   }
   const http = ctx.http || baseHttp;
-  const nowMs = ctx.now || Date.now();
+  const nowMs = nowMsOf(ctx);
   const entries = INSTRUMENTS.filter((e) => e.group === 'fund_proxy');
 
   await mapLimited(entries, 4, async (entry) => {
@@ -844,7 +854,7 @@ async function fetchRwaQuotes(ctx, notes, warnings) {
     warnings.push(`Tokenized Treasury yields: ${err?.status ? `HTTP ${err.status}` : err?.message || String(err)}`);
     return new Map();
   }
-  const parsed = parseRwaPools(payload, { dataAsOf: new Date(ctx.now || Date.now()).toISOString() });
+  const parsed = parseRwaPools(payload, { dataAsOf: new Date(nowMsOf(ctx)).toISOString() });
   notes.push(...parsed.notes);
   warnings.push(...parsed.warnings);
   return parsed.quotes;
@@ -865,7 +875,7 @@ async function fetchBreakevens(ctx, notes) {
   const http = ctx.http || baseHttp;
   if (typeof t?.csvUrl !== 'function' || typeof t?.parseCurveCSV !== 'function') return null;
 
-  const year = new Date(ctx.now || Date.now()).getUTCFullYear();
+  const year = new Date(nowMsOf(ctx)).getUTCFullYear();
   const grab = async (type) => {
     for (const y of [year, year - 1]) {
       try {
@@ -883,15 +893,34 @@ async function fetchBreakevens(ctx, notes) {
   ]);
   if (!nominal || !real) return null;
 
-  const pick = (curve, days) => curve.tenors.find((x) => Math.abs(x.days - days) <= 20)?.rate ?? null;
-  const pairs = [];
-  for (const t2 of BREAKEVEN_TENORS) {
-    const n = pick(nominal, t2.days);
-    const r = pick(real, t2.days);
-    if (n !== null && r !== null) pairs.push({ tenor: t2.tenor, nominal: n, real: r });
+  // treasury.js owns the curve shape, not this file, so nothing below may assume
+  // it. A drift there means no breakeven — the caller then falls back to the
+  // snapshot levels — and never a dead source, which is the whole point of
+  // borrowing the parser instead of copying it.
+  try {
+    const pick = (curve, days) => {
+      const tenors = Array.isArray(curve?.tenors) ? curve.tenors : [];
+      const hit = tenors.find((x) => {
+        const d = num(x?.days);
+        return d !== null && Math.abs(d - days) <= 20;
+      });
+      return num(hit?.rate);
+    };
+    const pairs = [];
+    for (const t2 of BREAKEVEN_TENORS) {
+      const n = pick(nominal, t2.days);
+      const r = pick(real, t2.days);
+      if (n !== null && r !== null) pairs.push({ tenor: t2.tenor, nominal: n, real: r });
+    }
+    if (!pairs.length) return null;
+    const asOf = str(nominal.dateISO);
+    notes.push(asOf
+      ? `Breakevens computed from the ${asOf.slice(0, 10)} Treasury curves.`
+      : 'Breakevens computed from the live Treasury curves.');
+    return pairs;
+  } catch {
+    return null;
   }
-  if (pairs.length) notes.push(`Breakevens computed from the ${nominal.dateISO.slice(0, 10)} Treasury curves.`);
-  return pairs.length ? pairs : null;
 }
 
 async function fetchLive(ctx) {

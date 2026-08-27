@@ -56,6 +56,7 @@ const MONTH_BARS = 21;          // one month of sessions, the bit 12-1 momentum 
 const MIN_VOL_RETURNS = 60;     // under a quarter of history, an annualised stdev is noise
 const HORIZON_DAYS = 365;
 const Z90 = 1.2815515655446004; // standard normal 90th percentile
+const MAX_TIME = 8.64e15;       // the widest instant Date can represent
 
 const num = (v) => {
   if (v === null || v === undefined || v === '') return null;
@@ -72,6 +73,8 @@ const round = (v, dp) => {
   return out === 0 ? 0 : out;
 };
 const r1 = (v) => round(v, 1);
+/** Epoch ms -> ISO string, or null. Never throws on an out-of-range instant. */
+const isoOrNull = (ms) => (Number.isFinite(ms) && Math.abs(ms) <= MAX_TIME ? new Date(ms).toISOString() : null);
 const r3 = (v) => round(v, 3);
 /** Percentages in basis[] always carry their sign; "+0%" for a loss reads as a lie. */
 const signed = (v, dp = 0) => `${v >= 0 ? '+' : ''}${v.toFixed(dp)}%`;
@@ -429,6 +432,10 @@ function modelFromSignals({ vol = null, momentum = null, drawdown = null, priors
     mu: blend.mu,
     bands,
     basis,
+    // The horizon the bands were actually computed over. Carried out with them
+    // so the row cannot end up labelled with a different one than it was priced
+    // on — a 90-day band captioned "one year" is a wrong number, not a typo.
+    horizonDays,
     confidence: modelConfidence({ vol: v, momentum: num(momentum), drawdown: num(drawdown), seed }),
     bars: Number.isFinite(bars) ? bars : null,
   };
@@ -437,6 +444,14 @@ function modelFromSignals({ vol = null, momentum = null, drawdown = null, priors
 // ---------------------------------------------------------------------------
 // Universe — real, liquid, editable
 // ---------------------------------------------------------------------------
+
+/**
+ * `GROUPS[g]` alone is not a membership test: "__proto__", "constructor" and
+ * "toString" all come back truthy off Object.prototype, sail past the fallbacks
+ * that use it and then blow up on `.thesis(...)`. A group name can arrive from
+ * user settings, so the check has to be an own-property one.
+ */
+const hasGroup = (g) => typeof g === 'string' && Object.prototype.hasOwnProperty.call(GROUPS, g);
 
 /**
  * Groups exist so the thesis can be honest without being written 46 times, and
@@ -561,7 +576,7 @@ function resolveUniverse(settings = {}) {
     // Ticker-shaped only; a junk string is a URL we then wait 20 seconds to fail on.
     if (!symbol || !/^[A-Z0-9][A-Z0-9.\-]{0,11}$/.test(symbol)) continue;
     const known = out.get(symbol);
-    const group = GROUPS[e.group] ? e.group : (known?.group || 'sector_thematic');
+    const group = hasGroup(e.group) ? e.group : (known?.group || 'sector_thematic');
     out.set(symbol, { kind: 'stock', ...(known || {}), ...e, symbol, group, userAdded: true });
   }
 
@@ -590,7 +605,7 @@ function buildOpportunity(entry, model, opts = {}) {
   if (!symbol || !model || !Number.isFinite(model.mu) || !model.bands) return null;
   if (!Number.isFinite(model.bands.p10) || !Number.isFinite(model.bands.probabilityOfLoss)) return null;
 
-  const group = GROUPS[entry?.group] ? entry.group : 'sector_thematic';
+  const group = hasGroup(entry?.group) ? entry.group : 'sector_thematic';
   const name = entry?.name || symbol;
   const b = model.bands;
   const seed = !!opts.seed;
@@ -639,7 +654,7 @@ function buildOpportunity(entry, model, opts = {}) {
       p50: b.p50,
       p90: b.p90,
       probabilityOfLoss: b.probabilityOfLoss,
-      horizonDays: num(opts.horizonDays) || HORIZON_DAYS,
+      horizonDays: num(model.horizonDays) || num(opts.horizonDays) || HORIZON_DAYS,
       basis: model.basis,
       thesis: GROUPS[group].thesis(name),
     },
@@ -786,7 +801,11 @@ async function fetchLive(ctx) {
         // Deepest peak-to-trough over the window, which is a different question
         // from "how far below the high is it now" — risk.js wants the former.
         maxDrawdown: typeof funds?.computeMaxDrawdown === 'function' ? num(funds.computeMaxDrawdown(closes)) : null,
-        dataAsOf: Number.isFinite(res.series.lastTsMs) ? new Date(res.series.lastTsMs).toISOString() : null,
+        // Number.isFinite is not enough: a feed that hands back a timestamp
+        // already in milliseconds (or simple garbage) lands outside the range
+        // Date can represent, and new Date(...).toISOString() THROWS there —
+        // which took the whole source down over one bad bar on one symbol.
+        dataAsOf: isoOrNull(res.series.lastTsMs),
       },
     });
   }

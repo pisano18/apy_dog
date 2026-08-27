@@ -35,6 +35,7 @@ const NOW = Date.parse('2026-08-27T00:00:00Z');
 const ctx = { schema, C, http, seedDir: SEED_DIR, settings: {}, now: NOW, log() {} };
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} !== ${b} (within ${eps})`);
 const ramp = (n, from = 100) => Array.from({ length: n }, (_, i) => from + i);
+const entry = { symbol: 'NKE', name: 'Nike, Inc.', kind: 'stock', group: 'beaten_down_quality' };
 
 // ---------------------------------------------------------------------------
 // Contract
@@ -351,12 +352,141 @@ test('a renamed or broken upstream degrades, never throws', () => {
   }
 });
 
+test('a corrupted chart payload degrades at every stage instead of throwing', () => {
+  // Each mutation is re-run through the whole chain — parse, model, build — via
+  // both the funds.js parser and the local fallback, because a malformed symbol
+  // must cost that symbol and nothing else.
+  const mutations = {
+    'timestamp null': (p) => { p.chart.result[0].timestamp = null; },
+    'timestamp non-array': (p) => { p.chart.result[0].timestamp = {}; },
+    'timestamp strings': (p) => { p.chart.result[0].timestamp = ['a', 'b']; },
+    'indicators null': (p) => { p.chart.result[0].indicators = null; },
+    'indicators missing': (p) => { delete p.chart.result[0].indicators; },
+    'quote non-array': (p) => { p.chart.result[0].indicators.quote = {}; },
+    'quote empty': (p) => { p.chart.result[0].indicators.quote = []; },
+    'quote[0] null': (p) => { p.chart.result[0].indicators.quote[0] = null; },
+    'close null': (p) => { p.chart.result[0].indicators.quote[0].close = null; },
+    'close non-array': (p) => { p.chart.result[0].indicators.quote[0].close = 'nope'; },
+    'close renamed': (p) => {
+      const q = p.chart.result[0].indicators.quote[0];
+      q.closes = q.close; delete q.close; p.chart.result[0].indicators.adjclose = [];
+    },
+    'adjclose empty': (p) => { p.chart.result[0].indicators.adjclose = []; },
+    'adjclose non-array': (p) => { p.chart.result[0].indicators.adjclose = 'x'; },
+    'adjclose inner non-array': (p) => { p.chart.result[0].indicators.adjclose[0].adjclose = 'x'; },
+    'adjclose empty array': (p) => {
+      p.chart.result[0].indicators.adjclose[0].adjclose = [];
+      p.chart.result[0].indicators.quote[0].close = [];
+    },
+    'adjclose all zero': (p) => {
+      const a = p.chart.result[0].indicators.adjclose[0];
+      a.adjclose = a.adjclose.map(() => 0);
+    },
+    'adjclose Infinity': (p) => {
+      const a = p.chart.result[0].indicators.adjclose[0];
+      a.adjclose = a.adjclose.map(() => Infinity);
+    },
+    'meta null': (p) => { p.chart.result[0].meta = null; },
+    'meta price zero': (p) => { p.chart.result[0].meta.regularMarketPrice = 0; },
+    'meta currency non-string': (p) => { p.chart.result[0].meta.currency = {}; },
+    'result[0] is an array': (p) => { p.chart.result[0] = []; },
+    'result empty': (p) => { p.chart.result = []; },
+    'result non-array': (p) => { p.chart.result = 'x'; },
+    'chart null': (p) => { p.chart = null; },
+    'chart error non-object': (p) => { p.chart = { error: 'boom' }; },
+    // Date can only represent +-8.64e15 ms; toISOString() THROWS outside that.
+    'timestamp out of Date range': (p) => {
+      const t = p.chart.result[0].timestamp; t[t.length - 1] = 1e15;
+    },
+  };
+
+  for (const [label, mutate] of Object.entries(mutations)) {
+    for (const parse of [adapter.parseChart, adapter.parseChartLocal]) {
+      const payload = JSON.parse(JSON.stringify(chartPayload));
+      mutate(payload);
+      const series = parse(payload);                                   // must not throw
+      assert.ok(series === null || typeof series === 'object', `${label} returned junk`);
+      const model = adapter.modelFromCloses(series && Array.isArray(series.adj) ? series.adj : []);
+      const o = adapter.buildOpportunity(entry, model, {
+        schema, C, price: series && series.price, dataAsOf: series && series.dataAsOf,
+      });
+      assert.ok(o === null || schema.validate(o).length === 0, `${label} produced an invalid row`);
+      if (o) assert.ok(Number.isFinite(o.expected.annualReturn), `${label} produced a row with no headline`);
+    }
+  }
+
+  for (const junk of [null, undefined, 0, '', 'string', true, [], {}, { chart: 'x' }, { chart: [] }, { chart: { result: 'x' } }]) {
+    for (const parse of [adapter.parseChart, adapter.parseChartLocal]) {
+      const series = parse(junk);
+      assert.ok(series === null || typeof series === 'object');
+      assert.equal(adapter.modelFromCloses(series && series.adj), null);
+    }
+  }
+
+  for (const csv of ['', '\n', 'Date,Close\n', 'garbage', 'Date,Close\n2026-01-01,notanumber\n',
+    'Date,Close\n,\n', 'Date,Close\n2026-01-01,0\n2026-01-02,-5\n', 'Close\n5\n']) {
+    for (const parse of [adapter.parseStooq, adapter.parseStooqLocal]) {
+      assert.equal(parse(csv, http.parseCSV), null, `stooq should refuse ${JSON.stringify(csv)}`);
+    }
+  }
+});
+
+test('an unrepresentable timestamp costs one row, not the whole source', async () => {
+  // Number.isFinite is not enough of a guard: a feed handing back a timestamp
+  // already in milliseconds lands outside the range Date can represent, and
+  // new Date(ms).toISOString() throws a RangeError there. That once escaped
+  // fetchLive and turned the entire source into a failed result.
+  const payload = JSON.parse(JSON.stringify(chartPayload));
+  const ts = payload.chart.result[0].timestamp;
+  ts[ts.length - 1] = 1e15;
+
+  const res = await adapter.fetch({
+    ...ctx,
+    settings: { sources: { speculative: { symbols: [{ symbol: 'NKE', group: 'beaten_down_quality' }], excludeGroups: Object.keys(adapter.UNIVERSE) } } },
+    http: { ...http, getJSON: async () => payload, getText: async () => { throw new Error('should not reach Stooq'); } },
+  });
+
+  assert.ok(['ok', 'partial'].includes(res.status), `source died on one bad timestamp: ${res.status}`);
+  assert.equal(res.opportunities.length, 1);
+  const o = res.opportunities[0];
+  assert.deepEqual(schema.validate(o), []);
+  assert.ok(Number.isFinite(Date.parse(o.dataAsOf)), 'dataAsOf must still be a real instant');
+});
+
 // ---------------------------------------------------------------------------
 // Row construction
 // ---------------------------------------------------------------------------
 
+test('a group name inherited from Object.prototype falls back instead of throwing', () => {
+  // `GROUPS[g]` alone is not a membership test: "__proto__", "constructor" and
+  // "toString" all come back truthy, sail past the intended fallback and then
+  // blow up on `.thesis(...)`. A group name can arrive from user settings.
+  const model = adapter.modelFromSignals({ vol: 30, momentum: 5, drawdown: -10 });
+  for (const group of ['__proto__', 'constructor', 'toString', 'valueOf', 'hasOwnProperty']) {
+    const o = adapter.buildOpportunity({ symbol: 'RKLB', name: 'Rocket Lab USA, Inc.', kind: 'stock', group }, model, { schema, C });
+    assert.ok(o, `group ${group} produced no row`);
+    assert.equal(o.subType, 'sector_thematic', `group ${group} did not fall back`);
+    assert.deepEqual(schema.validate(o), []);
+    assert.ok(/^For this to work/.test(o.expected.thesis));
+
+    const resolved = adapter.resolveUniverse({ sources: { speculative: { symbols: [{ symbol: 'RKLB', group }], excludeGroups: Object.keys(adapter.UNIVERSE) } } });
+    assert.equal(resolved[0].group, 'sector_thematic', `resolveUniverse kept ${group}`);
+  }
+});
+
+test('the row is labelled with the horizon its band was actually priced on', () => {
+  const short = adapter.modelFromSignals({ vol: 30, momentum: 5, drawdown: -10, horizonDays: 90 });
+  const o = adapter.buildOpportunity(entry, short, { schema, C });
+  assert.equal(o.expected.horizonDays, 90, 'a 90-day band must not be captioned as a year');
+  assert.ok(short.basis.some((b) => /90-day lognormal band/.test(b)));
+
+  const year = adapter.modelFromSignals({ vol: 30, momentum: 5, drawdown: -10 });
+  assert.equal(adapter.buildOpportunity(entry, year, { schema, C }).expected.horizonDays, 365);
+  // A narrower horizon has to give a narrower band.
+  assert.ok(short.bands.p90 - short.bands.p10 < year.bands.p90 - year.bands.p10);
+});
+
 test('a built row is an expectation, never a yield', () => {
-  const entry = { symbol: 'NKE', name: 'Nike, Inc.', kind: 'stock', group: 'beaten_down_quality' };
   const model = adapter.modelFromCloses(adapter.parseChart(chartPayload).adj);
   const o = adapter.buildOpportunity(entry, model, { schema, C, price: 39.2, maxDrawdown: 48 });
 

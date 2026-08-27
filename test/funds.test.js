@@ -237,6 +237,67 @@ test('accepts the array form of the dividend events block', () => {
   assert.equal(s.dividends[1].amount, 0.41);
 });
 
+test('a corrupted chart payload degrades at every stage instead of throwing', () => {
+  // Each of these once produced an uncaught throw somewhere between parseChart
+  // and buildOpportunity. A single malformed symbol must never take the source
+  // down, so the whole chain is re-run over each corruption.
+  const mutations = {
+    'timestamp null': (p) => { p.chart.result[0].timestamp = null; },
+    'timestamp non-array': (p) => { p.chart.result[0].timestamp = {}; },
+    'indicators null': (p) => { p.chart.result[0].indicators = null; },
+    'quote non-array': (p) => { p.chart.result[0].indicators.quote = {}; },
+    'quote empty': (p) => { p.chart.result[0].indicators.quote = []; },
+    'close null': (p) => { p.chart.result[0].indicators.quote[0].close = null; },
+    'close all null': (p) => { p.chart.result[0].indicators.quote[0].close = [null, null]; },
+    'close strings': (p) => { p.chart.result[0].indicators.quote[0].close = ['a', 'b']; },
+    'volume non-array': (p) => { p.chart.result[0].indicators.quote[0].volume = 'nope'; },
+    'adjclose empty': (p) => { p.chart.result[0].indicators.adjclose = []; },
+    'meta null': (p) => { p.chart.result[0].meta = null; },
+    'meta price zero': (p) => { p.chart.result[0].meta.regularMarketPrice = 0; },
+    'events null': (p) => { p.chart.result[0].events = null; },
+    'dividends non-array': (p) => { p.chart.result[0].events.dividends = 'nope'; },
+    'dividends empty array': (p) => { p.chart.result[0].events.dividends = []; },
+    'dividend records null': (p) => { p.chart.result[0].events.dividends = { 1: null, 2: undefined }; },
+    'dividend records scalar': (p) => { p.chart.result[0].events.dividends = { 1: 5, 2: 'x' }; },
+    'result[0] is an array': (p) => { p.chart.result[0] = []; },
+    'result empty': (p) => { p.chart.result = []; },
+    // Date can only represent +-8.64e15 ms; toISOString() throws outside that.
+    'timestamp out of Date range': (p) => { p.chart.result[0].timestamp[0] = 1e15; },
+  };
+  const entry = adapter.UNIVERSE.covered_call.find((e) => e.symbol === 'JEPI');
+  for (const [label, mutate] of Object.entries(mutations)) {
+    const payload = JSON.parse(JSON.stringify(chartPayload));
+    mutate(payload);
+    const series = adapter.parseChart(payload);           // must not throw
+    const stats = adapter.analyzeSeries(series, { nowMs: NOW });
+    const o = adapter.buildOpportunity(entry, stats, { schema, C });
+    assert.ok(o === null || schema.validate(o).length === 0, `${label} produced an invalid row`);
+    if (o) assert.ok(Number.isFinite(o.apy.total), `${label} produced a row with no headline`);
+  }
+
+  // Non-objects and wrong-typed containers at the very top.
+  for (const junk of [null, undefined, 0, '', 'string', true, [], {}, { chart: 'x' }, { chart: [] }, { chart: { result: 'x' } }]) {
+    assert.equal(adapter.parseChart(junk), null);
+  }
+  // analyzeSeries is exported and may be handed anything.
+  for (const junk of [null, undefined, {}, 'x', 5, [], { adj: 'x', volume: 'y', dividends: 'z' }, { lastTsMs: 1e18 }]) {
+    const st = adapter.analyzeSeries(junk, { nowMs: NOW });
+    assert.equal(st.trailingYield, null);
+    assert.equal(st.dataAsOf, null);
+  }
+  assert.equal(adapter.computeYield(null).trailingYield, null);
+});
+
+test('a note never costs a row: a string forward yield is coerced, not thrown on', () => {
+  const entry = adapter.UNIVERSE.covered_call.find((e) => e.symbol === 'JEPI');
+  const o = adapter.buildOpportunity(entry, { price: '59', trailingYield: '7.8', forwardYield: '12.5' }, { schema, C });
+  assert.ok(o, 'a string-typed stat block must still produce a row');
+  assert.deepEqual(schema.validate(o), []);
+  assert.equal(o.apy.total, 7.8);
+  assert.equal(o.apy.forward, 12.5);
+  assert.match(o.notes, /gives 12\.50%/);
+});
+
 test('the Stooq fallback gives price and volatility but no yield of its own', () => {
   const s = adapter.parseStooq(stooqCsv, http.parseCSV);
   assert.equal(s.adjustedForDividends, false);

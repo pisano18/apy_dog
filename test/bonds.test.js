@@ -488,3 +488,44 @@ test('the instrument table stays consistent with itself', () => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// regressions: a sibling parser or a bad clock must degrade this source, never
+// zero it out. Both of these used to throw out of fetchLive, and the outer catch
+// turned a missing breakeven sentence into a failed source with no rows at all —
+// including the savings bonds, which need no network in the first place.
+// ---------------------------------------------------------------------------
+
+test('a shape drift in the treasury curve parser costs the breakeven, not the rows', async () => {
+  const treasury = require('../src/sources/treasury');
+  const original = treasury.parseCurveCSV;
+  const drifted = [
+    {},                                                   // tenors gone entirely
+    { dateISO: '2026-08-26T00:00:00Z', tenors: null },
+    { dateISO: '2026-08-26T00:00:00Z', tenors: {} },      // object where an array is expected
+    { dateISO: '2026-08-26T00:00:00Z', tenors: [] },
+    { dateISO: '2026-08-26T00:00:00Z', tenors: [null, undefined] },
+    { tenors: [{ days: 1826, rate: 3.8 }, { days: 3653, rate: 4.15 }] },   // no dateISO
+    { dateISO: 20260826, tenors: [{ days: 1826, rate: 3.8 }, { days: 3653, rate: 4.15 }] },
+  ];
+  try {
+    for (const shape of drifted) {
+      treasury.parseCurveCSV = () => shape;
+      const res = await adapter.fetch({ ...baseCtx(), http: stubHttp() });
+      assert.equal(res.opportunities.length, 30, `shape ${JSON.stringify(shape)} lost rows`);
+      assert.notEqual(res.status, 'failed');
+      for (const o of res.opportunities) assert.deepEqual(schema.validate(o), []);
+    }
+  } finally {
+    treasury.parseCurveCSV = original;
+  }
+});
+
+test('an unusable ctx.now falls back to the wall clock instead of killing the source', async () => {
+  for (const now of ['yesterday', NaN, {}, [], Infinity, -1, 0, null, undefined]) {
+    const res = await adapter.fetch({ ...baseCtx(), now, http: stubHttp() });
+    assert.equal(res.opportunities.length, 30, `now=${String(now)} lost rows`);
+    assert.notEqual(res.status, 'failed');
+    for (const o of res.opportunities) assert.deepEqual(schema.validate(o), []);
+  }
+});
