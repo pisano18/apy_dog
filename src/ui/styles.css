@@ -116,7 +116,7 @@ body.mac .titlebar { padding-left: 82px; }
 .search {
   display: flex; align-items: center; gap: 7px; background: var(--panel-2);
   border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; height: 31px;
-  min-width: 170px; flex: 1 1 260px;
+  min-width: 210px; flex: 1 1 320px;
 }
 .search:focus-within { border-color: var(--brand-dim); background: var(--panel-3); }
 .search input { flex: 1; background: none; border: none; outline: none; user-select: text; }
@@ -491,9 +491,10 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 
 /* ---------- rebuilt filter system ---------- */
 .filterbar {
-  display: flex; align-items: center; gap: 6px; padding: 7px 14px; flex-wrap: wrap;
-  border-bottom: 1px solid var(--border); background: var(--panel); min-height: 42px;
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); background: var(--panel); min-height: 44px;
 }
+.filterbar .sectionswitch { margin-right: 6px; }
 .fpill {
   display: inline-flex; align-items: center; gap: 6px; height: 25px; padding: 0 4px 0 9px;
   border-radius: 13px; background: var(--panel-3); border: 1px solid var(--border);
@@ -619,9 +620,9 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
   display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 7px; cursor: pointer;
 }
 .ritem:hover { background: var(--panel-2); }
-.ritem .body { flex: 1 1 auto; min-width: 0; overflow: hidden; }
-.ritem .nm { font-size: 12.5px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ritem .sub { font-size: 10.5px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+.ritem .body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.ritem .nm { display: block; max-width: 100%; font-size: 12.5px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ritem .sub { display: block; max-width: 100%; font-size: 10.5px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
 .ritem .val { font-family: var(--mono); font-size: 13px; font-weight: 650; white-space: nowrap; text-align: right; flex: 0 0 auto; padding-left: 6px; }
 .ritem .val .u { display: block; font-size: 9.5px; color: var(--text-faint); font-weight: 500; }
 .ritem .empty3 { color: var(--text-faint); font-size: 12px; padding: 10px 4px; }
@@ -646,7 +647,7 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 .chartrange button.on { background: var(--panel-3); color: var(--text); }
 
 /* ---------- section switch (replaces the track switch) ---------- */
-.sectionswitch { display: flex; gap: 3px; background: var(--panel-2); border-radius: 9px; padding: 3px; }
+.sectionswitch { display: flex; gap: 3px; background: var(--panel-2); border-radius: 9px; padding: 3px; flex: 0 0 auto; }
 .sectionswitch button {
   padding: 6px 13px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim);
   display: flex; align-items: center; gap: 7px; white-space: nowrap;
