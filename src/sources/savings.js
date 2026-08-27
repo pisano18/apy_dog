@@ -259,7 +259,11 @@ function buildRows(items, ctx = {}) {
     opportunities.push(row);
 
     if (row.risk?.insurance === C.INSURANCE.FDIC) {
-      const legal = String(item?.fdicName || item?.provider || '').trim();
+      // An explicit null fdicName means "do not look this up": a brokerage sweep
+      // is not itself a bank, so a register search on its name can only ever
+      // miss and would print a scary non-finding on a perfectly normal product.
+      const explicit = item && Object.prototype.hasOwnProperty.call(item, 'fdicName');
+      const legal = String((explicit ? item.fdicName : item?.provider) || '').trim();
       if (legal) lookups.set(row.id, legal);
     }
   }
@@ -422,9 +426,11 @@ function collect(ctx, { verifyNames } = {}) {
   const merged = mergeUserRates(seedItems, user.items);
   const built = buildRows(merged, { schema, C, dataAsOf: meta?.dataAsOf || FALLBACK_AS_OF });
 
-  const userCount = merged.filter((it) => it.origin === 'user').length;
+  // Rows the user maintains are the ones that came out non-seed; counting the
+  // merged input instead would claim credit for rows that failed to build.
+  const fromUser = built.opportunities.filter((o) => o.seed === false).length;
   const notes = [
-    `${built.opportunities.length} curated deposit products (${userCount} from your own rates file, ${built.opportunities.length - userCount} bundled as of ${meta?.dataAsOf || FALLBACK_AS_OF}).`,
+    `${built.opportunities.length} curated deposit products (${fromUser} from your own rates file, ${built.opportunities.length - fromUser} bundled as of ${meta?.dataAsOf || FALLBACK_AS_OF}).`,
     'No free API publishes retail deposit APYs, so this list is hand-maintained. Edit it at Settings -> Open my rates file: same shape as data/seed/savings.json, a row with a matching id replaces the bundled one, a new id is added, and setting dataAsOf on a row you refresh raises how much the app trusts it.',
   ];
   if (built.skipped) notes.push(`${built.skipped} row(s) skipped — unknown kind, missing term, or an APY outside ${MIN_APY}-${MAX_APY}%.`);

@@ -28,6 +28,9 @@ const tax = require('../src/core/tax');
  */
 
 const isDev = process.argv.includes('--dev');
+// Boot, render, capture a screenshot, exit. Lets CI (and a headless box) prove
+// the whole app actually starts rather than only that the modules parse.
+const isSmoke = process.argv.includes('--smoke');
 
 let win = null;
 let store = null;
@@ -379,15 +382,87 @@ app.whenReady().then(async () => {
   // Show bundled data immediately so the window is never empty, then go to the
   // network. An instantly-useful window that improves beats a spinner.
   await doRefresh({ offline: true });
-  if (store.settings.refreshOnLaunch && !store.settings.offlineMode) {
+  if (store.settings.refreshOnLaunch && !store.settings.offlineMode && !isSmoke) {
     doRefresh().catch((e) => console.warn('[launch refresh]', e.message));
   }
+
+  if (isSmoke) return runSmokeTest();
 
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('before-quit', () => { try { history.prune(); } catch { /* best effort */ } });
+
+/**
+ * Headless self-check: wait for the renderer, assert it actually rendered rows,
+ * save a screenshot, report any console errors, and exit non-zero on failure.
+ */
+async function runSmokeTest() {
+  const errors = [];
+  win.webContents.on('console-message', (_e, level, message) => {
+    if (level >= 2) errors.push(message);
+  });
+  win.webContents.on('render-process-gone', (_e, d) => errors.push(`renderer gone: ${d.reason}`));
+
+  await new Promise((r) => setTimeout(r, 3500));
+
+  let report;
+  try {
+    report = await win.webContents.executeJavaScript(`(() => ({
+      rows: document.querySelectorAll('#tablewrap tbody tr').length,
+      headers: document.querySelectorAll('#tablewrap thead th').length,
+      sidebarGroups: document.querySelectorAll('#sidebar .fgroup').length,
+      presets: document.querySelectorAll('#sidebar .preset').length,
+      desc: (document.querySelector('#res-desc') || {}).textContent || '',
+      title: document.title,
+      bodyText: document.body.innerText.slice(0, 200),
+    }))()`);
+  } catch (err) {
+    errors.push(`executeJavaScript failed: ${err.message}`);
+    report = {};
+  }
+
+  const outDir = path.join(__dirname, '..', 'build');
+  try {
+    fs.mkdirSync(outDir, { recursive: true });
+    const img = await win.webContents.capturePage();
+    fs.writeFileSync(path.join(outDir, 'smoke.png'), img.toPNG());
+  } catch (err) {
+    errors.push(`screenshot failed: ${err.message}`);
+  }
+
+  // Exercise the drawer too: a table that renders but cannot open a row is broken.
+  try {
+    await win.webContents.executeJavaScript(
+      "document.querySelector('#tablewrap tbody tr')?.click(); true",
+    );
+    await new Promise((r) => setTimeout(r, 700));
+    report.drawerSections = await win.webContents.executeJavaScript(
+      "document.querySelectorAll('#drawer .dsection').length",
+    );
+    const img2 = await win.webContents.capturePage();
+    fs.writeFileSync(path.join(outDir, 'smoke-detail.png'), img2.toPNG());
+  } catch (err) {
+    errors.push(`drawer check failed: ${err.message}`);
+  }
+
+  const failures = [];
+  if (!report.rows) failures.push('no table rows rendered');
+  if (!report.headers) failures.push('no table headers rendered');
+  if (!report.sidebarGroups) failures.push('no filter groups rendered');
+  if (!report.drawerSections) failures.push('detail drawer did not open');
+  failures.push(...errors);
+
+  console.log('\n[smoke] ' + JSON.stringify(report, null, 2));
+  if (failures.length) {
+    console.error('\n[smoke] FAILED:\n  - ' + failures.join('\n  - '));
+    app.exit(1);
+  } else {
+    console.log('\n[smoke] PASS — screenshots in build/');
+    app.exit(0);
+  }
+}
 
 // Nothing in this app should ever open a second renderer or attach a webview.
 app.on('web-contents-created', (_e, contents) => {

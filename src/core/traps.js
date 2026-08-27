@@ -85,7 +85,10 @@ function detectTraps(o, context = {}) {
   }
 
   // --- stale ----------------------------------------------------------------
-  const ageMs = Date.now() - Date.parse(o.dataAsOf || '');
+  // Bundled snapshot rows are labelled as such throughout the UI already, so
+  // flagging their age here would put a warning on every offline row and drown
+  // out the flags that actually distinguish one opportunity from another.
+  const ageMs = o.seed ? NaN : Date.now() - Date.parse(o.dataAsOf || '');
   if (Number.isFinite(ageMs)) {
     if (ageMs > 60 * C.DAY) flag(C.TRAP_FLAGS.STALE_DATA, 16, `Rate last confirmed ${Math.round(ageMs / C.DAY)} days ago — verify before acting.`);
     else if (ageMs > 14 * C.DAY) flag(C.TRAP_FLAGS.STALE_DATA, 7, `Rate is ${Math.round(ageMs / C.DAY)} days old.`);

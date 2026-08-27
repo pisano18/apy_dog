@@ -1,3 +1,4 @@
+(function () {
 'use strict';
 
 /* Pure-ish render functions: state in, HTML string out. Kept separate from app.js
@@ -74,7 +75,7 @@ R.row = (o, { watched, change, selected, classes }) => {
     <td><span class="star ${watched ? 'on' : ''}" data-act="watch" data-id="${esc(o.id)}" title="${watched ? 'Remove from watchlist' : 'Add to watchlist'}">${watched ? '★' : '☆'}</span></td>
     <td><div class="cell-name">
       <span class="n">${esc(o.name)}</span>
-      <span class="m">${meta}${badges}</span>
+      <span class="m"><span class="mt">${meta}</span>${badges}</span>
     </div></td>
     ${apyCell(o)}
     <td class="num" title="After your tax settings">${window.F.pct(o.tax?.afterTaxApy, 2)} ${trendCell(change)}</td>
@@ -411,3 +412,4 @@ R.drawer = (detail, ctx) => {
 };
 
 window.R = R;
+}());

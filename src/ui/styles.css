@@ -210,9 +210,11 @@ table.results tbody tr.trap td { opacity: .68; }
 table.results td { padding: 5px 10px; vertical-align: middle; white-space: nowrap; }
 table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-.cell-name { display: flex; flex-direction: column; gap: 1px; max-width: 340px; }
+.cell-name { display: flex; flex-direction: column; gap: 1px; max-width: 380px; min-width: 0; }
 .cell-name .n { font-weight: 550; overflow: hidden; text-overflow: ellipsis; }
-.cell-name .m { font-size: 10.5px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; display: flex; gap: 6px; align-items: center; }
+.cell-name .m { font-size: 10.5px; color: var(--text-faint); display: flex; gap: 6px; align-items: center; min-width: 0; }
+.cell-name .m .mt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.badge { flex: 0 0 auto; }
 
 .badge {
   font-size: 9.5px; padding: 1px 5px; border-radius: 4px; font-weight: 650;

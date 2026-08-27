@@ -1,3 +1,4 @@
+(function () {
 'use strict';
 
 /* App controller. Owns state, wires events, calls into the main process.
@@ -652,3 +653,4 @@ async function main() {
 main().catch((err) => {
   document.body.innerHTML = `<div class="empty"><h3>APY Dog could not start</h3><p>${esc(err.message)}</p></div>`;
 });
+}());
