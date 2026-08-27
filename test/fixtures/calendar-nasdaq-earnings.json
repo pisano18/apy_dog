@@ -1,0 +1,91 @@
+{
+  "data": {
+    "asOf": null,
+    "headers": {
+      "lastYearRptDt": "Last Year's Report Date",
+      "lastYearEPS": "Last Year's EPS",
+      "time": "Time",
+      "symbol": "Symbol",
+      "name": "Company Name",
+      "marketCap": "Market Cap",
+      "fiscalQuarterEnding": "Fiscal Quarter Ending",
+      "epsForecast": "Consensus EPS* Forecast",
+      "noOfEsts": "# of Ests"
+    },
+    "rows": [
+      {
+        "lastYearRptDt": "10/30/2025",
+        "lastYearEPS": "$1.64",
+        "time": "time-after-hours",
+        "symbol": "AAPL",
+        "name": "Apple Inc.",
+        "marketCap": "$3,940,112,000,000",
+        "fiscalQuarterEnding": "Sep/2026",
+        "epsForecast": "$2.02",
+        "noOfEsts": "27"
+      },
+      {
+        "lastYearRptDt": "10/29/2025",
+        "lastYearEPS": "$1.47",
+        "time": "time-after-hours",
+        "symbol": "MSFT",
+        "name": "Microsoft Corporation",
+        "marketCap": "$3,610,004,000,000",
+        "fiscalQuarterEnding": "Sep/2026",
+        "epsForecast": "$3.71",
+        "noOfEsts": "24"
+      },
+      {
+        "lastYearRptDt": "10/29/2025",
+        "lastYearEPS": "$1.86",
+        "time": "time-pre-market",
+        "symbol": "KO",
+        "name": "Coca-Cola Company (The)",
+        "marketCap": "$298,442,000,000",
+        "fiscalQuarterEnding": "Sep/2026",
+        "epsForecast": "$0.82",
+        "noOfEsts": "18"
+      },
+      {
+        "lastYearRptDt": "10/28/2025",
+        "lastYearEPS": "$0.31",
+        "time": "time-not-supplied",
+        "symbol": "BRK-B",
+        "name": "Berkshire Hathaway Inc.",
+        "marketCap": "$1,102,884,000,000",
+        "fiscalQuarterEnding": "Sep/2026",
+        "epsForecast": "",
+        "noOfEsts": ""
+      },
+      {
+        "time": "time-pre-market",
+        "symbol": "",
+        "name": "Missing Symbol Corp.",
+        "marketCap": "$1,000,000",
+        "epsForecast": "$0.10"
+      },
+      {
+        "time": "time-pre-market",
+        "symbol": "not a ticker!!",
+        "name": "Junk Row",
+        "marketCap": "n/a"
+      },
+      null,
+      {
+        "time": "time-after-hours",
+        "symbol": "NVDA",
+        "name": "NVIDIA Corporation",
+        "marketCap": "not available",
+        "fiscalQuarterEnding": "Oct/2026",
+        "epsForecast": "$1.48",
+        "noOfEsts": "31"
+      }
+    ]
+  },
+  "message": null,
+  "status": {
+    "rCode": 200,
+    "bCodeMessage": null,
+    "developerMessage": null
+  }
+}

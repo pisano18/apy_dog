@@ -1,0 +1,83 @@
+[
+  {
+    "cusip": "912797RZ4",
+    "securityType": "Bill",
+    "securityTerm": "13-Week",
+    "auctionDate": "2026-09-08T00:00:00",
+    "issueDate": "2026-09-10T00:00:00",
+    "maturityDate": "2026-12-10T00:00:00",
+    "announcementDate": "2026-09-03T00:00:00",
+    "offeringAmount": "84000000000",
+    "type": "Bill"
+  },
+  {
+    "cusip": "912797SD2",
+    "securityType": "Bill",
+    "securityTerm": "26-Week",
+    "auctionDate": "2026-09-08T00:00:00",
+    "issueDate": "2026-09-10T00:00:00",
+    "maturityDate": "2027-03-11T00:00:00",
+    "announcementDate": "2026-09-03T00:00:00",
+    "offeringAmount": "76000000000",
+    "type": "Bill"
+  },
+  {
+    "cusip": "91282CNK7",
+    "securityType": "Note",
+    "securityTerm": "10-Year",
+    "auctionDate": "2026-09-09T00:00:00",
+    "issueDate": "2026-09-15T00:00:00",
+    "maturityDate": "2036-09-15T00:00:00",
+    "announcementDate": "2026-09-03T00:00:00",
+    "offeringAmount": "",
+    "type": "Note"
+  },
+  {
+    "cusip": "912810TW8",
+    "securityType": "TIPS",
+    "securityTerm": "30-Year",
+    "auctionDate": "2026-09-17T00:00:00",
+    "issueDate": "2026-09-30T00:00:00",
+    "maturityDate": "2056-02-15T00:00:00",
+    "offeringAmount": "8000000000",
+    "type": "TIPS"
+  },
+  {
+    "cusip": "91282CNL5",
+    "securityType": "FRN",
+    "securityTerm": "2-Year",
+    "auctionDate": "2026-09-23T00:00:00",
+    "issueDate": "2026-09-30T00:00:00",
+    "maturityDate": "2028-09-30T00:00:00",
+    "offeringAmount": "28000000000",
+    "type": "FRN"
+  },
+  null,
+  "912797RZ4",
+  {
+    "cusip": "912797SE0",
+    "securityType": "Bill",
+    "offeringAmount": "95000000000"
+  },
+  {
+    "cusip": "912797SF7",
+    "securityType": "Bill",
+    "securityTerm": "4-Week",
+    "auctionDate": "next thursday",
+    "offeringAmount": "95000000000"
+  },
+  {
+    "cusip": "912797SG5",
+    "securityType": "Bill",
+    "securityTerm": "8-Week",
+    "auctionDate": "275760-09-14T00:00:00",
+    "offeringAmount": "85000000000"
+  },
+  {
+    "cusip": "912796ZZ1",
+    "securityTerm": "42-Day",
+    "auctionDate": "2026-09-15T00:00:00",
+    "issueDate": "2026-09-17T00:00:00",
+    "offeringAmount": "70000000000"
+  }
+]

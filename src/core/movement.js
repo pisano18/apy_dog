@@ -299,6 +299,10 @@ function readMovement(o, { events = [], horizonDays = 30, now = Date.now() } = {
     // is happening; null is the truth, which is that we have not looked.
     unmeasured,
     heat: unmeasured ? null : heat,
+    heatTier: unmeasured ? null : T.heatTier(heat).key,
+    heatLabel: unmeasured ? null : T.heatTier(heat).label,
+    heatColor: unmeasured ? null : T.heatTier(heat).color,
+    heatText: unmeasured ? null : T.heatTier(heat).text,
     heatParts: unmeasured ? [] : parts,
     setup: setup.key,
     setupLabel: setupInfo?.label,

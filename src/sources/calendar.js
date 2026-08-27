@@ -181,9 +181,10 @@ function eventKey(e) {
  * Merge event lists in ascending order of trust: later lists win a collision, so
  * a published date always displaces the bundled estimate it replaces.
  */
-function mergeEvents(lists, { now = Date.now(), forwardDays = HORIZON_FORWARD_DAYS, lookbackDays = LOOKBACK_DAYS } = {}) {
+function mergeEvents(lists, opts) {
+  const { now = Date.now(), forwardDays = HORIZON_FORWARD_DAYS, lookbackDays = LOOKBACK_DAYS } = opts || {};
   const byKey = new Map();
-  for (const list of lists) {
+  for (const list of (Array.isArray(lists) ? lists : [])) {
     if (!Array.isArray(list)) continue;
     for (const e of list) {
       if (!e || !Number.isFinite(e.dateMs)) continue;
@@ -218,8 +219,8 @@ function moneyShort(v) {
  * before its size is set has no offeringAmount, which is missing information and
  * not a reason to drop the date.
  */
-function parseTreasuryUpcoming(payload, opts = {}) {
-  const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+function parseTreasuryUpcoming(payload, opts) {
+  const now = Number.isFinite(opts?.now) ? opts.now : Date.now();
   const rows = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : null;
   if (!rows) return { events: [], skipped: 0, seen: 0, unusable: true };
 
@@ -265,13 +266,14 @@ function parseTreasuryUpcoming(payload, opts = {}) {
         source: 'TreasuryDirect',
         url: 'https://www.treasurydirect.gov/auctions/upcoming/',
         magnitude: num(r.offeringAmount),
-        symbol: cusip || null,
+        // Deliberately no `symbol`. A CUSIP is not a ticker, and putting one in
+        // the field the symbol-matching pass reads would hang a rate-wide event
+        // off whatever row happened to collide with it. Auctions reach rows
+        // through the `rates` scope instead.
       }, now);
       // makeEvent rejects an unusable date rather than throwing; that is a skip.
       if (!e) { skipped += 1; continue; }
-      // The CUSIP is carried for identity, but it must not make this event look
-      // like a stock ticker to the symbol-matching pass — auctions are rate-wide.
-      events.push({ ...e, symbol: null, cusip: cusip || null });
+      events.push(cusip ? { ...e, cusip } : e);
     } catch {
       skipped += 1;
     }
@@ -307,8 +309,8 @@ const unwrapCdata = (s) => (typeof s === 'string'
   : null);
 
 /** PURE PARSER for the Federal Reserve press-release RSS/Atom feed. */
-function parseFedPressRss(xml, opts = {}) {
-  const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+function parseFedPressRss(xml, opts) {
+  const now = Number.isFinite(opts?.now) ? opts.now : Date.now();
   if (typeof xml !== 'string' || !xml.trim()) return { events: [], skipped: 0, seen: 0, unusable: true };
 
   let items = xmlTagValues(xml, 'item');
@@ -376,7 +378,8 @@ function unfoldIcs(text) {
  * `20260812T123000Z`. A date with no time is assumed to be a release at the
  * given Eastern hour, which is how BLS actually publishes.
  */
-function parseIcsDate(value, { hour = 0, minute = 0 } = {}) {
+function parseIcsDate(value, opts) {
+  const { hour = 0, minute = 0 } = opts || {};
   const v = str(value);
   if (!v) return null;
   const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/.exec(v);
@@ -396,8 +399,8 @@ function parseIcsDate(value, { hour = 0, minute = 0 } = {}) {
 }
 
 /** PURE PARSER for a BLS release-schedule .ics file. */
-function parseBlsIcs(text, opts = {}) {
-  const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+function parseBlsIcs(text, opts) {
+  const now = Number.isFinite(opts?.now) ? opts.now : Date.now();
   if (typeof text !== 'string' || !/BEGIN:VEVENT/i.test(text)) {
     return { events: [], skipped: 0, seen: 0, unusable: true };
   }
@@ -461,8 +464,8 @@ const TICKER_RE = /^[A-Z][A-Z0-9.-]{0,9}$/;
  * `data: null` and a message rather than an empty array, which is a normal
  * weekend, not a fault.
  */
-function parseNasdaqEarnings(payload, dateStr, opts = {}) {
-  const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+function parseNasdaqEarnings(payload, dateStr, opts) {
+  const now = Number.isFinite(opts?.now) ? opts.now : Date.now();
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || ''));
   if (!m) return { events: [], skipped: 0, seen: 0, unusable: true };
 
@@ -533,7 +536,8 @@ const QUARTERLY_MONTHS = new Set([3, 6, 9, 12]);
  * thing it barely touches. With no symbol it shows on the calendar, where it is
  * useful, and attaches to nothing, which is honest.
  */
-function calendricalEvents({ now = Date.now(), months = 13 } = {}) {
+function calendricalEvents(opts) {
+  const { now = Date.now(), months = 13 } = opts || {};
   if (!Number.isFinite(now)) return [];
   const events = [];
   const start = new Date(now);
@@ -588,8 +592,8 @@ function calendricalEvents({ now = Date.now(), months = 13 } = {}) {
 // ---------------------------------------------------------------------------
 
 /** Bundled raw descriptors -> canonical events. Never throws. */
-function parseSeedEvents(items, opts = {}) {
-  const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+function parseSeedEvents(items, opts) {
+  const now = Number.isFinite(opts?.now) ? opts.now : Date.now();
   const events = [];
   let skipped = 0;
   if (!Array.isArray(items)) return { events, skipped: 0, seen: 0 };
@@ -645,8 +649,9 @@ function isBroadFund(o) {
  *   market   an options expiry lands on everything that trades, which is every
  *            row not purely on the income track
  */
-function attachEvents(opportunities, events, { now = Date.now() } = {}) {
+function attachEvents(opportunities, events, opts) {
   if (!Array.isArray(opportunities)) return [];
+  const now = (opts || {}).now;
   const clock = Number.isFinite(now) ? now : Date.now();
 
   const usable = (Array.isArray(events) ? events : []).filter((e) => (
@@ -932,6 +937,13 @@ const adapter = {
 
       const asOf = meta.dataAsOf || '2026-08-01';
       const estimated = events.filter((e) => e.certainty === 'estimated').length;
+      // The expiry dates are computed and would survive on their own, which is
+      // exactly why a missing seed file has to be said out loud rather than
+      // quietly presented as a bundled calendar.
+      const warnings = bundled.length ? [] : [
+        `seed file data/seed/${SEED_FILE} is missing or unreadable — only the computed expiry and rebalance dates `
+          + 'are available, with no Fed, BLS, Treasury or earnings schedule behind them',
+      ];
       const byKind = {};
       for (const e of events) byKind[e.kind] = (byKind[e.kind] || 0) + 1;
       const breakdown = Object.entries(byKind).sort((a, b) => b[1] - a[1])
@@ -950,7 +962,7 @@ const adapter = {
           'This source contributes dated events, not buyable rows, which is why it lists no opportunities.',
           skipped ? `${skipped} bundled entries were unreadable and were skipped.` : null,
         ].filter(Boolean),
-        warnings: [],
+        warnings,
       });
       res.events = events;
       return res;

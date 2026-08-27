@@ -343,17 +343,26 @@ function parseFilingTitle(title) {
   let rest = raw.slice(dash + 3).trim();
   if (!form || !rest) return null;
 
-  // Optional trailing role, e.g. "(Filer)" / "(Subject)" / "(Filed by)".
+  // Optional trailing role: "(Filer)" / "(Subject)" / "(Filed by)".
+  //
+  // Only stripped when it is a role EDGAR actually uses, or when removing it
+  // exposes a CIK underneath. A company legitimately named "... (Delaware)"
+  // must keep its parenthetical rather than have it silently eaten.
+  const CIK_TAIL = /\((\d{4,10})\)\s*$/;
   let role = null;
   const roleMatch = /\(([A-Za-z][A-Za-z ]{2,20})\)\s*$/.exec(rest);
   if (roleMatch) {
-    role = roleMatch[1].trim();
-    rest = rest.slice(0, roleMatch.index).trim();
+    const known = /^(?:filer|subject|filed by|reporting|issuer)$/i.test(roleMatch[1].trim());
+    const head = rest.slice(0, roleMatch.index).trim();
+    if (known || CIK_TAIL.test(head)) {
+      role = roleMatch[1].trim();
+      rest = head;
+    }
   }
 
   // The last parenthesised run of digits is the CIK.
   let cik = null;
-  const cikMatch = /\((\d{4,10})\)\s*$/.exec(rest);
+  const cikMatch = CIK_TAIL.exec(rest);
   if (cikMatch) {
     cik = padCik(cikMatch[1]);
     rest = rest.slice(0, cikMatch.index).trim();
@@ -423,6 +432,7 @@ function parseAtom(xml, opts = {}) {
       const itemsCategory = /<category\b[^>]*\blabel\s*=\s*["'](?:8-K )?items?["'][^>]*\bterm\s*=\s*["']([^"']+)["']/i.exec(block);
 
       entries.push({
+        via: 'feed',
         form: parsedTitle.form || (category ? decodeEntities(category[1]) : null),
         company: parsedTitle.company,
         cik: parsedTitle.cik,
@@ -621,6 +631,7 @@ function buildEvents(entries, opts = {}) {
       event.company = company;
       event.items = built.codes;
       event.itemsKnown = built.hasItems;
+      event.via = str(entry.via);
       event.routine = built.routine;
       event.seed = seed;
       events.push(event);
@@ -650,11 +661,17 @@ function describeFiling(entry, { kind, company, symbol }) {
     const hasItems = s.codes.length > 0;
     const title = hasItems ? `${who} — ${s.headline || `8-K item ${s.codes[0]}`}` : `${who} — ${form || '8-K'} filed`;
     const lead = amended
-      ? `Amended ${form} filed with the SEC, restating an earlier disclosure.`
+      ? `${form} amends an 8-K this company already filed, so it revises an earlier disclosure rather than making a new one.`
       : 'An 8-K is filed when something material happens that the company must disclose promptly.';
+    // Two different reasons an 8-K can arrive without item codes, and saying the
+    // wrong one is a small lie about our own data: the getcurrent feed genuinely
+    // does not carry them, whereas the submissions API does and this filing
+    // simply left the field blank.
     const detail = hasItems
       ? s.sentence
-      : 'The live EDGAR feed does not publish item codes, so what this filing covers is only in the document itself.';
+      : entry.via === 'feed'
+        ? 'The live EDGAR feed does not publish item codes, so what this filing covers is only in the document itself.'
+        : 'No item codes were published with this filing, so what it covers is only in the document itself.';
     return {
       title,
       text: `${lead} ${detail} Read the filing rather than a summary of it.`,
@@ -730,6 +747,7 @@ function parseSubmissions(payload, opts = {}) {
       }
 
       entries.push({
+        via: 'submissions',
         form,
         company,
         cik,
@@ -852,6 +870,8 @@ async function fetchTickerIndex(ctx) {
   };
 
   // Cached hard: this file changes when a company lists or delists, not hourly.
+  // Stored as [cik, record] pairs rather than a Map because the cache is
+  // disk-backed JSON, and a Map round-trips through JSON as {}.
   let payload;
   if (ctx.cache?.wrap) {
     const hit = await ctx.cache.wrap(`${ID}:cik-tickers`, TICKER_TTL_MS, load);
@@ -924,7 +944,7 @@ async function fetchLive(ctx) {
     } catch (err) {
       warnings.push(`${feed.label} feed failed: ${err?.message || err}`);
     }
-    await sleep(SEC_CALL_GAP_MS);
+    if (feed !== FEEDS[FEEDS.length - 1]) await sleep(SEC_CALL_GAP_MS);
   }
 
   if (!rawEntries.length) {
@@ -945,29 +965,50 @@ async function fetchLive(ctx) {
     .filter((e) => eventKindForForm(e.form) === EVENT_KIND.FILING_8K && !e.items && e.cik)
     .sort((a, b) => b.filedMs - a.filedMs);
 
+  // Distinct companies, not distinct filings: one issuer that filed three 8-Ks
+  // this morning would otherwise consume the whole budget on one lookup's worth
+  // of information, and the submissions call returns all three anyway.
+  const targets = [];
+  const seenCik = new Set();
+  for (const e of needItems) {
+    if (seenCik.has(e.cik)) continue;
+    seenCik.add(e.cik);
+    targets.push(e);
+    if (targets.length >= itemLookups) break;
+  }
+
   let resolved = 0;
   const byCik = new Map();
-  for (const e of needItems.slice(0, itemLookups)) {
+  for (const e of targets) {
     if (ctx.signal?.aborted) break;
-    if (byCik.has(e.cik)) continue;
     try {
       const payload = await fetchSubmissions(ctx, e.cik);
       calls += 1;
       const parsed = parseSubmissions(payload, { now: nowMs, lookbackDays: 30, max: 40, symbol: null });
       const map = new Map();
       for (const row of parsed.entries) if (row.accession) map.set(row.accession, row);
-      byCik.set(e.cik, { map, symbol: parsed.symbol });
+      // Only trust the ticker if the payload is about the company we asked for.
+      // A redirect, a stale cache or an EDGAR mix-up would otherwise stamp one
+      // issuer's symbol onto another's filing, which is the single worst thing
+      // this adapter could do: it attaches somebody else's news to your holding.
+      const sameCompany = parsed.cik === e.cik;
+      byCik.set(e.cik, { map, symbol: sameCompany ? parsed.symbol : null, mismatch: !sameCompany });
     } catch (err) {
       byCik.set(e.cik, { map: new Map(), symbol: null, error: err?.message || String(err) });
     }
     await sleep(SEC_CALL_GAP_MS);
   }
+  let mismatched = 0;
   for (const e of unique) {
     const hit = e.cik ? byCik.get(e.cik) : null;
     if (!hit) continue;
+    if (hit.mismatch) { mismatched += 1; continue; }
     if (!e.symbol && hit.symbol) e.symbol = hit.symbol;
     const match = e.accession ? hit.map.get(e.accession) : null;
     if (match?.items) { e.items = match.items; e.primaryDocument = match.primaryDocument; resolved += 1; }
+  }
+  if (mismatched) {
+    warnings.push(`${mismatched} filings were left without item detail: data.sec.gov returned a submissions record for a different CIK than was requested.`);
   }
 
   // --- the user's own tickers, in depth -------------------------------------
@@ -978,6 +1019,9 @@ async function fetchLive(ctx) {
 
   const cikBySymbol = new Map();
   for (const [cik, rec] of tickerByCik) if (rec?.ticker) cikBySymbol.set(rec.ticker, cik);
+  if (wanted.length && !cikBySymbol.size) {
+    notes.push(`Filing history for ${wanted.join(', ')} was skipped: EDGAR is addressed by CIK and the ticker map did not load this run.`);
+  }
 
   let deepened = 0;
   for (const sym of wanted) {
@@ -1005,7 +1049,8 @@ async function fetchLive(ctx) {
   const eightK = built.events.filter((e) => e.kind === EVENT_KIND.FILING_8K);
   const itemised = eightK.filter((e) => e.itemsKnown).length;
 
-  notes.unshift(`${built.events.length} filings from EDGAR (${feedCounts.join(', ')}) in ${calls} request${calls === 1 ? '' : 's'}.`);
+  notes.unshift(`${built.events.length} filings in ${calls} request${calls === 1 ? '' : 's'}: `
+    + `${feedCounts.join(', ')} from the three market-wide feeds, plus any per-company history below.`);
   notes.push(`${withSymbol} of ${built.events.length} filings matched to a ticker; the rest are issuers with no listed common stock or no entry in the SEC ticker file.`);
   if (eightK.length) {
     notes.push(itemised
@@ -1063,6 +1108,7 @@ const adapter = {
       const nowMs = Number.isFinite(ctx.now) ? ctx.now : Date.now();
 
       const entries = items.map((row) => (row && typeof row === 'object' ? {
+        via: 'seed',
         form: str(row.form),
         company: str(row.company),
         cik: padCik(row.cik),
@@ -1079,11 +1125,13 @@ const adapter = {
       const eightK = built.events.filter((e) => e.kind === EVENT_KIND.FILING_8K);
       const itemised = eightK.filter((e) => e.itemsKnown).length;
 
+      // The seed's own honesty block is carried through verbatim rather than
+      // paraphrased here, so there is one statement of what this data is and it
+      // cannot drift away from the file it describes.
+      const honesty = Array.isArray(meta.honesty) ? meta.honesty.map(str).filter(Boolean) : [];
       const notes = [
-        `Bundled snapshot of ${built.events.length} filings as of ${dataAsOf}. Real issuers and real 8-K item codes, `
-        + 'but an illustrative reconstruction of a typical fortnight of EDGAR traffic rather than a record of specific '
-        + 'documents — so no accession numbers are shown and every link goes to the issuer\'s own EDGAR filing list '
-        + 'rather than to a document. Refresh to get the actual feed.',
+        `Bundled snapshot of ${built.events.length} filings as of ${dataAsOf}. Refresh to read the actual EDGAR feed.`,
+        ...honesty,
         `${itemised} of ${eightK.length} 8-Ks carry item codes.`,
       ];
       const skipped = Object.entries(built.dropped).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${k}`);

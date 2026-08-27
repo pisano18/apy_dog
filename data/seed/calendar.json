@@ -1,0 +1,1797 @@
+{
+  "meta": {
+    "dataAsOf": "2026-08-01",
+    "note": "Bundled forward calendar. Confirmed dates are the Fed's published 2026 meetings and the purely calendrical third-Friday expiries. Everything marked estimated was inferred from a publisher's long-standing pattern and is replaced by the published date on the first successful refresh.",
+    "rules": {
+      "cpi": "Wednesday nearest the 12th, 8:30am ET",
+      "ppi": "the business day after CPI, 8:30am ET",
+      "jobs": "first Friday of the month (second when the first falls on the 1st), 8:30am ET",
+      "fomc": "2:00pm ET on the second day of the two-day meeting",
+      "opex": "third Friday, 4:00pm ET; triple witching and index rebalance in Mar/Jun/Sep/Dec",
+      "treasury_auction": "Treasury's fixed weekly bill and monthly coupon cycle, bidding closing 1:00pm ET",
+      "earnings": "the week each company has reported in historically"
+    },
+    "counts": {
+      "treasury_auction": 61,
+      "jobs": 12,
+      "cpi": 12,
+      "ppi": 12,
+      "opex": 12,
+      "earnings": 62,
+      "fomc": 8,
+      "index_rebalance": 4
+    }
+  },
+  "items": [
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-03T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-03T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-04T17:00:00.000Z",
+      "title": "3-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 58000000000,
+      "text": "About $58B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-05T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-05T17:00:00.000Z",
+      "title": "10-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 42000000000,
+      "text": "About $42B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-06T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-06T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-06T17:00:00.000Z",
+      "title": "30-Year Bond auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 25000000000,
+      "text": "About $25B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "jobs",
+      "date": "2026-08-07T12:30:00.000Z",
+      "title": "Employment Situation — July 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-10T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-10T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-11T17:00:00.000Z",
+      "title": "52-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 48000000000,
+      "text": "About $48B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "cpi",
+      "date": "2026-08-12T12:30:00.000Z",
+      "title": "CPI — July 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-12T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "ppi",
+      "date": "2026-08-13T12:30:00.000Z",
+      "title": "PPI — July 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-13T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-13T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-17T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-17T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-19T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-20T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-20T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-20T17:00:00.000Z",
+      "title": "30-Year TIPS auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 8000000000,
+      "text": "About $8B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "opex",
+      "date": "2026-08-21T20:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-24T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-24T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-25T17:00:00.000Z",
+      "title": "2-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 69000000000,
+      "text": "About $69B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-26T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-26T17:00:00.000Z",
+      "title": "5-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 70000000000,
+      "text": "About $70B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-26T17:00:00.000Z",
+      "title": "2-Year FRN auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 30000000000,
+      "text": "About $30B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-08-26T20:15:00.000Z",
+      "symbol": "NVDA",
+      "title": "NVDA earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/nvda/earnings",
+      "text": "NVIDIA Corp. reports fiscal Q2, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-08-26T20:15:00.000Z",
+      "symbol": "CRM",
+      "title": "CRM earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/crm/earnings",
+      "text": "Salesforce Inc. reports fiscal Q2, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-08-26T20:15:00.000Z",
+      "symbol": "SNOW",
+      "title": "SNOW earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/snow/earnings",
+      "text": "Snowflake Inc. reports fiscal Q2, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-27T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-27T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-27T17:00:00.000Z",
+      "title": "7-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 44000000000,
+      "text": "About $44B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-08-27T20:15:00.000Z",
+      "symbol": "CRWD",
+      "title": "CRWD earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/crwd/earnings",
+      "text": "CrowdStrike Holdings Inc. reports fiscal Q2, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-31T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-08-31T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-02T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-03T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-03T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "jobs",
+      "date": "2026-09-04T12:30:00.000Z",
+      "title": "Employment Situation — August 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-08T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-08T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-08T17:00:00.000Z",
+      "title": "52-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 48000000000,
+      "text": "About $48B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-08T17:00:00.000Z",
+      "title": "3-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 58000000000,
+      "text": "About $58B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "cpi",
+      "date": "2026-09-09T12:30:00.000Z",
+      "title": "CPI — August 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-09T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-09T17:00:00.000Z",
+      "title": "10-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 39000000000,
+      "text": "About $39B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "ppi",
+      "date": "2026-09-10T12:30:00.000Z",
+      "title": "PPI — August 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-10T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-10T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-10T17:00:00.000Z",
+      "title": "30-Year Bond auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 22000000000,
+      "text": "About $22B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-14T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-14T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-16T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "fomc",
+      "date": "2026-09-16T18:00:00.000Z",
+      "title": "FOMC decision — September 2026",
+      "certainty": "confirmed",
+      "source": "federalreserve.gov",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting September 15-16; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. This meeting also publishes the dot plot, which moves the curve more often than the decision itself does."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-17T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-17T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-17T17:00:00.000Z",
+      "title": "10-Year TIPS auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 18000000000,
+      "text": "About $18B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "opex",
+      "date": "2026-09-18T20:00:00.000Z",
+      "title": "Triple witching",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Stock options, index options and index futures all expire together on the third Friday. The largest expiry of the quarter: prices tend to be pinned to big strikes into it and to move more freely once it clears."
+    },
+    {
+      "kind": "index_rebalance",
+      "date": "2026-09-18T20:00:00.000Z",
+      "title": "Quarterly index rebalance",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.spglobal.com/spdji/en/governance/index-announcements/",
+      "text": "S&P index changes take effect at this close, so index funds must trade the adds and deletes whatever the price. Which names are affected is announced about a week ahead and is not in this app yet, which is why this event carries no ticker."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-21T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-21T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-22T17:00:00.000Z",
+      "title": "2-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 69000000000,
+      "text": "About $69B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-23T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-23T17:00:00.000Z",
+      "title": "5-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 70000000000,
+      "text": "About $70B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-23T17:00:00.000Z",
+      "title": "2-Year FRN auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 28000000000,
+      "text": "About $28B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-24T17:00:00.000Z",
+      "title": "4-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 95000000000,
+      "text": "About $95B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-24T17:00:00.000Z",
+      "title": "8-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 85000000000,
+      "text": "About $85B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-24T17:00:00.000Z",
+      "title": "7-Year Note auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 44000000000,
+      "text": "About $44B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-09-24T20:15:00.000Z",
+      "symbol": "NKE",
+      "title": "NKE earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/nke/earnings",
+      "text": "NIKE Inc. reports fiscal Q1, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-09-24T20:15:00.000Z",
+      "symbol": "MU",
+      "title": "MU earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mu/earnings",
+      "text": "Micron Technology Inc. reports fiscal Q4, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-28T17:00:00.000Z",
+      "title": "13-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 84000000000,
+      "text": "About $84B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-28T17:00:00.000Z",
+      "title": "26-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 76000000000,
+      "text": "About $76B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "treasury_auction",
+      "date": "2026-09-30T17:00:00.000Z",
+      "title": "17-Week Bill auction",
+      "certainty": "estimated",
+      "source": "Treasury auction cycle",
+      "url": "https://www.treasurydirect.gov/auctions/upcoming/",
+      "magnitude": 64000000000,
+      "text": "About $64B on offer. Bid noncompetitively through TreasuryDirect or a broker; a noncompetitive bid always fills at the rate the auction sets. Estimated from Treasury's fixed auction cycle, not from an announcement — a refresh pulls the announced schedule from TreasuryDirect."
+    },
+    {
+      "kind": "jobs",
+      "date": "2026-10-02T12:30:00.000Z",
+      "title": "Employment Situation — September 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-08T11:00:00.000Z",
+      "symbol": "PEP",
+      "title": "PEP earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/pep/earnings",
+      "text": "PepsiCo Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-13T11:00:00.000Z",
+      "symbol": "JPM",
+      "title": "JPM earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/jpm/earnings",
+      "text": "JPMorgan Chase & Co. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-14T11:00:00.000Z",
+      "symbol": "BAC",
+      "title": "BAC earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/bac/earnings",
+      "text": "Bank of America Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-14T11:00:00.000Z",
+      "symbol": "WFC",
+      "title": "WFC earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/wfc/earnings",
+      "text": "Wells Fargo & Co. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "cpi",
+      "date": "2026-10-14T12:30:00.000Z",
+      "title": "CPI — September 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-15T11:00:00.000Z",
+      "symbol": "GS",
+      "title": "GS earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/gs/earnings",
+      "text": "Goldman Sachs Group Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-15T11:00:00.000Z",
+      "symbol": "USB",
+      "title": "USB earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/usb/earnings",
+      "text": "U.S. Bancorp reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-15T11:00:00.000Z",
+      "symbol": "UNH",
+      "title": "UNH earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/unh/earnings",
+      "text": "UnitedHealth Group Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-15T11:00:00.000Z",
+      "symbol": "TSM",
+      "title": "TSM earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/tsm/earnings",
+      "text": "Taiwan Semiconductor Manufacturing Co. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "ppi",
+      "date": "2026-10-15T12:30:00.000Z",
+      "title": "PPI — September 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-16T11:00:00.000Z",
+      "symbol": "SCHW",
+      "title": "SCHW earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/schw/earnings",
+      "text": "Charles Schwab Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-16T11:00:00.000Z",
+      "symbol": "SLB",
+      "title": "SLB earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/slb/earnings",
+      "text": "SLB (Schlumberger) reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "opex",
+      "date": "2026-10-16T20:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-20T11:00:00.000Z",
+      "symbol": "JNJ",
+      "title": "JNJ earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/jnj/earnings",
+      "text": "Johnson & Johnson reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-20T11:00:00.000Z",
+      "symbol": "LMT",
+      "title": "LMT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/lmt/earnings",
+      "text": "Lockheed Martin Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-20T20:15:00.000Z",
+      "symbol": "TXN",
+      "title": "TXN earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/txn/earnings",
+      "text": "Texas Instruments Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-21T11:00:00.000Z",
+      "symbol": "KO",
+      "title": "KO earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/ko/earnings",
+      "text": "Coca-Cola Co. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-21T20:15:00.000Z",
+      "symbol": "TSLA",
+      "title": "TSLA earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/tsla/earnings",
+      "text": "Tesla Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-21T20:15:00.000Z",
+      "symbol": "KMI",
+      "title": "KMI earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/kmi/earnings",
+      "text": "Kinder Morgan Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-22T11:00:00.000Z",
+      "symbol": "UNP",
+      "title": "UNP earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/unp/earnings",
+      "text": "Union Pacific Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-22T20:15:00.000Z",
+      "symbol": "INTC",
+      "title": "INTC earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/intc/earnings",
+      "text": "Intel Corp. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-23T11:00:00.000Z",
+      "symbol": "PG",
+      "title": "PG earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/pg/earnings",
+      "text": "Procter & Gamble Co. reports fiscal Q1, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-27T11:00:00.000Z",
+      "symbol": "MRK",
+      "title": "MRK earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mrk/earnings",
+      "text": "Merck & Co. Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-27T11:00:00.000Z",
+      "symbol": "MCD",
+      "title": "MCD earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mcd/earnings",
+      "text": "McDonald's Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-27T11:00:00.000Z",
+      "symbol": "UPS",
+      "title": "UPS earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/ups/earnings",
+      "text": "United Parcel Service Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-27T20:15:00.000Z",
+      "symbol": "MSFT",
+      "title": "MSFT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/msft/earnings",
+      "text": "Microsoft Corp. reports fiscal Q1, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-27T20:15:00.000Z",
+      "symbol": "GOOGL",
+      "title": "GOOGL earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/googl/earnings",
+      "text": "Alphabet Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-28T11:00:00.000Z",
+      "symbol": "CAT",
+      "title": "CAT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/cat/earnings",
+      "text": "Caterpillar Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-28T11:00:00.000Z",
+      "symbol": "BA",
+      "title": "BA earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/ba/earnings",
+      "text": "Boeing Co. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "fomc",
+      "date": "2026-10-28T18:00:00.000Z",
+      "title": "FOMC decision — October 2026",
+      "certainty": "confirmed",
+      "source": "federalreserve.gov",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting October 27-28; the statement lands at 2:00pm ET on the second day and the press conference half an hour later."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-28T20:15:00.000Z",
+      "symbol": "META",
+      "title": "META earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/meta/earnings",
+      "text": "Meta Platforms Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T11:00:00.000Z",
+      "symbol": "MO",
+      "title": "MO earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mo/earnings",
+      "text": "Altria Group Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T20:15:00.000Z",
+      "symbol": "AAPL",
+      "title": "AAPL earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/aapl/earnings",
+      "text": "Apple Inc. reports fiscal Q4, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T20:15:00.000Z",
+      "symbol": "AMZN",
+      "title": "AMZN earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/amzn/earnings",
+      "text": "Amazon.com Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T20:15:00.000Z",
+      "symbol": "SBUX",
+      "title": "SBUX earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/sbux/earnings",
+      "text": "Starbucks Corp. reports fiscal Q4, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T20:15:00.000Z",
+      "symbol": "NET",
+      "title": "NET earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/net/earnings",
+      "text": "Cloudflare Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T20:15:00.000Z",
+      "symbol": "COIN",
+      "title": "COIN earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/coin/earnings",
+      "text": "Coinbase Global Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-29T20:15:00.000Z",
+      "symbol": "MSTR",
+      "title": "MSTR earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mstr/earnings",
+      "text": "MicroStrategy Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-30T11:00:00.000Z",
+      "symbol": "ABBV",
+      "title": "ABBV earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/abbv/earnings",
+      "text": "AbbVie Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-30T11:00:00.000Z",
+      "symbol": "XOM",
+      "title": "XOM earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/xom/earnings",
+      "text": "Exxon Mobil Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-10-30T11:00:00.000Z",
+      "symbol": "CVX",
+      "title": "CVX earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/cvx/earnings",
+      "text": "Chevron Corp. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-03T12:00:00.000Z",
+      "symbol": "PFE",
+      "title": "PFE earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/pfe/earnings",
+      "text": "Pfizer Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-03T21:15:00.000Z",
+      "symbol": "AMGN",
+      "title": "AMGN earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/amgn/earnings",
+      "text": "Amgen Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-03T21:15:00.000Z",
+      "symbol": "AMD",
+      "title": "AMD earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/amd/earnings",
+      "text": "Advanced Micro Devices Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-03T21:15:00.000Z",
+      "symbol": "PLTR",
+      "title": "PLTR earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/pltr/earnings",
+      "text": "Palantir Technologies Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-04T12:00:00.000Z",
+      "symbol": "UBER",
+      "title": "UBER earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/uber/earnings",
+      "text": "Uber Technologies Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-04T21:15:00.000Z",
+      "symbol": "HOOD",
+      "title": "HOOD earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/hood/earnings",
+      "text": "Robinhood Markets Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-05T12:00:00.000Z",
+      "symbol": "MRNA",
+      "title": "MRNA earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mrna/earnings",
+      "text": "Moderna Inc. reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-05T12:00:00.000Z",
+      "symbol": "COP",
+      "title": "COP earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/cop/earnings",
+      "text": "ConocoPhillips reports Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "jobs",
+      "date": "2026-11-06T13:30:00.000Z",
+      "title": "Employment Situation — October 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-10T21:15:00.000Z",
+      "symbol": "OXY",
+      "title": "OXY earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/oxy/earnings",
+      "text": "Occidental Petroleum Corp. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-10T21:15:00.000Z",
+      "symbol": "MARA",
+      "title": "MARA earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/mara/earnings",
+      "text": "MARA Holdings Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-10T21:15:00.000Z",
+      "symbol": "RIOT",
+      "title": "RIOT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/riot/earnings",
+      "text": "Riot Platforms Inc. reports Q3, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "cpi",
+      "date": "2026-11-11T13:30:00.000Z",
+      "title": "CPI — October 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-11T21:15:00.000Z",
+      "symbol": "DIS",
+      "title": "DIS earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/dis/earnings",
+      "text": "Walt Disney Co. reports fiscal Q4, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-11T21:15:00.000Z",
+      "symbol": "CSCO",
+      "title": "CSCO earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/csco/earnings",
+      "text": "Cisco Systems Inc. reports fiscal Q1, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "ppi",
+      "date": "2026-11-12T13:30:00.000Z",
+      "title": "PPI — October 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-12T21:15:00.000Z",
+      "symbol": "AMAT",
+      "title": "AMAT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/amat/earnings",
+      "text": "Applied Materials Inc. reports fiscal Q4, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-17T12:00:00.000Z",
+      "symbol": "HD",
+      "title": "HD earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/hd/earnings",
+      "text": "Home Depot Inc. reports fiscal Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-18T12:00:00.000Z",
+      "symbol": "TGT",
+      "title": "TGT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/tgt/earnings",
+      "text": "Target Corp. reports fiscal Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-11-19T12:00:00.000Z",
+      "symbol": "WMT",
+      "title": "WMT earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/wmt/earnings",
+      "text": "Walmart Inc. reports fiscal Q3, before the open. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "opex",
+      "date": "2026-11-20T21:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "jobs",
+      "date": "2026-12-04T13:30:00.000Z",
+      "title": "Employment Situation — November 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2026-12-09T13:30:00.000Z",
+      "title": "CPI — November 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "fomc",
+      "date": "2026-12-09T19:00:00.000Z",
+      "title": "FOMC decision — December 2026",
+      "certainty": "confirmed",
+      "source": "federalreserve.gov",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting December 8-9; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. This meeting also publishes the dot plot, which moves the curve more often than the decision itself does."
+    },
+    {
+      "kind": "ppi",
+      "date": "2026-12-10T13:30:00.000Z",
+      "title": "PPI — November 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-12-10T21:15:00.000Z",
+      "symbol": "AVGO",
+      "title": "AVGO earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/avgo/earnings",
+      "text": "Broadcom Inc. reports fiscal Q4, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "earnings",
+      "date": "2026-12-10T21:15:00.000Z",
+      "symbol": "ORCL",
+      "title": "ORCL earnings",
+      "certainty": "estimated",
+      "source": "reporting pattern",
+      "url": "https://www.nasdaq.com/market-activity/stocks/orcl/earnings",
+      "text": "Oracle Corp. reports fiscal Q2, after the close. Estimated from the week this company has reported in for years — it is not a published date, and the live Nasdaq calendar replaces it on refresh. The guidance that comes with the number usually matters more than the number."
+    },
+    {
+      "kind": "opex",
+      "date": "2026-12-18T21:00:00.000Z",
+      "title": "Triple witching",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Stock options, index options and index futures all expire together on the third Friday. The largest expiry of the quarter: prices tend to be pinned to big strikes into it and to move more freely once it clears."
+    },
+    {
+      "kind": "index_rebalance",
+      "date": "2026-12-18T21:00:00.000Z",
+      "title": "Quarterly index rebalance",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.spglobal.com/spdji/en/governance/index-announcements/",
+      "text": "S&P index changes take effect at this close, so index funds must trade the adds and deletes whatever the price. Which names are affected is announced about a week ahead and is not in this app yet, which is why this event carries no ticker."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-01-08T13:30:00.000Z",
+      "title": "Employment Situation — December 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-01-13T13:30:00.000Z",
+      "title": "CPI — December 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-01-14T13:30:00.000Z",
+      "title": "PPI — December 2026",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-01-15T21:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "fomc",
+      "date": "2027-01-27T19:00:00.000Z",
+      "title": "FOMC decision — January 2027",
+      "certainty": "estimated",
+      "source": "FOMC meeting cadence",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting January 26-27; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. Inferred from the Fed's eight-meeting cadence — check fomccalendars.htm, and a refresh will confirm it."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-02-05T13:30:00.000Z",
+      "title": "Employment Situation — January 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-02-10T13:30:00.000Z",
+      "title": "CPI — January 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-02-11T13:30:00.000Z",
+      "title": "PPI — January 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-02-19T21:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-03-05T13:30:00.000Z",
+      "title": "Employment Situation — February 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-03-10T13:30:00.000Z",
+      "title": "CPI — February 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-03-11T13:30:00.000Z",
+      "title": "PPI — February 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "fomc",
+      "date": "2027-03-17T18:00:00.000Z",
+      "title": "FOMC decision — March 2027",
+      "certainty": "estimated",
+      "source": "FOMC meeting cadence",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting March 16-17; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. This meeting also publishes the dot plot, which moves the curve more often than the decision itself does. Inferred from the Fed's eight-meeting cadence — check fomccalendars.htm, and a refresh will confirm it."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-03-19T20:00:00.000Z",
+      "title": "Triple witching",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Stock options, index options and index futures all expire together on the third Friday. The largest expiry of the quarter: prices tend to be pinned to big strikes into it and to move more freely once it clears."
+    },
+    {
+      "kind": "index_rebalance",
+      "date": "2027-03-19T20:00:00.000Z",
+      "title": "Quarterly index rebalance",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.spglobal.com/spdji/en/governance/index-announcements/",
+      "text": "S&P index changes take effect at this close, so index funds must trade the adds and deletes whatever the price. Which names are affected is announced about a week ahead and is not in this app yet, which is why this event carries no ticker."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-04-02T12:30:00.000Z",
+      "title": "Employment Situation — March 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-04-14T12:30:00.000Z",
+      "title": "CPI — March 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-04-15T12:30:00.000Z",
+      "title": "PPI — March 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-04-16T20:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "fomc",
+      "date": "2027-04-28T18:00:00.000Z",
+      "title": "FOMC decision — April 2027",
+      "certainty": "estimated",
+      "source": "FOMC meeting cadence",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting April 27-28; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. Inferred from the Fed's eight-meeting cadence — check fomccalendars.htm, and a refresh will confirm it."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-05-07T12:30:00.000Z",
+      "title": "Employment Situation — April 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-05-12T12:30:00.000Z",
+      "title": "CPI — April 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-05-13T12:30:00.000Z",
+      "title": "PPI — April 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-05-21T20:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-06-04T12:30:00.000Z",
+      "title": "Employment Situation — May 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-06-09T12:30:00.000Z",
+      "title": "CPI — May 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-06-10T12:30:00.000Z",
+      "title": "PPI — May 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "fomc",
+      "date": "2027-06-16T18:00:00.000Z",
+      "title": "FOMC decision — June 2027",
+      "certainty": "estimated",
+      "source": "FOMC meeting cadence",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting June 15-16; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. This meeting also publishes the dot plot, which moves the curve more often than the decision itself does. Inferred from the Fed's eight-meeting cadence — check fomccalendars.htm, and a refresh will confirm it."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-06-18T20:00:00.000Z",
+      "title": "Triple witching",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Stock options, index options and index futures all expire together on the third Friday. The largest expiry of the quarter: prices tend to be pinned to big strikes into it and to move more freely once it clears."
+    },
+    {
+      "kind": "index_rebalance",
+      "date": "2027-06-18T20:00:00.000Z",
+      "title": "Quarterly index rebalance",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.spglobal.com/spdji/en/governance/index-announcements/",
+      "text": "S&P index changes take effect at this close, so index funds must trade the adds and deletes whatever the price. Which names are affected is announced about a week ahead and is not in this app yet, which is why this event carries no ticker."
+    },
+    {
+      "kind": "jobs",
+      "date": "2027-07-02T12:30:00.000Z",
+      "title": "Employment Situation — June 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Monthly payrolls and unemployment at 8:30am ET. Estimated from the BLS pattern (the first Friday of the month, pushed a week when that falls on the 1st); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "cpi",
+      "date": "2027-07-14T12:30:00.000Z",
+      "title": "CPI — June 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Inflation print at 8:30am ET, before the open. Estimated from the BLS pattern (CPI lands on the Wednesday nearest the 12th); BLS publishes the real schedule a year ahead and a refresh replaces this date with it."
+    },
+    {
+      "kind": "ppi",
+      "date": "2027-07-15T12:30:00.000Z",
+      "title": "PPI — June 2027",
+      "certainty": "estimated",
+      "source": "BLS release pattern",
+      "url": "https://www.bls.gov/schedule/news_release/",
+      "text": "Producer prices at 8:30am ET — an early read on where CPI is heading. Estimated from the BLS pattern (PPI sits within a day of CPI); a refresh replaces this date with the published one."
+    },
+    {
+      "kind": "opex",
+      "date": "2027-07-16T20:00:00.000Z",
+      "title": "Monthly options expiry",
+      "certainty": "confirmed",
+      "source": "calendar",
+      "url": "https://www.cboe.com/us/options/market_statistics/",
+      "text": "Monthly options expiry on the third Friday. Open interest rolls off and the pinning effect around large strikes releases."
+    },
+    {
+      "kind": "fomc",
+      "date": "2027-07-28T18:00:00.000Z",
+      "title": "FOMC decision — July 2027",
+      "certainty": "estimated",
+      "source": "FOMC meeting cadence",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "text": "Two-day meeting July 27-28; the statement lands at 2:00pm ET on the second day and the press conference half an hour later. Inferred from the Fed's eight-meeting cadence — check fomccalendars.htm, and a refresh will confirm it."
+    }
+  ]
+}

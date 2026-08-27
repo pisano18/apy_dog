@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Board of Governors of the Federal Reserve System - All Press Releases</title>
+    <link>https://www.federalreserve.gov/newsevents/pressreleases.htm</link>
+    <description>All press releases from the Federal Reserve Board</description>
+    <language>en-us</language>
+    <item>
+      <title>Federal Reserve issues FOMC statement</title>
+      <link>https://www.federalreserve.gov/newsevents/pressreleases/monetary20260729a.htm</link>
+      <description>The Federal Open Market Committee decided today to maintain the target range for the federal funds rate.</description>
+      <pubDate>Wed, 29 Jul 2026 14:00:00 GMT</pubDate>
+      <dc:creator>Federal Reserve Board</dc:creator>
+    </item>
+    <item>
+      <title><![CDATA[Minutes of the Federal Open Market Committee, June 16-17, 2026]]></title>
+      <link>https://www.federalreserve.gov/newsevents/pressreleases/monetary20260708a.htm</link>
+      <description>The minutes of the June meeting were released today.</description>
+      <pubDate>Wed, 08 Jul 2026 18:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Speech by Governor Cook on the economic outlook</title>
+      <link>https://www.federalreserve.gov/newsevents/speech/cook20260721a.htm</link>
+      <pubDate>Tue, 21 Jul 2026 13:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Federal Reserve Board announces termination of enforcement action</title>
+      <link>https://www.federalreserve.gov/newsevents/pressreleases/enforcement20260715a.htm</link>
+      <pubDate>Wed, 15 Jul 2026 16:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Federal Reserve Board announces the Summary of Economic Projections</title>
+      <link>/newsevents/pressreleases/monetary20260617b.htm</link>
+      <pubDate>Wed, 17 Jun 2026 18:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Federal Reserve issues FOMC statement</title>
+      <link>https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm</link>
+      <pubDate>whenever we got round to it</pubDate>
+    </item>
+    <item>
+      <link>https://www.federalreserve.gov/newsevents/pressreleases/other20260701a.htm</link>
+      <pubDate>Wed, 01 Jul 2026 12:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

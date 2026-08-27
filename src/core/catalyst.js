@@ -167,17 +167,40 @@ function makeEvent(raw, now = Date.now()) {
  * ex-dividend date tomorrow, because one can reprice the asset by 8% and the
  * other is a mechanical adjustment. Weight by impact, discount by distance.
  */
-function nextCatalyst(events = [], { now = Date.now(), horizonDays = 60 } = {}) {
+/**
+ * The horizon is generous (four months) because the weight test below, not an
+ * arbitrary date cutoff, is what decides relevance. A confirmed earnings date
+ * sixty-four days out is a real fact about that company; dropping it for being
+ * one day past a sixty-day boundary would hide it for no reason, while a
+ * market-wide expiry two months out fails on weight regardless of the window.
+ */
+function nextCatalyst(events = [], { now = Date.now(), horizonDays = 120, minWeight = 0.25 } = {}) {
   const upcoming = events
     .filter((e) => e && !e.past && e.daysAway <= horizonDays)
     .map((e) => {
       // Impact decays with distance — an event 45 days out barely affects today.
       const proximity = Math.exp(-Math.max(e.daysAway, 0) / 21);
       const certaintyWeight = e.certainty === 'confirmed' ? 1 : 0.7;
-      return { ...e, weight: (e.volMultiple || 1) * proximity * certaintyWeight };
+      // Market-wide events apply to everything, so they are only "this row's
+      // catalyst" when nothing specific to it is competing.
+      const specificity = e.scope === 'symbol' ? 1 : e.scope === 'rates' ? 0.55 : 0.4;
+      return { ...e, weight: (e.volMultiple || 1) * proximity * certaintyWeight * specificity };
     })
     .sort((a, b) => b.weight - a.weight);
-  return upcoming[0] || null;
+
+  // Drop the ineligible ones BEFORE picking a winner. Testing only the top-weighted
+  // candidate is wrong: a market-wide expiry three weeks out outweighs a specific
+  // earnings date two months out, so checking the leader alone rejects the whole
+  // row when the answer was sitting second in the list.
+  //
+  // The threshold exists to stop a market-wide event being reported as though it
+  // were about this row in particular — an expiry attached to every movement row
+  // in the app is nobody's catalyst. It deliberately does not apply to
+  // symbol-scoped events: a known earnings date two months out is genuinely this
+  // company's next catalyst, and the row shows the day count so the reader can
+  // weigh it themselves.
+  const eligible = upcoming.filter((e) => e.scope === 'symbol' || e.weight >= minWeight);
+  return eligible[0] || null;
 }
 
 /** Events that already happened and are still relevant — the "news" side. */

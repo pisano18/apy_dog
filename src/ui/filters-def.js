@@ -190,6 +190,13 @@
 
     // ---- Movement ---------------------------------------------------------
     {
+      key: 'heatTiers', type: 'multi', keys: ['heatTiers'], group: G.MOVEMENT,
+      label: 'How much is going on', track: 'movement',
+      description: 'Quiet, stirring, warm, hot, urgent. Says nothing about direction.',
+      options: [['quiet', 'Quiet'], ['stirring', 'Stirring'], ['warm', 'Warm'], ['hot', 'Hot'], ['urgent', 'Urgent']],
+      format: (q) => q.heatTiers.join(', '),
+    },
+    {
       key: 'minHeat', type: 'number', keys: ['minHeat'], group: G.MOVEMENT,
       label: 'Minimum heat', unit: '/100', track: 'movement',
       description: 'How much is likely to happen here soon. Not a forecast of direction.',

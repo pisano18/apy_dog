@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<title>Latest Filings - Type 8-K</title>
+	<link rel="alternate" type="text/html" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent"/>
+	<link rel="self" type="application/atom+xml" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&amp;type=8-K&amp;output=atom"/>
+	<id>https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent</id>
+	<author><name>Webmaster</name><email>webmaster@sec.gov</email></author>
+	<updated>2026-08-27T09:41:12-04:00</updated>
+
+	<entry>
+		<title>8-K - Apple Inc. (0000320193) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/320193/000032019326000081/0000320193-26-000081-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-27 &lt;b&gt;AccNo:&lt;/b&gt; 0000320193-26-000081 &lt;b&gt;Size:&lt;/b&gt; 412 KB</summary>
+		<updated>2026-08-27T09:31:02-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0000320193-26-000081</id>
+	</entry>
+
+	<entry>
+		<title>8-K - AT&amp;T INC. (0000732717) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/732717/000073271726000044/0000732717-26-000044-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-27 &lt;b&gt;AccNo:&lt;/b&gt; 0000732717-26-000044 &lt;b&gt;Size:&lt;/b&gt; 1 MB</summary>
+		<updated>2026-08-27T09:12:44-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0000732717-26-000044</id>
+	</entry>
+
+	<entry>
+		<title>8-K - Freeport-McMoRan Inc. (0000831259) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/831259/000083125926000030/0000831259-26-000030-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-26 &lt;b&gt;AccNo:&lt;/b&gt; 0000831259-26-000030 &lt;b&gt;Size:&lt;/b&gt; 288 KB</summary>
+		<updated>2026-08-26T16:47:10-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0000831259-26-000030</id>
+	</entry>
+
+	<entry>
+		<title>8-K - Ford Motor Company (0000037996) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/37996/000003799626000112/0000037996-26-000112-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-26 &lt;b&gt;AccNo:&lt;/b&gt; 0000037996-26-000112 &lt;b&gt;Items:&lt;/b&gt; 5.02,9.01 &lt;b&gt;Size:&lt;/b&gt; 96 KB</summary>
+		<updated>2026-08-26T16:05:00-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0000037996-26-000112</id>
+	</entry>
+
+	<entry>
+		<title>8-K - Kroger Co (0000056873) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/56873/000005687326000060/0000056873-26-000060-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-26 &lt;b&gt;AccNo:&lt;/b&gt; 0000056873-26-000060 &lt;b&gt;Size:&lt;/b&gt; 54 KB</summary>
+		<updated>2026-08-26T15:22:31-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="8-K items" term="9.01"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0000056873-26-000060</id>
+	</entry>
+
+	<entry>
+		<title>8-K/A - General Motors Company (0001467858) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1467858/000146785826000078/0001467858-26-000078-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-25 &lt;b&gt;AccNo:&lt;/b&gt; 0001467858-26-000078 &lt;b&gt;Size:&lt;/b&gt; 33 KB</summary>
+		<updated>2026-08-25T11:02:09-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K/A"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0001467858-26-000078</id>
+	</entry>
+
+	<entry>
+		<title>8-K - NEWMONT Corp /DE/ (0001164727) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1164727/000116472726000041/0001164727-26-000041-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-25 &lt;b&gt;AccNo:&lt;/b&gt; 0001164727-26-000041 &lt;b&gt;Size:&lt;/b&gt; 120 KB</summary>
+		<updated>2026-08-25T08:04:00-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0001164727-26-000041</id>
+	</entry>
+
+	<!-- An issuer with no listed common stock: no ticker will ever match this CIK. -->
+	<entry>
+		<title>8-K - MIDWEST MUNICIPAL POWER AGENCY (0000902104) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/902104/000090210426000004/0000902104-26-000004-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-25 &lt;b&gt;AccNo:&lt;/b&gt; 0000902104-26-000004 &lt;b&gt;Size:&lt;/b&gt; 18 KB</summary>
+		<updated>2026-08-25T07:41:55-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="8-K"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0000902104-26-000004</id>
+	</entry>
+
+	<!-- CORRUPTION 1: title has no " - " separator at all. -->
+	<entry>
+		<title>Apple Inc. 0000320193 Filer</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/320193/000032019326000082/0000320193-26-000082-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-24 &lt;b&gt;AccNo:&lt;/b&gt; 0000320193-26-000082</summary>
+		<updated>2026-08-24T10:00:00-04:00</updated>
+		<id>urn:tag:sec.gov,2008:accession-number=0000320193-26-000082</id>
+	</entry>
+
+	<!-- CORRUPTION 2: no <updated> and no Filed: date. Undatable, so unusable. -->
+	<entry>
+		<title>8-K - Tesla, Inc. (0001318605) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1318605/000131860526000055/0001318605-26-000055-index.htm"/>
+		<summary type="html">&lt;b&gt;AccNo:&lt;/b&gt; 0001318605-26-000055 &lt;b&gt;Size:&lt;/b&gt; 77 KB</summary>
+		<id>urn:tag:sec.gov,2008:accession-number=0001318605-26-000055</id>
+	</entry>
+
+	<!-- CORRUPTION 3: empty title element. -->
+	<entry>
+		<title></title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1/000000000126000001/0000000001-26-000001-index.htm"/>
+		<updated>2026-08-24T09:00:00-04:00</updated>
+		<id>urn:tag:sec.gov,2008:accession-number=0000000001-26-000001</id>
+	</entry>
+
+	<!-- CORRUPTION 4: a nonsense timestamp. Guarded, or toISOString throws. -->
+	<entry>
+		<title>8-K - Micron Technology, Inc. (0000723125) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/723125/000072312526000019/0000723125-26-000019-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; not-a-date &lt;b&gt;AccNo:&lt;/b&gt; 0000723125-26-000019</summary>
+		<updated>275760-09-14T00:00:00-04:00</updated>
+		<id>urn:tag:sec.gov,2008:accession-number=0000723125-26-000019</id>
+	</entry>
+
+	<!-- A 10-Q that has no business in an 8-K feed, but EDGAR has mixed forms before. -->
+	<entry>
+		<title>10-Q - Etsy, Inc. (0001370637) (Filer)</title>
+		<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/1370637/000137063726000045/0001370637-26-000045-index.htm"/>
+		<summary type="html">&lt;b&gt;Filed:&lt;/b&gt; 2026-08-24 &lt;b&gt;AccNo:&lt;/b&gt; 0001370637-26-000045 &lt;b&gt;Size:&lt;/b&gt; 4 MB</summary>
+		<updated>2026-08-24T08:15:00-04:00</updated>
+		<category scheme="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" label="form type" term="10-Q"/>
+		<id>urn:tag:sec.gov,2008:accession-number=0001370637-26-000045</id>
+	</entry>
+</feed>

@@ -1,0 +1,699 @@
+{
+  "meta": {
+    "dataAsOf": "2026-08-01",
+    "source": "SEC EDGAR",
+    "homepage": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent",
+    "honesty": [
+      "This is a reconstruction of a typical late-July fortnight on EDGAR, not a record of specific documents.",
+      "Every issuer, ticker, CIK and 8-K item code here is real. The earnings rows follow each issuer's actual reporting calendar; the rest illustrate forms these issuers routinely file.",
+      "No accession numbers are shown, because inventing one would produce a link that either 404s or, worse, resolves to an unrelated filing. Every row links to the issuer's own EDGAR filing list so any of it can be checked against the real record in one click.",
+      "Nothing alarming is attributed to any named company here: no restatements (item 4.02), delisting notices (3.01), bankruptcies (1.03) or debt-acceleration events (2.04). A reconstruction is not a basis for saying that about a real business. Those codes are in the item map and appear the moment the live feed is fetched."
+    ]
+  },
+  "items": [
+    {
+      "form": "8-K",
+      "company": "Apple Inc.",
+      "cik": "0000320193",
+      "symbol": "AAPL",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T16:32:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Microsoft Corporation",
+      "cik": "0000789019",
+      "symbol": "MSFT",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:07:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Alphabet Inc.",
+      "cik": "0001652044",
+      "symbol": "GOOGL",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:06:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Meta Platforms, Inc.",
+      "cik": "0001326801",
+      "symbol": "META",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Amazon.com, Inc.",
+      "cik": "0001018724",
+      "symbol": "AMZN",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T16:04:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Tesla, Inc.",
+      "cik": "0001318605",
+      "symbol": "TSLA",
+      "items": "2.02,9.01",
+      "filed": "2026-07-22T16:10:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Netflix, Inc.",
+      "cik": "0001065280",
+      "symbol": "NFLX",
+      "items": "2.02,9.01",
+      "filed": "2026-07-16T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Intel Corporation",
+      "cik": "0000050863",
+      "symbol": "INTC",
+      "items": "2.02,9.01",
+      "filed": "2026-07-23T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "International Business Machines Corporation",
+      "cik": "0000051143",
+      "symbol": "IBM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-22T16:12:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Texas Instruments Incorporated",
+      "cik": "0000097476",
+      "symbol": "TXN",
+      "items": "2.02,9.01",
+      "filed": "2026-07-21T16:31:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Advanced Micro Devices, Inc.",
+      "cik": "0000002488",
+      "symbol": "AMD",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:06:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "QUALCOMM Incorporated",
+      "cik": "0000804328",
+      "symbol": "QCOM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:08:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "JPMorgan Chase & Co.",
+      "cik": "0000019617",
+      "symbol": "JPM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-14T07:02:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Bank of America Corporation",
+      "cik": "0000070858",
+      "symbol": "BAC",
+      "items": "2.02,9.01",
+      "filed": "2026-07-15T06:45:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Wells Fargo & Company",
+      "cik": "0000072971",
+      "symbol": "WFC",
+      "items": "2.02,9.01",
+      "filed": "2026-07-14T07:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "The Goldman Sachs Group, Inc.",
+      "cik": "0000886982",
+      "symbol": "GS",
+      "items": "2.02,9.01",
+      "filed": "2026-07-15T07:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "UnitedHealth Group Incorporated",
+      "cik": "0000731766",
+      "symbol": "UNH",
+      "items": "2.02,9.01",
+      "filed": "2026-07-16T06:03:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Johnson & Johnson",
+      "cik": "0000200406",
+      "symbol": "JNJ",
+      "items": "2.02,9.01",
+      "filed": "2026-07-21T06:45:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Merck & Co., Inc.",
+      "cik": "0000310158",
+      "symbol": "MRK",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T06:45:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "AbbVie Inc.",
+      "cik": "0001551152",
+      "symbol": "ABBV",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T06:45:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "The Coca-Cola Company",
+      "cik": "0000021344",
+      "symbol": "KO",
+      "items": "2.02,9.01",
+      "filed": "2026-07-22T06:55:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "PepsiCo, Inc.",
+      "cik": "0000077476",
+      "symbol": "PEP",
+      "items": "2.02,9.01",
+      "filed": "2026-07-16T06:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "The Procter & Gamble Company",
+      "cik": "0000080424",
+      "symbol": "PG",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T06:55:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "McDonald's Corporation",
+      "cik": "0000063908",
+      "symbol": "MCD",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T07:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Starbucks Corporation",
+      "cik": "0000829224",
+      "symbol": "SBUX",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Exxon Mobil Corporation",
+      "cik": "0000034088",
+      "symbol": "XOM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-31T07:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Chevron Corporation",
+      "cik": "0000093410",
+      "symbol": "CVX",
+      "items": "2.02,9.01",
+      "filed": "2026-07-31T08:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Caterpillar Inc.",
+      "cik": "0000018230",
+      "symbol": "CAT",
+      "items": "2.02,9.01",
+      "filed": "2026-07-31T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "3M Company",
+      "cik": "0000066740",
+      "symbol": "MMM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-24T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "The Boeing Company",
+      "cik": "0000012927",
+      "symbol": "BA",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T07:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Ford Motor Company",
+      "cik": "0000037996",
+      "symbol": "F",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "General Motors Company",
+      "cik": "0001467858",
+      "symbol": "GM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-22T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Verizon Communications Inc.",
+      "cik": "0000732712",
+      "symbol": "VZ",
+      "items": "2.02,9.01",
+      "filed": "2026-07-21T07:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "AT&T Inc.",
+      "cik": "0000732717",
+      "symbol": "T",
+      "items": "2.02,9.01",
+      "filed": "2026-07-22T07:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Comcast Corporation",
+      "cik": "0001166691",
+      "symbol": "CMCSA",
+      "items": "2.02,9.01",
+      "filed": "2026-07-23T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "United Parcel Service, Inc.",
+      "cik": "0001090727",
+      "symbol": "UPS",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T06:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Delta Air Lines, Inc.",
+      "cik": "0000027904",
+      "symbol": "DAL",
+      "items": "2.02,9.01",
+      "filed": "2026-07-10T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "American Airlines Group Inc.",
+      "cik": "0000006201",
+      "symbol": "AAL",
+      "items": "2.02,9.01",
+      "filed": "2026-07-23T07:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Southwest Airlines Co.",
+      "cik": "0000092380",
+      "symbol": "LUV",
+      "items": "2.02,9.01",
+      "filed": "2026-07-23T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Freeport-McMoRan Inc.",
+      "cik": "0000831259",
+      "symbol": "FCX",
+      "items": "2.02,9.01",
+      "filed": "2026-07-22T07:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Newmont Corporation",
+      "cik": "0001164727",
+      "symbol": "NEM",
+      "items": "2.02,9.01",
+      "filed": "2026-07-23T16:15:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "CVS Health Corporation",
+      "cik": "0000064803",
+      "symbol": "CVS",
+      "items": "2.02,9.01",
+      "filed": "2026-07-31T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Prologis, Inc.",
+      "cik": "0001045609",
+      "symbol": "PLD",
+      "items": "2.02,9.01",
+      "filed": "2026-07-15T07:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "American Tower Corporation",
+      "cik": "0001053507",
+      "symbol": "AMT",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Ares Capital Corporation",
+      "cik": "0001287750",
+      "symbol": "ARCC",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Coinbase Global, Inc.",
+      "cik": "0001679788",
+      "symbol": "COIN",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Strategy Inc.",
+      "cik": "0001050446",
+      "symbol": "MSTR",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T16:10:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "PayPal Holdings, Inc.",
+      "cik": "0001633917",
+      "symbol": "PYPL",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Robinhood Markets, Inc.",
+      "cik": "0001783879",
+      "symbol": "HOOD",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "SoFi Technologies, Inc.",
+      "cik": "0001818874",
+      "symbol": "SOFI",
+      "items": "2.02,9.01",
+      "filed": "2026-07-27T06:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Snap Inc.",
+      "cik": "0001564408",
+      "symbol": "SNAP",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:10:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Roku, Inc.",
+      "cik": "0001428439",
+      "symbol": "ROKU",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Etsy, Inc.",
+      "cik": "0001370637",
+      "symbol": "ETSY",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Carvana Co.",
+      "cik": "0001690820",
+      "symbol": "CVNA",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Enphase Energy, Inc.",
+      "cik": "0001463101",
+      "symbol": "ENPH",
+      "items": "2.02,9.01",
+      "filed": "2026-07-21T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "First Solar, Inc.",
+      "cik": "0001274494",
+      "symbol": "FSLR",
+      "items": "2.02,9.01",
+      "filed": "2026-07-28T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Lumen Technologies, Inc.",
+      "cik": "0000018926",
+      "symbol": "LUMN",
+      "items": "2.02,9.01",
+      "filed": "2026-07-29T16:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Hertz Global Holdings, Inc.",
+      "cik": "0001657853",
+      "symbol": "HTZ",
+      "items": "2.02,9.01",
+      "filed": "2026-07-30T06:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "The Walt Disney Company",
+      "cik": "0001744489",
+      "symbol": "DIS",
+      "items": "7.01,9.01",
+      "filed": "2026-07-27T09:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Palantir Technologies Inc.",
+      "cik": "0001321655",
+      "symbol": "PLTR",
+      "items": "7.01,9.01",
+      "filed": "2026-07-30T08:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Pfizer Inc.",
+      "cik": "0000078003",
+      "symbol": "PFE",
+      "items": "8.01,9.01",
+      "filed": "2026-07-24T08:00:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Oracle Corporation",
+      "cik": "0001341439",
+      "symbol": "ORCL",
+      "items": "8.01,9.01",
+      "filed": "2026-07-23T16:45:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Realty Income Corporation",
+      "cik": "0000726728",
+      "symbol": "O",
+      "items": "5.02",
+      "filed": "2026-07-20T16:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Walmart Inc.",
+      "cik": "0000104169",
+      "symbol": "WMT",
+      "items": "5.02",
+      "filed": "2026-07-17T16:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "NIKE, Inc.",
+      "cik": "0000320187",
+      "symbol": "NKE",
+      "items": "5.02",
+      "filed": "2026-07-27T16:30:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Target Corporation",
+      "cik": "0000027419",
+      "symbol": "TGT",
+      "items": "1.01,9.01",
+      "filed": "2026-07-20T16:15:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Occidental Petroleum Corporation",
+      "cik": "0000797468",
+      "symbol": "OXY",
+      "items": "1.01,9.01",
+      "filed": "2026-07-27T16:20:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "The Home Depot, Inc.",
+      "cik": "0000354950",
+      "symbol": "HD",
+      "items": "2.03,9.01",
+      "filed": "2026-07-15T16:20:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Lowe's Companies, Inc.",
+      "cik": "0000060667",
+      "symbol": "LOW",
+      "items": "2.03,9.01",
+      "filed": "2026-07-22T16:25:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Cisco Systems, Inc.",
+      "cik": "0000858877",
+      "symbol": "CSCO",
+      "items": "2.01,9.01",
+      "filed": "2026-07-16T16:20:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "GameStop Corp.",
+      "cik": "0001326380",
+      "symbol": "GME",
+      "items": "5.03,9.01",
+      "filed": "2026-07-21T16:35:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "8-K",
+      "company": "Micron Technology, Inc.",
+      "cik": "0000723125",
+      "symbol": "MU",
+      "items": "9.01",
+      "filed": "2026-07-24T16:40:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "S-1",
+      "company": "Plug Power Inc.",
+      "cik": "0001093691",
+      "symbol": "PLUG",
+      "items": null,
+      "filed": "2026-07-24T17:05:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "S-1",
+      "company": "Lucid Group, Inc.",
+      "cik": "0001811210",
+      "symbol": "LCID",
+      "items": null,
+      "filed": "2026-07-31T17:20:00-04:00",
+      "role": "Filer"
+    },
+    {
+      "form": "SC 13D",
+      "company": "Macy's, Inc.",
+      "cik": "0000794367",
+      "symbol": "M",
+      "items": null,
+      "filed": "2026-07-23T16:40:00-04:00",
+      "role": "Subject"
+    },
+    {
+      "form": "SC 13D",
+      "company": "Peloton Interactive, Inc.",
+      "cik": "0001639825",
+      "symbol": "PTON",
+      "items": null,
+      "filed": "2026-07-29T17:05:00-04:00",
+      "role": "Subject"
+    }
+  ]
+}

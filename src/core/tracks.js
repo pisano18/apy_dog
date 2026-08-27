@@ -226,6 +226,27 @@ function clarity(score01) {
   return CLARITY.find((c) => s < c.max) || CLARITY[CLARITY.length - 1];
 }
 
+/**
+ * Heat tiers.
+ *
+ * Heat is a 0-100 composite, and 33 versus 24 means nothing to someone seeing it
+ * for the first time. Most things, most of the time, genuinely have nothing going
+ * on — so the scale is correctly bottom-heavy, and the tier is what makes it
+ * readable.
+ */
+const HEAT = [
+  { key: 'quiet', max: 15, label: 'Quiet', color: '#8f9aab', text: 'Nothing much going on.' },
+  { key: 'stirring', max: 30, label: 'Stirring', color: '#c9a227', text: 'Something mild is developing.' },
+  { key: 'warm', max: 50, label: 'Warm', color: '#e08b3c', text: 'A real setup or a catalyst close enough to matter.' },
+  { key: 'hot', max: 70, label: 'Hot', color: '#dc5f3c', text: 'Several things lining up at once.' },
+  { key: 'urgent', max: 101, label: 'Urgent', color: '#c73434', text: 'A major dated event, imminent, on something already moving.' },
+];
+
+function heatTier(score) {
+  const s = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
+  return HEAT.find((h) => s < h.max) || HEAT[HEAT.length - 1];
+}
+
 /** Directional lean. NONE is the honest default and the most common answer. */
 const LEAN = {
   UP: 'up',
@@ -246,5 +267,6 @@ module.exports = {
   SETUP, SETUP_INFO,
   SEVERITY, severity,
   CLARITY, clarity,
+  HEAT, heatTier,
   LEAN, LEAN_INFO,
 };

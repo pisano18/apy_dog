@@ -34,11 +34,11 @@ R.gradeChip = gradeChip;
 function heatBar(m) {
   if (m?.unmeasured) return '<span style="color:var(--text-faint)" title="No price history pulled for this one yet. Open it and choose Measure.">not measured</span>';
   if (!m || !Number.isFinite(m.heat)) return '<span style="color:var(--text-faint)">—</span>';
-  const h = m.heat;
-  const col = h >= 70 ? 'var(--neg)' : h >= 45 ? 'var(--brand)' : h >= 25 ? 'var(--warn)' : 'var(--text-faint)';
-  return `<span class="heat" title="How much is likely to happen here soon. Not a prediction of direction.">
-    <span class="v" style="color:${col}">${Math.round(h)}</span>
-    <span class="bar"><i style="width:${Math.min(100, h)}%;background:${col}"></i></span>
+  const col = m.heatColor || 'var(--text-faint)';
+  return `<span class="heat" title="${esc(m.heatLabel || '')} — ${esc(m.heatText || '')} Not a prediction of direction.">
+    <span class="v" style="color:${col}">${Math.round(m.heat)}</span>
+    <span class="bar"><i style="width:${Math.min(100, m.heat)}%;background:${col}"></i></span>
+    <span style="color:${col};font-size:10.5px;font-weight:600">${esc(m.heatLabel || '')}</span>
   </span>`;
 }
 

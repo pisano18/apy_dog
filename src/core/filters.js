@@ -64,6 +64,7 @@ const DEFAULT_QUERY = {
 
   // --- movement track -------------------------------------------------------
   minHeat: null,                // 0..100, how much is likely to happen soon
+  heatTiers: [],                // quiet | stirring | warm | hot | urgent
   setups: [],                   // coiled, expanding, breaking_out, ...
   severities: [],               // quiet .. extreme
   leans: [],                    // up | down | none
@@ -143,6 +144,7 @@ function matches(o, q, unknownPasses) {
   if (q.grades?.length && !q.grades.includes(o.rating?.grade)) return false;
   if (q.setups?.length && !q.setups.includes(o.movement?.setup)) return false;
   if (q.severities?.length && !q.severities.includes(o.movement?.severity)) return false;
+  if (q.heatTiers?.length && !q.heatTiers.includes(o.movement?.heatTier)) return false;
   if (q.leans?.length && !q.leans.includes(o.movement?.lean)) return false;
 
   // --- rate ----------------------------------------------------------------
