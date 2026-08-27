@@ -28,6 +28,7 @@
         <button class="tab" data-view="events">Calendar <span class="count" id="ev-count">0</span></button>
         <button class="tab" data-view="watch">Watchlist <span class="count" id="watch-count">0</span></button>
         <button class="tab" data-view="sources">Sources <span class="count" id="src-count">–</span></button>
+        <button class="tab" data-view="learn" title="Plain-English explanations of every term in the app">Learn</button>
         <button class="tab" data-view="settings">Settings</button>
       </nav>
 
@@ -64,6 +65,11 @@
           <span id="filterbar" style="display:contents"></span>
         </div>
         <div class="resbar">
+          <span class="amountbox" title="Every dollar figure in the list recomputes on this. Leave it empty to see rates instead.">
+            <label for="q-amount">I have</label>
+            <span class="amtwrap"><i>$</i><input id="q-amount" type="text" inputmode="numeric" placeholder="any amount" /></span>
+            <button class="amtclear" id="q-amount-clear" title="Clear the amount and go back to rates">✕</button>
+          </span>
           <span class="desc" id="res-desc"></span>
           <span class="spacer"></span>
           <label style="color:var(--text-faint);font-size:11px">Sort by</label>
@@ -73,6 +79,7 @@
       </div>
 
       <div class="pane" id="view-plan" hidden></div>
+      <div class="pane" id="view-learn" hidden></div>
       <div class="pane" id="view-events" hidden></div>
       <div class="pane" id="view-watch" hidden></div>
       <div class="pane" id="view-sources" hidden></div>
@@ -82,6 +89,7 @@
     </div>
   </div>
 
+  <div class="helppop hidden" id="helppop"></div>
   <div class="fmenu hidden" id="fmenu"></div>
   <div class="fedit hidden" id="fedit"></div>
 
@@ -97,6 +105,7 @@
   <script src="format.js"></script>
   <script src="filters-def.js"></script>
   <script src="render.js"></script>
-  <script src="app.js"></script>
+  <script src="glossary.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

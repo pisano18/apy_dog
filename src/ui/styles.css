@@ -685,6 +685,77 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 #view-plan .wrap { max-width: 1060px; }
 #view-plan .lead, #view-plan .disclaimer, #view-plan .sectionnote { max-width: 820px; }
 
+/* ---------- help: the "?" and its popover ---------- */
+.helpq {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%; margin-left: 4px; flex: 0 0 auto;
+  background: var(--panel-3); color: var(--text-faint);
+  font-size: 9.5px; font-weight: 700; line-height: 1; vertical-align: middle;
+}
+.helpq:hover { background: var(--brand-dim); color: var(--text); }
+.helppop {
+  position: fixed; z-index: 300; width: 360px; max-width: calc(100vw - 20px);
+  background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 13px 15px; font-size: 12px; line-height: 1.55;
+}
+.helppop.hidden { display: none; }
+.helppop .hhead {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; margin-bottom: 7px;
+}
+.helppop .hx { margin-left: auto; color: var(--text-faint); font-size: 12px; }
+.helppop .hx:hover { color: var(--text); }
+.helppop .hwhat { color: var(--text); }
+.helppop .hwhy, .helppop .hcatch { margin-top: 8px; color: var(--text-dim); }
+.helppop .hcatch { color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 7px 9px; }
+.helppop .hcatch b, .helppop .hwhy b { color: inherit; }
+.helppop .hsee, .helppop .hfoot { margin-top: 9px; font-size: 11px; color: var(--text-faint); }
+.hlink { color: var(--brand); font-size: 11px; text-align: left; }
+.hlink:hover { text-decoration: underline; }
+
+/* ---------- Learn ---------- */
+#view-learn .wrap { max-width: 1180px; }
+#view-learn .lead { max-width: 820px; }
+.learnsearch { display: flex; align-items: center; gap: 10px; margin: 4px 0 16px; }
+.learnsearch input {
+  flex: 1 1 auto; max-width: 460px; background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none;
+}
+.learnsearch input:focus { border-color: var(--brand-dim); }
+.learnsearch .n { font-size: 11px; color: var(--text-faint); font-family: var(--mono); }
+.learngrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+.learncard {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+}
+.learncard h3 { font-size: 13px; margin: 0 0 7px; }
+.learncard p { margin: 0 0 8px; font-size: 12px; line-height: 1.55; }
+.learncard .lwhat { color: var(--text); }
+.learncard .lwhy { color: var(--text-dim); }
+.learncard .lcatch {
+  color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 8px 10px;
+}
+.learncard .lsee { color: var(--text-faint); font-size: 11px; margin-bottom: 0; }
+
+/* ---------- the amount box, where the numbers are ---------- */
+.amountbox { display: inline-flex; align-items: center; gap: 6px; }
+.amountbox label { font-size: 11px; color: var(--text-faint); }
+.amtwrap {
+  display: inline-flex; align-items: center; background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 0 8px; height: 26px;
+}
+.amtwrap:focus-within { border-color: var(--brand-dim); background: var(--panel-3); }
+.amtwrap i { font-style: normal; color: var(--text-faint); font-size: 11px; margin-right: 2px; }
+.amtwrap input {
+  width: 82px; background: none; border: 0; outline: none; color: var(--text);
+  font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 0;
+}
+.amtwrap input::placeholder { color: var(--text-faint); font-weight: 400; }
+.amtclear {
+  width: 20px; height: 20px; border-radius: 5px; color: var(--text-faint); font-size: 11px;
+  display: none; align-items: center; justify-content: center;
+}
+.amtclear.on { display: inline-flex; }
+.amtclear:hover { background: var(--panel-3); color: var(--text); }
+
 .reflegend { color: var(--text-faint); font-size: 11px; }
 .reflegend a { color: var(--brand); text-decoration: none; }
 .reflegend a:hover { text-decoration: underline; }

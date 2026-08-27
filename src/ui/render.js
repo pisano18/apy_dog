@@ -228,27 +228,27 @@ function trend(change) {
 R.INCOME_COLUMNS = [
   { key: 'watch', label: '', width: 26 },
   { key: 'name', label: 'Opportunity', sort: 'name' },
-  { key: 'apy', label: 'Yield', sort: 'apy', num: true },
-  { key: 'aftertax', label: 'After tax', sort: 'afterTax', num: true },
-  { key: 'income', label: 'Income yr 1', sort: null, num: true, basisLabel: true },
-  { key: 'grade', label: 'Safety', sort: 'grade' },
-  { key: 'axes', label: 'Principal · Payout · Exit', sort: null },
-  { key: 'term', label: 'Committed', sort: 'term' },
+  { key: 'apy', label: 'Yield', sort: 'apy', num: true, help: 'apy' },
+  { key: 'aftertax', label: 'After tax', sort: 'afterTax', num: true, help: 'afterTax' },
+  { key: 'income', label: 'Income yr 1', sort: null, num: true, basisLabel: true, help: 'incomeYear1' },
+  { key: 'grade', label: 'Safety', sort: 'grade', help: 'safetyGrade' },
+  { key: 'axes', label: 'Principal · Payout · Exit', sort: null, help: 'principalSafe' },
+  { key: 'term', label: 'Committed', sort: 'term', help: 'liquidity' },
   { key: 'entry', label: 'Min', sort: 'minInvestment', num: true },
-  { key: 'flags', label: 'Flags', sort: 'trap' },
+  { key: 'flags', label: 'Flags', sort: 'trap', help: 'trap' },
 ];
 
 R.MOVEMENT_COLUMNS = [
   { key: 'watch', label: '', width: 26 },
   { key: 'name', label: 'Ticker', sort: 'name' },
-  { key: 'heat', label: 'Heat', sort: 'heat', num: true },
-  { key: 'chart', label: '12mo', sort: null, width: 84 },
-  { key: 'setup', label: 'Setup', sort: null },
-  { key: 'catalyst', label: 'Next catalyst', sort: 'soonest' },
-  { key: 'severity', label: 'If it moves', sort: 'biggestMove' },
-  { key: 'lean', label: 'Lean', sort: null },
-  { key: 'clarity', label: 'Clarity', sort: 'clarity' },
-  { key: 'grade', label: 'Safety', sort: 'grade' },
+  { key: 'heat', label: 'Heat', sort: 'heat', num: true, help: 'pressure' },
+  { key: 'chart', label: '12mo', sort: null, width: 84, help: 'illustrative' },
+  { key: 'setup', label: 'Setup', sort: null, help: 'coil' },
+  { key: 'catalyst', label: 'Next catalyst', sort: 'soonest', help: 'catalyst' },
+  { key: 'severity', label: 'If it moves', sort: 'biggestMove', help: 'expectedMove' },
+  { key: 'lean', label: 'Lean', sort: null, help: 'lean' },
+  { key: 'clarity', label: 'Clarity', sort: 'clarity', help: 'clarity' },
+  { key: 'grade', label: 'Safety', sort: 'grade', help: 'safetyGrade' },
   { key: 'price', label: 'Price', sort: 'price', num: true },
 ];
 
@@ -301,7 +301,7 @@ R.table = (rows, ctx) => {
   const head = cols.map((c) => {
     const sorted = ctx.sortBy === c.sort;
     return `<th class="${c.num ? 'num' : ''} ${sorted ? 'sorted' : ''}" ${c.sort ? `data-sort="${c.sort}"` : ''} ${c.width ? `style="width:${c.width}px"` : ''}>
-      ${esc(c.label)}${sorted ? `<span class="arrow">${ctx.sortDir === 'asc' ? '▲' : '▼'}</span>` : ''}
+      ${esc(c.label)}${sorted ? `<span class="arrow">${ctx.sortDir === 'asc' ? '▲' : '▼'}</span>` : ''}${c.help && window.helpChip ? window.helpChip(c.help) : ''}
     </th>`;
   }).join('');
 

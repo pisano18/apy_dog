@@ -104,7 +104,7 @@ function renderCtx() {
     sourceLabels: Object.fromEntries(S.boot.sources.map((s) => [s.id, s.label])),
     termPresets: S.boot.constants.TERM_PRESETS,
     options: filterOptions(),
-    budget: S.boot.settings.budget ?? 10000,
+    budget: S.boot.settings.budget ?? null,
     watchlist: S.watchlist,
     changes: S.changes,
     selectedId: S.selectedId,
@@ -388,6 +388,82 @@ async function renderRadar() {
   }
 
   $('#view-radar').innerHTML = window.R.radar({ cards, meta: d.meta, budget: d.budget }, renderCtx());
+}
+
+/* ------------------------------------------------------------------- help - */
+
+/**
+ * The "?" affordance and its popover.
+ *
+ * Every piece of jargon on screen can be clicked and explained in place. The
+ * alternative — a help page you have to go and find — is a help page nobody
+ * reads, and the moment somebody needs to know what "duration" means is the
+ * moment they are looking at it.
+ */
+window.helpChip = helpChip;
+function helpChip(key, label = '?') {
+  const e = window.glossaryLookup(key);
+  if (!e) return '';
+  return `<button class="helpq" data-act="help" data-key="${esc(key)}" title="What is ${esc(e.term)}?"
+    aria-label="Explain ${esc(e.term)}">${esc(label)}</button>`;
+}
+
+function showHelp(key, anchor) {
+  const e = window.glossaryLookup(key);
+  const pop = $('#helppop');
+  if (!e || !pop) return;
+  pop.innerHTML = `
+    <div class="hhead">${esc(e.term)}<button class="hx" data-act="help-close">✕</button></div>
+    <div class="hwhat">${esc(e.what)}</div>
+    ${e.why ? `<div class="hwhy"><b>Why it is here.</b> ${esc(e.why)}</div>` : ''}
+    ${e.catch ? `<div class="hcatch"><b>The catch.</b> ${esc(e.catch)}</div>` : ''}
+    ${(e.see || []).length ? `<div class="hsee">See also ${e.see.map((k) => {
+    const t = window.glossaryLookup(k);
+    return t ? `<button class="hlink" data-act="help" data-key="${esc(k)}">${esc(t.term)}</button>` : '';
+  }).filter(Boolean).join(' · ')}</div>` : ''}
+    <div class="hfoot"><button class="hlink" data-act="goto-view" data-val="learn">Open the full glossary →</button></div>`;
+  pop.classList.remove('hidden');
+
+  // Anchor to the thing that was clicked, then pull back inside the window.
+  const r = anchor?.getBoundingClientRect?.();
+  const w = pop.offsetWidth;
+  const h = pop.offsetHeight;
+  let left = r ? r.left : window.innerWidth / 2 - w / 2;
+  let top = r ? r.bottom + 8 : 120;
+  left = Math.max(10, Math.min(left, window.innerWidth - w - 10));
+  if (top + h > window.innerHeight - 10) top = Math.max(10, (r ? r.top : 120) - h - 8);
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
+}
+
+function hideHelp() { $('#helppop')?.classList.add('hidden'); }
+
+function renderLearn() {
+  const q = S.learnQuery || '';
+  const entries = window.glossarySearch(q);
+  $('#view-learn').innerHTML = `<div class="wrap">
+    <h2>What everything means</h2>
+    <p class="lead">Every term this app puts on screen, explained without using another piece of jargon to do it.
+      The <b>catch</b> on each one is usually the part that matters — it is what people get wrong about it.
+      Anywhere you see a <span class="helpq" style="pointer-events:none">?</span> in the app, it opens the same
+      explanation right where you are.</p>
+    <div class="learnsearch">
+      <input id="learn-q" type="text" placeholder="Search — try &quot;short&quot;, &quot;tax&quot;, &quot;risk&quot;…" value="${esc(q)}" />
+      <span class="n">${entries.length} of ${Object.keys(window.GLOSSARY).length}</span>
+    </div>
+    ${entries.length ? `<div class="learngrid">${entries.map((e) => `
+      <section class="learncard" id="g-${esc(e.key)}">
+        <h3>${esc(e.term)}</h3>
+        <p class="lwhat">${esc(e.what)}</p>
+        ${e.why ? `<p class="lwhy"><b>Why it is here.</b> ${esc(e.why)}</p>` : ''}
+        ${e.catch ? `<p class="lcatch"><b>The catch.</b> ${esc(e.catch)}</p>` : ''}
+        ${(e.see || []).length ? `<p class="lsee">See also ${e.see.map((k) => {
+    const t = window.glossaryLookup(k);
+    return t ? `<button class="hlink" data-act="help" data-key="${esc(k)}">${esc(t.term)}</button>` : '';
+  }).filter(Boolean).join(' · ')}</p>` : ''}
+      </section>`).join('')}</div>`
+    : '<div class="infobox">Nothing matches that. Try a shorter word.</div>'}
+  </div>`;
 }
 
 /* ------------------------------------------------------------------- plan - */
@@ -706,7 +782,8 @@ function renderSettings() {
           <span style="font-size:10.5px;color:var(--text-faint)">0 = I cannot lose this. 100 = swing for the fences.</span></div>
         <div class="field"><label>Rank income using</label>
           <select id="s-basis">${opt('gross', st.rankingBasis, 'Headline yield')}${opt('afterTax', st.rankingBasis, 'After tax')}${opt('afterTaxReal', st.rankingBasis, 'After tax and inflation')}</select></div>
-        <div class="field"><label>Amount you would deploy ($)</label><input type="number" id="s-budget" value="${st.budget ?? 10000}" step="1000" /></div>
+        <div class="field"><label>Amount you are working with ($)</label><input type="number" id="s-budget" value="${Number.isFinite(st.budget) && st.budget > 0 ? st.budget : ''}" step="1000" placeholder="leave empty for rates only" />
+          <span style="font-size:10.5px;color:var(--text-faint)">Empty means the app shows rates and ranks capped offers against a stated reference. Fill it in and every figure becomes dollars on your money.</span></div>
         <div class="field"><label>Movement horizon (days)</label><input type="number" id="s-mhorizon" value="${st.movementHorizonDays ?? 30}" step="7" min="1" />
           <span style="font-size:10.5px;color:var(--text-faint)">Expected-move bands are computed over this window.</span></div>
       </div>
@@ -793,9 +870,10 @@ function switchView(view) {
   $('#view-find').style.display = view === 'find' ? 'flex' : 'none';
   $('#view-radar').style.display = view === 'radar' ? 'flex' : 'none';
   $('#drawer').classList.toggle('hidden', view !== 'find' || !S.detail);
-  for (const v of ['plan', 'events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
+  for (const v of ['plan', 'learn', 'events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
   if (view === 'radar') renderRadar().catch(() => {});
   if (view === 'plan') renderPlan().catch(() => {});
+  if (view === 'learn') renderLearn();
   if (view === 'events') renderEvents();
   if (view === 'sources') renderSources();
   if (view === 'settings') renderSettings();
@@ -840,6 +918,32 @@ function wire() {
   $('#q-sort').addEventListener('change', (e) => { S.query.sortBy = e.target.value; runQuery(); });
 
   // --- filter bar ---------------------------------------------------------
+  document.addEventListener('input', (e) => {
+    if (e.target.id !== 'learn-q') return;
+    S.learnQuery = e.target.value;
+    const at = e.target.selectionStart;
+    renderLearn();
+    const next = $('#learn-q');
+    if (next) { next.focus(); next.setSelectionRange(at, at); }
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#helppop') || e.target.closest('[data-act="help"]')) return;
+    hideHelp();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideHelp(); });
+
+  $('#q-amount')?.addEventListener('input', (e) => {
+    clearTimeout(amountTimer);
+    const v = e.target.value;
+    amountTimer = setTimeout(() => commitAmount(v), 450);
+  });
+  $('#q-amount')?.addEventListener('blur', () => syncAmountBox());
+  $('#q-amount')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { clearTimeout(amountTimer); commitAmount(e.target.value); e.target.blur(); }
+    if (e.key === 'Escape') { clearTimeout(amountTimer); syncAmountBox(); e.target.blur(); }
+  });
+  $('#q-amount-clear')?.addEventListener('click', () => { clearTimeout(amountTimer); commitAmount(''); });
+
   $('#filterbar').addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
@@ -912,6 +1016,9 @@ function wire() {
 
   // --- table --------------------------------------------------------------
   $('#tablewrap').addEventListener('click', async (e) => {
+    // The "?" in a column header must explain the column, not re-sort it.
+    const q = e.target.closest('[data-act="help"]');
+    if (q) { e.preventDefault(); e.stopPropagation(); return showHelp(q.dataset.key, q); }
     const star = e.target.closest('[data-act="watch"]');
     if (star) {
       e.stopPropagation();
@@ -1007,6 +1114,8 @@ function wire() {
     if (act === 'open-user-rates') { await window.apy.openUserRates(); return toast('Opened', 'Edit, save, then refresh.'); }
     if (act === 'clear-cache') { const n = await window.apy.clearCache(); toast('Cache cleared', `${n} files`); return renderSources(); }
     if (act === 'reset-settings') { S.boot.settings = await window.apy.resetSettings(); applyTheme(); renderSettings(); return toast('Settings reset'); }
+    if (act === 'help') { e.preventDefault(); e.stopPropagation(); return showHelp(b.dataset.key, b); }
+    if (act === 'help-close') { e.preventDefault(); return hideHelp(); }
     if (act === 'check-updates') {
       const el = $('#update-status');
       if (el) el.textContent = 'Checking…';
@@ -1041,7 +1150,7 @@ function wire() {
       's-niit': () => ({ tax: { niitApplies: $('#s-niit').checked } }),
       's-appetite': (v) => ({ riskAppetite: Number(v) }),
       's-basis': (v) => ({ rankingBasis: v }),
-      's-budget': (v) => ({ budget: Number(v) }),
+      's-budget': (v) => ({ budget: v === '' || Number(v) <= 0 ? null : Number(v) }),
       's-mhorizon': (v) => ({ movementHorizonDays: Number(v) }),
       's-auto': (v) => ({ autoRefreshMinutes: Number(v) }),
       's-maxpools': (v) => ({ maxDefiPools: Number(v) }),
@@ -1070,6 +1179,7 @@ function wire() {
     const fn = map[el.id];
     if (!fn) return;
     S.boot.settings = await window.apy.updateSettings(fn(el.value));
+    if (el.id === 's-budget') syncAmountBox();
     if (el.id === 's-theme') applyTheme();
     if (el.id === 's-live' || el.id === 's-offline') syncLive();
     if (el.id.startsWith('s-fed') || ['s-state', 's-account', 's-inflation', 's-niit'].includes(el.id)) updateTaxPreview();
@@ -1136,6 +1246,7 @@ function wire() {
     S.events = payload.events || [];
     await runQuery();
     syncCounters();
+  syncAmountBox();
     syncLive();
     if (S.view === 'radar') renderRadar().catch(() => {});
     if (S.view === 'sources') renderSources();
@@ -1178,6 +1289,41 @@ function applyTheme() {
   const t = S.boot.settings.theme;
   const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+}
+
+/**
+ * The amount box in the results bar.
+ *
+ * It lived in Settings, which is the wrong place for it: the number changes
+ * what every figure in the list means, so it belongs where the figures are.
+ * Debounced rather than live because re-scoring eight hundred rows on each
+ * keystroke makes typing feel broken.
+ */
+let amountTimer = null;
+function syncAmountBox() {
+  const el = $('#q-amount');
+  if (!el) return;
+  const v = S.boot.settings.budget;
+  const set = Number.isFinite(v) && v > 0;
+  if (document.activeElement !== el) el.value = set ? Number(v).toLocaleString() : '';
+  $('#q-amount-clear')?.classList.toggle('on', set);
+}
+
+async function commitAmount(raw) {
+  // Accept "10k", "25,000", "$1200" — people type money the way they say it.
+  const t = String(raw ?? '').trim().toLowerCase().replace(/[$,\s]/g, '');
+  let n = null;
+  if (t) {
+    const mult = t.endsWith('k') ? 1e3 : t.endsWith('m') ? 1e6 : 1;
+    const num = parseFloat(mult === 1 ? t : t.slice(0, -1));
+    if (Number.isFinite(num) && num > 0) n = Math.round(num * mult);
+  }
+  S.boot.settings = await window.apy.updateSettings({ budget: n });
+  syncAmountBox();
+  await runQuery();
+  if (S.selectedId) openDetail(S.selectedId);
+  if (S.view === 'radar') renderRadar().catch(() => {});
+  if (S.view === 'plan') renderPlan().catch(() => {});
 }
 
 /** Header badges that describe the loaded dataset rather than any one view. */

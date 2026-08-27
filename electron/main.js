@@ -951,7 +951,7 @@ async function runSmokeTest() {
   }
 
   // Every other view. A pane that throws on render is invisible from Find alone.
-  for (const view of ['plan', 'events', 'sources', 'settings', 'watch']) {
+  for (const view of ['plan', 'learn', 'events', 'sources', 'settings', 'watch']) {
     try {
       await js(`document.querySelector('.tab[data-view="${view}"]').click(); true`);
       await wait(view === 'plan' ? 900 : 500);
@@ -962,6 +962,33 @@ async function runSmokeTest() {
     } catch (err) {
       failuresLate.push(`${view} pane failed: ${err.message}`);
     }
+  }
+
+  // Help must be reachable from where the jargon is, not only from the Learn
+  // page — a help system you have to go and find is one nobody uses.
+  try {
+    await js("document.querySelector('.tab[data-view=\"find\"]').click(); true");
+    await wait(400);
+    report.helpChips = await js("document.querySelectorAll('#tablewrap .helpq').length");
+    await js("document.querySelector('#tablewrap .helpq').click(); true");
+    await wait(250);
+    report.helpPopOpen = await js("!document.querySelector('#helppop').classList.contains('hidden')");
+    report.helpPopText = await js("document.querySelector('#helppop').innerText.length");
+    await js("document.querySelector('#helppop .hx').click(); true");
+    if (!report.helpChips) failuresLate.push('no help affordances rendered on the table');
+    if (!report.helpPopOpen) failuresLate.push('the help popover did not open');
+    if ((report.helpPopText || 0) < 80) failuresLate.push('the help popover rendered almost nothing');
+  } catch (err) {
+    failuresLate.push(`help check failed: ${err.message}`);
+  }
+
+  try {
+    await js("document.querySelector('.tab[data-view=\"learn\"]').click(); true");
+    await wait(400);
+    report.learnCards = await js("document.querySelectorAll('#view-learn .learncard').length");
+    if ((report.learnCards || 0) < 20) failuresLate.push(`glossary rendered only ${report.learnCards} entries`);
+  } catch (err) {
+    failuresLate.push(`glossary check failed: ${err.message}`);
   }
 
   // The plan is an ordering, so an empty or single-step one means the tiering

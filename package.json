@@ -18,7 +18,8 @@
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
     "smoke": "xvfb-run -a electron . --smoke --no-sandbox",
-    "probe": "node scripts/probe.js"
+    "probe": "node scripts/probe.js",
+    "backtest": "node scripts/backtest.js"
   },
   "devDependencies": {
     "electron": "^33.2.0",
