@@ -343,6 +343,79 @@ test('fetch() degrades to partial when protocol enrichment fails', async () => {
   assert.equal(r.opportunities.every((o) => o.risk.auditCount === null), true);
 });
 
+test('the cap and the TVL floor come from user settings, and the defaults are the wide ones', async () => {
+  // Default: 4,000 pools and a $10k floor, so the whole long tail survives.
+  const wide = stubCtx();
+  const r = await adapter.fetch(wide.ctx);
+  assert.equal(r.opportunities.length, 11);
+  assert.ok(r.notes.some((n) => /at least \$10,000 of TVL/.test(n) && /at most 4,000 pools/.test(n)), r.notes.join(' | '));
+  assert.ok(r.notes.some((n) => /cap did not bind/.test(n)));
+
+  // settings.maxDefiPools binds and says how many it left behind.
+  const capped = stubCtx();
+  capped.ctx.settings = { maxDefiPools: 4 };
+  const rc = await adapter.fetch(capped.ctx);
+  assert.equal(rc.opportunities.length, 4);
+  assert.ok(rc.notes.some((n) => /Capped at 4 pools out of 11 considered/.test(n)), rc.notes.join(' | '));
+
+  // settings.minDefiTvl raises the floor.
+  const floored = stubCtx();
+  floored.ctx.settings = { minDefiTvl: 5e8 };
+  const rf = await adapter.fetch(floored.ctx);
+  assert.ok(rf.opportunities.every((o) => o.tvl >= 5e8), 'floor must actually bind');
+  assert.ok(rf.opportunities.length < 11);
+  assert.ok(rf.notes.some((n) => /at least \$500,000,000 of TVL/.test(n)));
+
+  // Zero is a real answer — "show me everything" must not fall back to $10k.
+  const nofloor = stubCtx();
+  nofloor.ctx.settings = { minDefiTvl: 0 };
+  const rz = await adapter.fetch(nofloor.ctx);
+  assert.ok(rz.opportunities.length > 11, 'a zero floor must let the dust pools through');
+  assert.ok(rz.notes.some((n) => /at least \$0 of TVL/.test(n)));
+
+  // Nonsense in the setting falls back to the default rather than to NaN.
+  for (const junk of ['lots', null, -5, NaN, {}, undefined]) {
+    const s2 = stubCtx();
+    s2.ctx.settings = { maxDefiPools: junk, minDefiTvl: junk };
+    const r2 = await adapter.fetch(s2.ctx);
+    assert.equal(r2.opportunities.length, 11, `maxDefiPools=${String(junk)}`);
+  }
+});
+
+test('a perp-DEX counterparty vault is not filed as a loan', () => {
+  const protocols = [...PROTOCOLS.filter(Boolean), { slug: 'housevault', name: 'House Vault', category: 'Derivatives', audits: '1', listedAt: 1700000000 }];
+  const r = parse({
+    status: 'success',
+    data: [{
+      pool: 'hv-1', chain: 'Arbitrum', project: 'housevault', symbol: 'HLP',
+      tvlUsd: 5e8, apyBase: 12, apy: 12, stablecoin: true, ilRisk: 'no', exposure: 'single', count: 400,
+    }],
+  }, { protocols });
+  const o = r.opportunities[0];
+  // Depositing into a market-making vault is providing liquidity, and the loss
+  // mode is trader PnL — filing it beside Aave USDC would be a lie about both.
+  assert.equal(o.assetClass, C.ASSET_CLASS.CRYPTO_LP);
+  assert.equal(o.subType, 'perp_vault');
+  assert.deepEqual(schema.validate(o), []);
+});
+
+test('the seed carries the categories the old snapshot was missing', () => {
+  const rows = adapter.loadSeed({ seedDir: SEED_DIR, schema, C, settings: {}, log() {} }).opportunities;
+  const has = (needle) => rows.some((o) => o.name.toUpperCase().includes(needle));
+  for (const needle of [
+    'WEETH', 'EZETH', 'RSETH',          // liquid restaking
+    'SYRUPUSDC', 'FIDU', 'MTBILL',      // real-world assets
+    'USR', 'RLP', 'MBASIS',             // delta-neutral / basis
+    'LUSD', 'BOLD', 'SCRVUSD',          // CDP stability pools
+    'HLP', 'JLP', 'GDAI',               // perp-DEX liquidity vaults
+  ]) {
+    assert.ok(has(needle), `seed has no ${needle} row`);
+  }
+  assert.ok(rows.filter((o) => o.subType === 'perp_vault').length >= 4);
+  assert.ok(rows.filter((o) => o.assetClass === C.ASSET_CLASS.CRYPTO_STAKING).length >= 10);
+  assert.ok(rows.length >= 60, `expected 60+ seed pools, got ${rows.length}`);
+});
+
 test('fetch() reports a dead pools endpoint as a failed source, not an exception', async () => {
   const { ctx } = stubCtx({ pools: Object.assign(new Error('blocked'), { status: 403 }) });
   const r = await adapter.fetch(ctx);

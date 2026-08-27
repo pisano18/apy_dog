@@ -19,7 +19,20 @@ const POOLS_URL = 'https://yields.llama.fi/pools';
 const PROTOCOLS_URL = 'https://api.llama.fi/protocols';
 
 const PROTOCOL_TTL_MS = 24 * 60 * 60 * 1000;   // protocol metadata barely moves
-const DEFAULT_LIMIT = 1200;                    // keep the UI table responsive
+
+/**
+ * Breadth defaults. The cap used to be 1,200, which threw away most of the
+ * long tail — and the long tail is where the pools nobody has heard of live,
+ * which is the entire reason to run a yield screener rather than read a
+ * league table. 4,000 is roughly "everything upstream that clears the TVL
+ * floor" on a normal day, so in practice the cap stops binding at all and the
+ * ranking below only matters on the days DefiLlama is unusually generous.
+ *
+ * Both numbers are user settings because the right answer depends on the
+ * machine and the appetite: settings.maxDefiPools trades table size against
+ * completeness, settings.minDefiTvl trades obscurity against exitability.
+ */
+const DEFAULT_LIMIT = 4000;
 const MIN_TVL_USD = 10000;                     // below this you cannot exit at size
 const MAX_APY = 100000;                        // above this it is an upstream bug, not a yield
 
@@ -47,6 +60,14 @@ const GAS_TOKEN = {
  */
 const STAKING_PROJECT = /(^|-)(lido|rocket-pool|stakewise|stader|ankr|swell|frax-ether|mantle-staked-eth|binance-staked-eth|coinbase-wrapped-staked-eth|jito|marinade|blazestake|sanctum|benqi-staked|liquid-collective|origin-ether|dinero|puffer|etherfi|ether-fi|kelp|renzo|eigenpie)(-|$)/i;
 const STAKING_CATEGORY = /(liquid staking|liquid restaking|restaking|staking pool|staking services)/i;
+
+/**
+ * Categories where the depositor is the counterparty to leveraged traders
+ * rather than a lender or an AMM liquidity provider. DefiLlama files these
+ * under Derivatives / Perps, and the distinction is worth carrying because the
+ * loss mode is completely different from either of the other two.
+ */
+const DERIVATIVES_CATEGORY = /(derivatives|perpetuals|perps|options|synthetics|prediction market)/i;
 
 /** Turn a DefiLlama slug into something a human reads: "aave-v3" -> "Aave V3". */
 function prettyProject(slug) {
@@ -101,11 +122,23 @@ function classify(p, proto, C) {
   if (pairish) return C.ASSET_CLASS.CRYPTO_LP;
 
   if (STAKING_CATEGORY.test(category) || STAKING_PROJECT.test(project)) return C.ASSET_CLASS.CRYPTO_STAKING;
+
+  // A perp-DEX counterparty vault — HLP, JLP, GLP, gDAI — is not a loan. You are
+  // the house: the yield is trading fees and funding minus whatever the traders
+  // win, and in a bad week that is negative. Falling through to CRYPTO_LENDING
+  // would file it next to Aave USDC and hand risk.js the wrong prior entirely,
+  // so it goes to CRYPTO_LP, which is what depositing into a market-making pool
+  // actually is.
+  if (DERIVATIVES_CATEGORY.test(category)) return C.ASSET_CLASS.CRYPTO_LP;
   return C.ASSET_CLASS.CRYPTO_LENDING;
 }
 
-function subTypeFor(assetClass, p, C) {
+function subTypeFor(assetClass, p, C, proto) {
   if (assetClass === C.ASSET_CLASS.CRYPTO_LP) {
+    // The counterparty vaults are their own thing and must not be labelled
+    // "stable_lp": their principal is stable-denominated but their drawdown
+    // comes from trader PnL, not from a peg or from divergence loss.
+    if (DERIVATIVES_CATEGORY.test(str(proto?.category) || '')) return 'perp_vault';
     // traps.js keys impermanent-loss detection off ilRisk OR this subType, so
     // set both rather than relying on one upstream field staying named the same.
     if (str(p?.ilRisk) === 'yes') return 'volatile_lp';
@@ -278,7 +311,7 @@ function parsePools(payload, opts = {}) {
     }
   }
 
-  notes.push(`${rows.length.toLocaleString()} pools upstream, ${opportunities.length.toLocaleString()} kept`);
+  notes.push(`${rows.length.toLocaleString()} pools upstream, ${kept.length.toLocaleString()} passed the filters, ${opportunities.length.toLocaleString()} kept`);
   const dropTxt = [
     dropped.lowTvl ? `${dropped.lowTvl} under $${minTvl.toLocaleString()} TVL` : null,
     dropped.absurdApy ? `${dropped.absurdApy} with APY above ${maxApy.toLocaleString()}% (upstream data errors)` : null,
@@ -288,7 +321,9 @@ function parsePools(payload, opts = {}) {
   ].filter(Boolean);
   if (dropTxt.length) notes.push(`Dropped: ${dropTxt.join('; ')}`);
   if (capped) {
-    notes.push(`Capped at ${limit.toLocaleString()} pools: the ${reserved.toLocaleString()} deepest by TVL plus ${(limit - reserved).toLocaleString()} by a blended yield-and-TVL rank (${(kept.length - limit).toLocaleString()} more available upstream)`);
+    notes.push(`Capped at ${limit.toLocaleString()} pools out of ${kept.length.toLocaleString()} considered: the ${reserved.toLocaleString()} deepest by TVL, plus ${(limit - reserved).toLocaleString()} chosen by a blended yield-and-TVL rank so the selection is not simply the largest pools (${(kept.length - limit).toLocaleString()} more available upstream — raise settings.maxDefiPools to see them)`);
+  } else if (!seed) {
+    notes.push(`Every pool that cleared the filters is shown; the ${limit.toLocaleString()}-pool cap did not bind this run.`);
   }
   if (protoIndex.size) notes.push(`Protocol metadata joined for ${enriched.toLocaleString()} of ${opportunities.length.toLocaleString()} pools (audits, age)`);
 
@@ -305,7 +340,7 @@ function shapeOpportunity(p, { protoIndex, C, schema, nowMs, seed, dataAsOf }) {
   const poolMeta = str(p.poolMeta);
 
   const assetClass = classify(p, proto, C);
-  const subType = subTypeFor(assetClass, p, C);
+  const subType = subTypeFor(assetClass, p, C, proto);
 
   const apyBase = num(p.apyBase);
   const apyReward = num(p.apyReward);
@@ -412,9 +447,29 @@ const adapter = {
   indexProtocols,
 
   async fetch(ctx) {
+    // Two places to say the same thing, because both already exist in the wild:
+    // the flat user settings the Settings panel writes (maxDefiPools /
+    // minDefiTvl) and the per-source block an advanced user may have hand-edited.
+    // The flat setting wins where both are present, since that is the one with a
+    // control attached to it.
     const cfg = ctx.settings?.sources?.defillama || ctx.settings?.defillama || {};
-    const limit = Number.isFinite(cfg.limit) ? cfg.limit : DEFAULT_LIMIT;
-    const minTvlUsd = Number.isFinite(cfg.minTvlUsd) ? cfg.minTvlUsd : MIN_TVL_USD;
+    // A floor of 0 is a real answer ("show me everything"), so the test is
+    // finite-and-in-range rather than truthy — `|| DEFAULT` would silently
+    // discard it and quietly re-impose a filter the user turned off.
+    const setting = (flat, nested, fallback, min) => {
+      for (const raw of [flat, nested]) {
+        // Number(null) and Number([]) are both 0, so an unset setting would
+        // otherwise read as a deliberate floor of zero. Only a number, or a
+        // string with a number in it, counts as the user having said something.
+        if (typeof raw !== 'number' && typeof raw !== 'string') continue;
+        if (typeof raw === 'string' && !raw.trim()) continue;
+        const v = Number(raw);
+        if (Number.isFinite(v) && v >= min) return v;
+      }
+      return fallback;
+    };
+    const limit = setting(ctx.settings?.maxDefiPools, cfg.limit, DEFAULT_LIMIT, 1);
+    const minTvlUsd = setting(ctx.settings?.minDefiTvl, cfg.minTvlUsd, MIN_TVL_USD, 0);
 
     ctx.log?.('fetching yields.llama.fi/pools');
     let payload;
@@ -441,6 +496,7 @@ const adapter = {
 
     const allWarnings = [...warnings, ...parsed.warnings];
     const notes = [...parsed.notes];
+    notes.push(`Filters this run: at least $${minTvlUsd.toLocaleString()} of TVL (settings.minDefiTvl), at most ${limit.toLocaleString()} pools kept (settings.maxDefiPools).`);
     if (!protocols) notes.push('Protocol metadata skipped this run — audit counts and ages are absent.');
 
     return result({

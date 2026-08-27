@@ -198,10 +198,15 @@ function directionalLean(stats, events = []) {
 
   const net = votes.reduce((s, v) => s + v.dir * v.weight, 0);
   const gross = votes.reduce((s, v) => s + v.weight, 0);
-  const strength = gross > 0 ? Math.abs(net) / gross : 0;
+  // Agreement alone is not strength: with a single vote it is always 1.0, which
+  // renders a lone weak trend reading as maximum conviction. Scale it by how much
+  // evidence there actually is, so full strength needs several signals agreeing.
+  const agreement = gross > 0 ? Math.abs(net) / gross : 0;
+  const evidence = Math.min(1, gross / 0.8);
+  const strength = agreement * evidence;
 
   // Below a real threshold, conflicting weak signals are just noise.
-  if (Math.abs(net) < 0.18 || strength < 0.4) {
+  if (Math.abs(net) < 0.18 || agreement < 0.5) {
     return { lean: T.LEAN.NONE, strength: 0, reasons: votes.map((v) => v.why) };
   }
   return {

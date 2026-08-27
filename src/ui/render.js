@@ -86,8 +86,26 @@ function badges(o) {
   ].filter(Boolean).join('');
 }
 
+const SUBTYPE_LABELS = {
+  megacap: 'Mega-cap', high_growth: 'High growth', semis: 'Semiconductors', biotech: 'Biotech',
+  energy: 'Energy', financials: 'Financials', consumer: 'Consumer', industrials: 'Industrials',
+  small_cap: 'Small cap', crypto_equity: 'Crypto-linked', volatility_adjacent: 'Volatility-linked',
+  core_index: 'Core index', target_date: 'Target date', bond_core: 'Core bonds',
+  dividend_growth: 'Dividend growth', sector: 'Sector', factor: 'Factor',
+  international: 'International', commodity: 'Commodity', spot: 'Spot',
+  covered_call: 'Covered call', bond_etf: 'Bond fund', dividend_etf: 'Dividend fund',
+  reit: 'REIT', mortgage_reit: 'Mortgage REIT', bdc: 'BDC', preferred: 'Preferred',
+  cef: 'Closed-end fund', ultrashort: 'Ultra-short', index_proxy: 'Index proxy',
+  bill: 'Bill', note: 'Note', bond: 'Bond', tips: 'TIPS',
+};
+
 function nameCell(o, classes) {
-  const meta = [classes[o.assetClass] || o.assetClass, o.provider || o.chain || o.sourceLabel]
+  // On a row about price movement, "Semiconductors" is a far more useful label
+  // than "Dividend Stocks", which is technically true of almost any listed
+  // company and tells the reader nothing about what they are looking at.
+  const primary = (o.track !== 'income' && SUBTYPE_LABELS[o.subType])
+    || classes[o.assetClass] || o.assetClass;
+  const meta = [primary, o.provider || o.chain || o.sourceLabel]
     .filter(Boolean).map(esc).join(' · ');
   return `<div class="cell-name">
     <span class="n">${esc(o.name)}${o.symbol && !o.name.includes(o.symbol) ? ` <span style="color:var(--text-faint);font-weight:500">${esc(o.symbol)}</span>` : ''}</span>
