@@ -1,0 +1,84 @@
+{
+  "_comment": "What a user's own bonus offers file looks like after they refresh a few offers by hand, plus the malformed rows a hand-edited file always ends up containing. Same shape as data/seed/bonuses.json: a matching id replaces field by field, a new id is added. The rows named 'MALFORMED TEST ROW' are deliberately broken and are not real institutions.",
+  "items": [
+    {
+      "id": "chase-total-checking-bonus",
+      "bonus": 400,
+      "dataAsOf": "2026-08-26"
+    },
+    {
+      "id": "td-bank-checking-bonus",
+      "bonus": "$200",
+      "requiredDeposit": "$500",
+      "dataAsOf": "2026-08-26"
+    },
+    {
+      "id": "ally-savings-bonus",
+      "dataAsOf": 99999999999999999999
+    },
+    {
+      "id": "first-tech-fcu-checking-bonus",
+      "kind": "credit_union",
+      "name": "First Tech Federal Credit Union checking bonus",
+      "provider": "First Tech Federal Credit Union",
+      "bonus": 300,
+      "requiredDeposit": 1000,
+      "holdDays": 120,
+      "ongoingApy": 0.15,
+      "depositBasis": "deposits_received",
+      "url": "https://www.firsttechfed.com/banking/checking",
+      "accessNotes": "Membership is open nationally through the Financial Fitness Association; join and open checking in the same application.",
+      "requirements": [
+        "Membership required — open nationally through an association route",
+        "Qualifying direct deposits within 60 days",
+        "New checking members only"
+      ],
+      "dataAsOf": "2026-08-26"
+    },
+    {
+      "id": "malformed-no-kind",
+      "name": "MALFORMED TEST ROW - no kind",
+      "bonus": 100,
+      "requiredDeposit": 1000,
+      "holdDays": 90,
+      "url": "https://example.invalid/",
+      "accessNotes": "unused"
+    },
+    {
+      "id": "malformed-absurd-ratio",
+      "kind": "bank_checking",
+      "name": "MALFORMED TEST ROW - bonus larger than the deposit by 2000x",
+      "bonus": 100000,
+      "requiredDeposit": 50,
+      "holdDays": 90,
+      "url": "https://example.invalid/",
+      "accessNotes": "unused"
+    },
+    {
+      "id": "malformed-no-link",
+      "kind": "bank_savings",
+      "name": "MALFORMED TEST ROW - no url and no access notes",
+      "bonus": 200,
+      "requiredDeposit": 5000,
+      "holdDays": 90
+    },
+    {
+      "id": "malformed-zero-hold",
+      "kind": "brokerage",
+      "name": "MALFORMED TEST ROW - zero day holding period",
+      "bonus": 200,
+      "requiredDeposit": 5000,
+      "holdDays": 0,
+      "url": "https://example.invalid/",
+      "accessNotes": "unused"
+    },
+    null,
+    "a bare string somebody pasted in",
+    {
+      "kind": "bank_checking",
+      "bonus": 100,
+      "requiredDeposit": 500,
+      "holdDays": 90
+    }
+  ]
+}

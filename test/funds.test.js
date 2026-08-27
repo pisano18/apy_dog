@@ -45,10 +45,12 @@ test('satisfies the adapter contract', () => {
 test('the universe is grouped, real and roughly the intended size', () => {
   const cats = Object.keys(adapter.UNIVERSE);
   assert.deepEqual(cats.sort(), [
-    'bdc', 'bond_etf', 'cef', 'covered_call', 'dividend_etf', 'mortgage_reit', 'preferred', 'reit', 'ultrashort',
+    'bdc', 'bond_etf', 'cef', 'core_bond', 'core_index', 'covered_call', 'dividend_etf', 'em_debt',
+    'infrastructure', 'intl_income', 'money_market_etf', 'mortgage_reit', 'muni_state', 'preferred',
+    'reit', 'senior_loan_clo', 'target_date', 'tips', 'ultrashort',
   ]);
   const all = adapter.resolveUniverse({});
-  assert.ok(all.length >= 65 && all.length <= 85, `expected ~70 symbols, got ${all.length}`);
+  assert.ok(all.length >= 150 && all.length <= 180, `expected ~160 symbols, got ${all.length}`);
   assert.equal(new Set(all.map((e) => e.symbol)).size, all.length, 'duplicate ticker in the universe');
   for (const e of all) {
     assert.match(e.symbol, /^[A-Z]{1,5}$/, `${e.symbol} does not look like a US ticker`);
@@ -430,7 +432,7 @@ test('buildAll drops what it cannot map without taking the batch down', () => {
 test('loadSeed returns real, valid, honestly labelled rows', () => {
   const res = adapter.loadSeed(ctx);
   assert.equal(res.status, 'offline');
-  assert.ok(res.opportunities.length >= 45, `expected ~50 seed rows, got ${res.opportunities.length}`);
+  assert.ok(res.opportunities.length >= 130, `expected ~140 seed rows, got ${res.opportunities.length}`);
   assert.equal(res.warnings.length, 0);
 
   const classes = new Set();
@@ -440,8 +442,19 @@ test('loadSeed returns real, valid, honestly labelled rows', () => {
     assert.equal(o.live, false);
     assert.equal(o.dataAsOf, '2026-08-01');
     assert.equal(o.source, 'funds');
-    assert.ok(o.price > 0 && o.minInvestment === o.price);
-    assert.ok(o.apy.total > 0 && o.apy.total < 30, `${o.symbol} seed yield ${o.apy.total} is not plausible`);
+    // One share is the minimum for an ETF; an open-end fund can ask for more,
+    // and never for less.
+    assert.ok(o.price > 0 && o.minInvestment >= o.price, `${o.symbol} minimum ${o.minInvestment} vs price ${o.price}`);
+    // The upper bound is generous because single-stock option-income funds really
+    // do print distribution rates in the high double digits. What is NOT allowed
+    // is one of those sitting on the table without saying where the money comes
+    // from — a 90% "yield" that is mostly your own capital back is the single
+    // most misleading row this app could publish.
+    assert.ok(o.apy.total > 0 && o.apy.total < 120, `${o.symbol} seed yield ${o.apy.total} is not plausible`);
+    if (o.apy.total > 25) {
+      assert.match(o.notes, /return of (your own )?capital|distribution rate is not a (return|yield)|not income the underlying actually earned|not earnings/i,
+        `${o.symbol} pays ${o.apy.total}% and does not say where that comes from`);
+    }
     assert.ok(o.confidence < 0.6, 'a bundled snapshot must not read as a live quote');
     classes.add(o.assetClass);
   }
@@ -449,6 +462,67 @@ test('loadSeed returns real, valid, honestly labelled rows', () => {
   for (const cls of ['etf', 'corp_bond', 'govt_bond', 'muni_bond', 'dividend_equity', 'reit', 'bdc', 'preferred', 'cef']) {
     assert.ok(classes.has(cls), `no seed row for ${cls}`);
   }
+});
+
+test('the retirement end of the universe is present, and lands on the right track', () => {
+  const rows = adapter.loadSeed(ctx).opportunities;
+  const by = (sym) => rows.find((o) => o.symbol === sym);
+  const group = (cat) => rows.filter((o) => o.subType === cat);
+
+  for (const cat of ['core_index', 'target_date', 'core_bond', 'tips', 'muni_state',
+    'intl_income', 'em_debt', 'infrastructure', 'senior_loan_clo', 'money_market_etf']) {
+    assert.ok(group(cat).length >= 5, `${cat} is thin offline: ${group(cat).length}`);
+  }
+
+  // The rule that matters: a growth index fund must never be ranked as income.
+  // Its whole return is price, and a 0.5% dividend is a fact about it that
+  // answers a question nobody asked.
+  for (const o of group('core_index')) {
+    assert.equal(o.track, 'movement', `${o.symbol} must not sit on the income track`);
+    assert.ok(o.apy.total < 2, `${o.symbol} is not a core index fund at ${o.apy.total}%`);
+  }
+  assert.equal(by('QQQM').track, 'movement');
+
+  // Bills, TIPS and single-state munis are the opposite case: essentially all
+  // of their return is the coupon.
+  for (const o of [...group('tips'), ...group('money_market_etf'), ...group('muni_state')]) {
+    assert.equal(o.track, 'income', `${o.symbol} should be an income holding`);
+  }
+
+  // A glidepath fund is genuinely both, and the near-dated vintages must yield
+  // more than the far ones — that is the bond share rising, and if the ordering
+  // ever inverts the snapshot has drifted from the product.
+  const glide = ['VTINX', 'VTHRX', 'VFORX', 'VFIFX', 'VLXVX'].map(by);
+  assert.ok(glide.every(Boolean), 'the Vanguard glidepath is incomplete');
+  for (let i = 1; i < glide.length; i += 1) {
+    assert.ok(glide[i].apy.total <= glide[i - 1].apy.total,
+      `${glide[i].symbol} yields more than the nearer-dated ${glide[i - 1].symbol}`);
+    assert.ok(glide[i].risk.volatility >= glide[i - 1].risk.volatility, 'the far-dated vintage must be the more volatile one');
+  }
+
+  // Mutual funds must not be described as if they traded like a stock, and must
+  // carry their real account minimum rather than one share.
+  for (const o of [...group('target_date'), ...group('muni_state')]) {
+    assert.match(o.accessNotes, /open-end mutual fund/i, `${o.symbol} is not an ETF`);
+    assert.doesNotMatch(o.accessNotes, /Trades like a stock/);
+    assert.ok(o.requirements.length >= 1);
+  }
+  assert.equal(by('VFIFX').minInvestment, 1000);
+  assert.equal(by('VCITX').minInvestment, 3000);
+  assert.ok(by('FIPFX').minInvestment > 0, 'a Fidelity fund with no stated minimum still costs one share');
+
+  // A single-state muni fund may only claim the federal exemption: this adapter
+  // has no idea where the user lives.
+  for (const o of group('muni_state')) {
+    assert.equal(o.taxTreatment, C.TAX_TREATMENT.MUNI_FEDERAL_EXEMPT);
+    assert.ok(o.stateOfIssue, `${o.symbol} must name its state`);
+    assert.match(o.notes, new RegExp(`${o.stateOfIssue}[\\s\\S]*only to residents`));
+  }
+
+  // MLP funds are C-corporations paying mostly return of capital, and calling
+  // that a qualified dividend would overstate the after-tax yield badly.
+  assert.equal(by('AMLP').taxTreatment, C.TAX_TREATMENT.ROC);
+  assert.equal(by('MLPA').taxTreatment, C.TAX_TREATMENT.ROC);
 });
 
 test('loadSeed never throws, whatever it is handed', () => {

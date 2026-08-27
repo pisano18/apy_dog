@@ -199,6 +199,71 @@ const INSTRUMENTS = [
     durationYears: 0.25, creditRating: 'B+', expenseRatio: 0.65,
   },
 
+  // --- 2c. Treasury and Treasury-adjacent funds ---------------------------
+  // treasury.js prices the curve itself; these are the tradeable wrappers around
+  // it, which is a different product: no maturity, no par back, sellable any day.
+  { key: 'VGSH', group: 'fund_proxy', category: 'treasury_fund', symbol: 'VGSH', name: 'Vanguard Short-Term Treasury ETF', issuer: 'Vanguard', durationYears: 1.9, creditRating: 'AA+', expenseRatio: 0.03 },
+  { key: 'VGIT', group: 'fund_proxy', category: 'treasury_fund', symbol: 'VGIT', name: 'Vanguard Intermediate-Term Treasury ETF', issuer: 'Vanguard', durationYears: 5.2, creditRating: 'AA+', expenseRatio: 0.03 },
+  { key: 'VGLT', group: 'fund_proxy', category: 'treasury_fund', symbol: 'VGLT', name: 'Vanguard Long-Term Treasury ETF', issuer: 'Vanguard', durationYears: 15.5, creditRating: 'AA+', expenseRatio: 0.03 },
+  { key: 'GOVT', group: 'fund_proxy', category: 'treasury_fund', symbol: 'GOVT', name: 'iShares U.S. Treasury Bond ETF', issuer: 'iShares', durationYears: 5.9, creditRating: 'AA+', expenseRatio: 0.05 },
+  {
+    key: 'EDV', group: 'fund_proxy', category: 'treasury_fund', symbol: 'EDV', name: 'Vanguard Extended Duration Treasury ETF', issuer: 'Vanguard',
+    durationYears: 24.0, creditRating: 'AA+', expenseRatio: 0.05,
+    note: 'Long-dated Treasury STRIPS — zero-coupon, so the whole return sits at the maturity date and nothing cushions '
+      + 'a rate move. Twenty-four years of duration means a one-point rise in long yields takes roughly a quarter of the '
+      + 'price. It fell more than 50% from its 2020 peak, which is a bigger drawdown than the S&P 500 took in 2008, '
+      + 'from an instrument with no default risk at all.',
+  },
+  {
+    key: 'ZROZ', group: 'fund_proxy', category: 'treasury_fund', symbol: 'ZROZ', name: 'PIMCO 25+ Year Zero Coupon U.S. Treasury Index ETF', issuer: 'PIMCO',
+    durationYears: 26.5, creditRating: 'AA+', expenseRatio: 0.15,
+    note: 'The longest duration in this app. Bought as a hedge — it is the one thing that reliably rises hard when the '
+      + 'Fed is cutting into a recession — and it is not a place to hold cash you might need.',
+  },
+
+  // --- 2d. agency and agency mortgage paper -------------------------------
+  { key: 'AGZ', group: 'fund_proxy', category: 'agency', symbol: 'AGZ', name: 'iShares Agency Bond ETF', issuer: 'iShares', durationYears: 3.9, creditRating: 'AA+', expenseRatio: 0.20 },
+  { key: 'MBB', group: 'fund_proxy', category: 'agency_mbs', symbol: 'MBB', name: 'iShares MBS ETF', issuer: 'iShares', durationYears: 5.9, creditRating: 'AA+', expenseRatio: 0.04 },
+  { key: 'VMBS', group: 'fund_proxy', category: 'agency_mbs', symbol: 'VMBS', name: 'Vanguard Mortgage-Backed Securities ETF', issuer: 'Vanguard', durationYears: 6.1, creditRating: 'AA+', expenseRatio: 0.03 },
+  { key: 'SPMB', group: 'fund_proxy', category: 'agency_mbs', symbol: 'SPMB', name: 'SPDR Portfolio Mortgage Backed Bond ETF', issuer: 'State Street SPDR', durationYears: 5.7, creditRating: 'AA+', expenseRatio: 0.04 },
+  {
+    key: 'GNMA', group: 'fund_proxy', category: 'agency_mbs', symbol: 'GNMA', name: 'iShares GNMA Bond ETF', issuer: 'iShares',
+    durationYears: 5.2, creditRating: 'AA+', expenseRatio: 0.10,
+    note: 'Ginnie Mae pools are the one corner of mortgage paper that carries an explicit full-faith-and-credit '
+      + 'guarantee rather than an implicit one, which is why they yield a little less than Fannie and Freddie pools. '
+      + 'The prepayment risk is identical.',
+  },
+
+  // --- 2e. inflation-linked funds across the curve ------------------------
+  // funds.js carries the broad TIPS benchmarks; these are the maturity buckets
+  // around them, which is where the choice actually gets made.
+  { key: 'STPZ', group: 'fund_proxy', category: 'tips_fund', symbol: 'STPZ', name: 'PIMCO 1-5 Year U.S. TIPS Index ETF', issuer: 'PIMCO', durationYears: 2.6, creditRating: 'AA+', expenseRatio: 0.20 },
+  { key: 'TDTT', group: 'fund_proxy', category: 'tips_fund', symbol: 'TDTT', name: 'FlexShares iBoxx 3-Year Target Duration TIPS Index Fund', issuer: 'FlexShares', durationYears: 3.0, creditRating: 'AA+', expenseRatio: 0.18 },
+  { key: 'TDTF', group: 'fund_proxy', category: 'tips_fund', symbol: 'TDTF', name: 'FlexShares iBoxx 5-Year Target Duration TIPS Index Fund', issuer: 'FlexShares', durationYears: 4.9, creditRating: 'AA+', expenseRatio: 0.18 },
+  { key: 'SPIP', group: 'fund_proxy', category: 'tips_fund', symbol: 'SPIP', name: 'SPDR Portfolio TIPS ETF', issuer: 'State Street SPDR', durationYears: 6.8, creditRating: 'AA+', expenseRatio: 0.12 },
+  {
+    key: 'TIPZ', group: 'fund_proxy', category: 'tips_fund', symbol: 'TIPZ', name: 'PIMCO Broad U.S. TIPS Index ETF', issuer: 'PIMCO',
+    durationYears: 6.5, creditRating: 'AA+', expenseRatio: 0.20,
+    note: 'A target-duration TIPS fund holds its duration constant by rolling; a broad one lets it drift with the '
+      + 'index. Over a decade that difference decides how much of your return was inflation and how much was rates.',
+  },
+
+  // --- 2f. a real ladder --------------------------------------------------
+  // Defined-maturity Treasury funds. Unlike every other fund here they have a
+  // termination date and pay out, so term.days is genuinely a maturity rather
+  // than a duration standing in for one.
+  { key: 'IBTG', group: 'fund_proxy', category: 'ladder', symbol: 'IBTG', name: 'iShares iBonds Dec 2027 Term Treasury ETF', issuer: 'iShares', durationYears: 1.3, maturity: '2027-12-15', creditRating: 'AA+', expenseRatio: 0.07 },
+  { key: 'IBTH', group: 'fund_proxy', category: 'ladder', symbol: 'IBTH', name: 'iShares iBonds Dec 2028 Term Treasury ETF', issuer: 'iShares', durationYears: 2.3, maturity: '2028-12-15', creditRating: 'AA+', expenseRatio: 0.07 },
+  { key: 'IBTI', group: 'fund_proxy', category: 'ladder', symbol: 'IBTI', name: 'iShares iBonds Dec 2029 Term Treasury ETF', issuer: 'iShares', durationYears: 3.3, maturity: '2029-12-15', creditRating: 'AA+', expenseRatio: 0.07 },
+  { key: 'IBTJ', group: 'fund_proxy', category: 'ladder', symbol: 'IBTJ', name: 'iShares iBonds Dec 2030 Term Treasury ETF', issuer: 'iShares', durationYears: 4.2, maturity: '2030-12-15', creditRating: 'AA+', expenseRatio: 0.07 },
+  {
+    key: 'IBTK', group: 'fund_proxy', category: 'ladder', symbol: 'IBTK', name: 'iShares iBonds Dec 2031 Term Treasury ETF', issuer: 'iShares',
+    durationYears: 5.1, maturity: '2031-12-15', creditRating: 'AA+', expenseRatio: 0.07,
+    note: 'The top rung. Hold IBTG through IBTK in equal amounts and you have a five-year Treasury ladder in five '
+      + 'trades, with one rung maturing into cash every December — the thing people build by hand out of individual '
+      + 'CUSIPs, without the reinvestment admin.',
+  },
+
   // --- 2b. municipal proxies ----------------------------------------------
   { key: 'VTES', group: 'fund_proxy', category: 'muni', symbol: 'VTES', name: 'Vanguard Short-Term Tax-Exempt Bond ETF', issuer: 'Vanguard', durationYears: 1.0, creditRating: 'AA', expenseRatio: 0.07 },
   { key: 'SUB', group: 'fund_proxy', category: 'muni', symbol: 'SUB', name: 'iShares Short-Term National Muni Bond ETF', issuer: 'iShares', durationYears: 1.9, creditRating: 'AA', expenseRatio: 0.07 },
@@ -284,6 +349,32 @@ const INSTRUMENTS = [
     llama: { symbol: 'WTGXX' }, url: 'https://www.wisdomtree.com',
     note: 'A registered government money market fund with tokenized shares, aimed at US retail through WisdomTree\'s own app.',
   },
+  {
+    key: 'VBILL', group: 'rwa', symbol: 'VBILL', name: 'VanEck Treasury Fund (VBILL)', issuer: 'VanEck / Securitize',
+    chain: 'Ethereum', minInvestment: 100000,
+    requirements: ['Securitize onboarding and KYC', 'Qualified purchaser', '$100,000 minimum'],
+    llama: { symbol: 'VBILL' }, url: 'https://www.vaneck.com',
+    note: 'A conventional short-Treasury fund from a conventional asset manager, with its share register on-chain. '
+      + 'Same wrapper risk as the rest of this group; a more familiar name behind it than most.',
+  },
+  {
+    key: 'USDL', group: 'rwa', symbol: 'USDL', name: 'Lift Dollar (USDL)', issuer: 'Paxos International',
+    chain: 'Ethereum', region: 'Non-US',
+    requirements: ['KYC with the issuer', 'Not available to US persons'],
+    llama: { symbol: 'USDL' }, url: 'https://www.paxos.com',
+    note: 'A stablecoin that pays its reserve yield to holders by rebasing the balance daily, rather than by paying a '
+      + 'distribution. The economics are a T-bill fund; the wrapper is a token issued from the UAE, outside US '
+      + 'regulation, which is exactly why US persons cannot hold it.',
+  },
+  {
+    key: 'YLDS', group: 'rwa', symbol: 'YLDS', name: 'YLDS (Figure Certificate Company)', issuer: 'Figure Markets',
+    chain: 'Provenance',
+    requirements: ['Figure Markets account and KYC', 'US persons eligible'],
+    llama: { symbol: 'YLDS' }, url: 'https://www.figuremarkets.com',
+    note: 'An SEC-registered public security that also functions as a stablecoin — the first of its kind. Registration '
+      + 'means real disclosure and a prospectus, which is more than any other token here offers, and it still is not a '
+      + 'bank deposit and still is not insured.',
+  },
 ];
 
 const INDEX = new Map(INSTRUMENTS.map((e) => [e.key, e]));
@@ -317,6 +408,47 @@ const CATEGORIES = {
     note: 'Floating-rate senior secured bank loans to leveraged borrowers. Almost no duration and a great deal of credit '
       + 'risk. The loans themselves settle in weeks, not days, so a fund promising daily liquidity on them is running a '
       + 'mismatch that only shows up when everyone leaves at once.',
+  },
+  treasury_fund: {
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.TREASURY,
+    note: 'Treasuries in a fund wrapper. No credit risk whatsoever, and all of the risk that remains is the one the '
+      + 'duration figure describes. Interest is exempt from state and local income tax, which is worth roughly half a '
+      + 'point of yield in a high-tax state and is the reason a Treasury fund can beat a higher-yielding corporate one '
+      + 'after tax.',
+  },
+  agency: {
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.ORDINARY,
+    note: 'Debt of the federal agencies and government-sponsored enterprises. It is NOT full faith and credit: the '
+      + 'guarantee behind Fannie Mae and Freddie Mac paper is implicit, which is why it pays a spread over Treasuries. '
+      + 'That implicit guarantee was honoured in 2008, at the cost of putting both into conservatorship. Interest on '
+      + 'most agency debt is state-tax exempt; on GSE mortgage paper it generally is not, so this is filed as ordinary '
+      + 'income rather than claiming an exemption that may not apply.',
+  },
+  agency_mbs: {
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.ORDINARY,
+    note: 'Agency mortgage-backed securities: pools of home loans guaranteed against default by Ginnie, Fannie or '
+      + 'Freddie. The credit risk is effectively taken care of; the risk that is left is prepayment. When rates fall '
+      + 'homeowners refinance and you get your money back early at exactly the wrong moment, and when rates rise they '
+      + 'do not, so the duration extends into the loss. That asymmetry is what the extra yield over Treasuries pays for.',
+  },
+  tips_fund: {
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.TREASURY,
+    note: 'Inflation-protected Treasuries. The coupon is a REAL yield: you also receive whatever CPI does, applied to '
+      + 'the principal. Compare the real yield against the breakeven below, not against a nominal Treasury yield — the '
+      + 'two numbers measure different things. The inflation adjustment is federally taxable in the year it accrues '
+      + 'even though no cash arrives, which is why these belong in a tax-deferred account more than most bond funds do.',
+  },
+  ladder: {
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.TREASURY,
+    note: 'A defined-maturity fund: it holds Treasuries maturing in one calendar year, then liquidates and pays out. '
+      + 'That makes it the one bond fund on this list that DOES return your money on a date — the missing piece that '
+      + 'makes a real ladder possible without buying individual CUSIPs. Buy one of each year and you own a ladder that '
+      + 'rolls itself; each rung matures into cash you can spend or reinvest at whatever rates are then.',
   },
   muni: {
     assetClass: baseC.ASSET_CLASS.MUNI_BOND,
@@ -483,7 +615,12 @@ function buildFundProxy(entry, quote, { schema, C, dataAsOf, seed, settings }) {
     cat.note,
   ];
   if (entry.note) notes.push(entry.note);
-  if (Number.isFinite(entry.durationYears)) {
+  if (entry.maturity) {
+    notes.push(`The term shown is a real maturity: this fund holds Treasuries maturing in ${String(entry.maturity).slice(0, 4)}, `
+      + `then liquidates and pays out around ${entry.maturity}. You can still sell any session, and between now and then the `
+      + `price moves with roughly ${entry.durationYears.toFixed(1)} years of duration — but unlike every other fund on this `
+      + 'list, holding it to the end returns your money without needing rates to cooperate.');
+  } else if (Number.isFinite(entry.durationYears)) {
     notes.push(`The term shown is the fund's ${entry.durationYears.toFixed(1)}-year effective duration expressed in days, `
       + `not a lockup — you can sell any session. It is there so the rate-sensitivity penalty applies: a one-point rise in `
       + `yields costs roughly ${entry.durationYears.toFixed(1)}% of the price.`);
@@ -521,7 +658,15 @@ function buildFundProxy(entry, quote, { schema, C, dataAsOf, seed, settings }) {
 
     // Duration in term.days. See the header: it is the only honest thing to put
     // there for a perpetual fund, and it is what risk.js prices rate risk from.
-    term: { days: durDays, label: Number.isFinite(entry.durationYears) ? `${entry.durationYears.toFixed(1)}yr duration` : null },
+    //
+    // A defined-maturity fund is the exception. It really does terminate and pay
+    // out, so it gets the actual date and lets schema derive the days remaining
+    // from it — a stored duration would drift out of step with the maturity as
+    // the fund rolls down, and the term filter would stop finding the rung the
+    // user asked for.
+    term: entry.maturity
+      ? { days: null, maturity: entry.maturity, kind: 'maturity', label: `Matures ${entry.maturity}` }
+      : { days: durDays, label: Number.isFinite(entry.durationYears) ? `${entry.durationYears.toFixed(1)}yr duration` : null },
     liquidity: C.LIQUIDITY.DAILY,
 
     price: num(quote?.price),

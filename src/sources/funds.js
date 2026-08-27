@@ -63,6 +63,15 @@ const ACCESS_NOTES =
   'Any US brokerage, commission free. Trades like a stock and settles T+1; one share is the practical minimum, '
   + 'or less wherever fractional shares are supported.';
 
+// Open-end mutual funds are a different purchase entirely and saying "trades
+// like a stock" about one is simply wrong: there is no intraday price, the order
+// fills at the next close whatever the market does in between, and most carry an
+// account minimum that a share price does not tell you about.
+const ACCESS_MUTUAL_FUND =
+  'An open-end mutual fund, not an ETF. Buy it directly from the fund company or through a brokerage that carries it; '
+  + 'orders fill at the next 4pm NAV rather than at a price you can see when you place them, and there is no intraday '
+  + 'trading, no bid-ask spread and no limit order. Held in an IRA or 401(k) this is usually the default way to own it.';
+
 // Number(null) is 0, which is how a missing yield becomes a confident "0%".
 const num = (v) => {
   if (v === null || v === undefined || v === '') return null;
@@ -151,6 +160,103 @@ const CATEGORIES = {
     note: 'Cash equivalent. Duration is measured in weeks, so the price barely moves and the distribution simply '
       + 'tracks short rates — which also means the yield resets down the moment the Fed cuts.',
   },
+
+  // --- the retirement end of the table -------------------------------------
+  // These groups exist because the app has to be usable for the ordinary
+  // question "where does my long-term money go", not only for the exotic one
+  // "what pays 12%". Their yields are small on purpose, and schema.inferTrack
+  // puts the low-yield ones on the movement track, which is correct: their
+  // return is price, not income, and ranking them on a 1.1% dividend would say
+  // something true and completely beside the point.
+  core_index: {
+    label: 'Broad core index fund',
+    assetClass: baseC.ASSET_CLASS.ETF,
+    taxTreatment: baseC.TAX_TREATMENT.QUALIFIED_DIVIDEND,
+    note: 'A whole-market index fund. The dividend is a by-product, not the reason to own it — essentially all of the '
+      + 'long-run return is price. It is in this table as the baseline every income product on the list has to beat on '
+      + 'total return, not as a yield.',
+  },
+  target_date: {
+    label: 'Target-date / all-in-one retirement fund',
+    assetClass: baseC.ASSET_CLASS.ETF,
+    taxTreatment: baseC.TAX_TREATMENT.MIXED,
+    accessNotes: ACCESS_MUTUAL_FUND,
+    note: 'One fund holding a whole portfolio, shifting from equities toward bonds as the target year approaches. The '
+      + 'distribution rises along that glidepath, which is why the near-dated vintages yield more than the far ones — '
+      + 'that is the fund changing shape, not a better deal. Payouts mix qualified dividends, ordinary interest and '
+      + 'capital gains, so this is a fund to hold inside a retirement account where the mix does not matter.',
+  },
+  core_bond: {
+    label: 'Core / aggregate bond fund',
+    assetClass: baseC.ASSET_CLASS.CORP_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.ORDINARY,
+    note: 'The whole investment-grade bond market in one fund: mostly Treasuries and agency mortgages with a corporate '
+      + 'sleeve. Around six years of duration, so a one-point move in yields is worth about six percent of the price in '
+      + 'the opposite direction. It never matures, so that loss is only recovered if yields come back.',
+  },
+  tips: {
+    label: 'Inflation-protected Treasury fund',
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.TREASURY,
+    note: 'Treasury inflation-protected securities. The distribution jumps around with CPI, so a trailing yield here is '
+      + 'a worse guide than usual — what you are buying is the real yield plus whatever inflation turns out to be. Only '
+      + 'beats a nominal Treasury if CPI runs above the breakeven, which the bonds source computes. The inflation '
+      + 'adjustment is taxed in the year it accrues even though you do not receive it, so these belong in a tax-deferred '
+      + 'account far more than most bond funds do.',
+  },
+  muni_state: {
+    label: 'Single-state municipal fund',
+    assetClass: baseC.ASSET_CLASS.MUNI_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.MUNI_FEDERAL_EXEMPT,
+    accessNotes: ACCESS_MUTUAL_FUND,
+    note: 'Municipal bonds from one state. Federally exempt for anyone; the state exemption applies only if you live '
+      + 'there, and this row deliberately claims only the federal one — overstating it would hand a non-resident a tax '
+      + 'break they do not get. If you do live in the state, the real after-tax yield is higher than shown here.',
+  },
+  intl_income: {
+    label: 'International / emerging-market dividend fund',
+    assetClass: baseC.ASSET_CLASS.DIVIDEND_EQUITY,
+    taxTreatment: baseC.TAX_TREATMENT.QUALIFIED_DIVIDEND,
+    note: 'Dividends from companies outside the US, which structurally yield more than US ones because they pay out '
+      + 'more of their earnings. Two catches: foreign governments withhold tax at source, recoverable as a foreign tax '
+      + 'credit in a taxable account and simply lost inside an IRA; and the distribution moves with the dollar as well '
+      + 'as with the dividend.',
+  },
+  em_debt: {
+    label: 'Emerging-market bond fund',
+    assetClass: baseC.ASSET_CLASS.CORP_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.ORDINARY,
+    note: 'Sovereign and quasi-sovereign debt from developing countries. Filed as credit rather than government paper '
+      + 'because the default risk is real and a Treasury baseline would badly understate it. Local-currency funds add a '
+      + 'second, larger risk on top: the currency, which has historically driven more of the return than the coupon.',
+  },
+  infrastructure: {
+    label: 'Utilities & infrastructure income',
+    assetClass: baseC.ASSET_CLASS.DIVIDEND_EQUITY,
+    taxTreatment: baseC.TAX_TREATMENT.QUALIFIED_DIVIDEND,
+    note: 'Regulated utilities, pipelines, toll roads and airports — businesses with contracted or rate-regulated cash '
+      + 'flows, which is why they pay out more than the market and move less. They are also long-duration equities: '
+      + 'they fall when long rates rise, for the same arithmetic reason a bond does.',
+  },
+  senior_loan_clo: {
+    label: 'Senior loan & CLO fund',
+    assetClass: baseC.ASSET_CLASS.CORP_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.ORDINARY,
+    note: 'Floating-rate leveraged loans, or the tranches of the CLOs that hold them. Almost no interest-rate duration '
+      + 'and a great deal of credit risk, so the yield falls the moment the Fed cuts and the price falls when defaults '
+      + 'rise. The AAA tranche has never taken a loss, which is a strong record and not a guarantee; the BB and equity '
+      + 'tranches are where the double-digit numbers and the actual losses both live.',
+  },
+  money_market_etf: {
+    label: 'T-bill / money-market ETF',
+    assetClass: baseC.ASSET_CLASS.GOVT_BOND,
+    taxTreatment: baseC.TAX_TREATMENT.TREASURY,
+    note: 'A single slice of the bill curve in an ETF wrapper — the exchange-traded answer to a money market fund. '
+      + 'Interest is exempt from state and local tax, which is worth roughly half a point in a high-tax state, and the '
+      + 'yield resets straight down when the Fed cuts. The NAV floats rather than being pinned at $1.00, but at these '
+      + 'maturities it barely moves.',
+  },
+
   user: {
     label: 'User-added symbol',
     assetClass: baseC.ASSET_CLASS.ETF,
@@ -179,6 +285,41 @@ const UNIVERSE = {
     { symbol: 'SPYI', name: 'NEOS S&P 500 High Income ETF', issuer: 'NEOS Investments', expenseRatio: 0.68 },
     { symbol: 'QQQI', name: 'NEOS Nasdaq-100 High Income ETF', issuer: 'NEOS Investments', expenseRatio: 0.68 },
     { symbol: 'GPIX', name: 'Goldman Sachs S&P 500 Core Premium Income ETF', issuer: 'Goldman Sachs', expenseRatio: 0.29 },
+    { symbol: 'GPIQ', name: 'Goldman Sachs Nasdaq-100 Core Premium Income ETF', issuer: 'Goldman Sachs', expenseRatio: 0.29 },
+    { symbol: 'ISPY', name: 'ProShares S&P 500 High Income ETF', issuer: 'ProShares', expenseRatio: 0.55,
+      note: 'Writes daily rather than monthly options, which smooths the premium and gives up slightly less of a single '
+        + 'big up-day than a monthly writer does. The trade-off is the same one, just sliced finer.' },
+    { symbol: 'PBP', name: 'Invesco S&P 500 BuyWrite ETF', issuer: 'Invesco', expenseRatio: 0.49,
+      note: 'The oldest buy-write fund on this list, which makes it the honest long-run record of the strategy: two '
+        + 'decades of a large distribution and a total return well behind the index it writes against.' },
+    { symbol: 'SVOL', name: 'Simplify Volatility Premium ETF', issuer: 'Simplify Asset Management', expenseRatio: 1.16,
+      note: 'Shorts VIX futures rather than writing calls on stocks. The premium is real and the payoff is deliberately '
+        + 'asymmetric: it collects steadily and loses a great deal in a volatility spike. February 2018 took products '
+        + 'built on this trade to zero in a day; this one is sized to survive that, which is a design choice, not a law.' },
+    { symbol: 'FEPI', name: 'REX FANG & Innovation Equity Premium Income ETF', issuer: 'REX Shares', expenseRatio: 0.65,
+      note: 'Writes calls on a concentrated basket of big technology names. A 25%-plus distribution on a portfolio of '
+        + 'fifteen stocks is option premium on very expensive volatility, not earnings — and the capped upside costs '
+        + 'most in exactly the names people buy this for.' },
+    { symbol: 'XDTE', name: 'Roundhill S&P 500 0DTE Covered Call Strategy ETF', issuer: 'Roundhill Investments', expenseRatio: 0.95,
+      note: 'Sells same-day-expiry calls every morning. The weekly distribution is large and is funded by giving away '
+        + 'every intraday rally, so in a trending market the NAV grinds down while the payout stays up.' },
+    { symbol: 'YMAX', name: 'YieldMax Universe Fund of Option Income ETFs', issuer: 'YieldMax', expenseRatio: 1.28,
+      note: 'A fund of the single-stock option-income funds below, so it carries their fees on top of its own. The '
+        + 'headline distribution rate is not a yield: a large share of it is return of your own capital, and the share '
+        + 'price has fallen roughly in line with what has been paid out.' },
+    { symbol: 'TSLY', name: 'YieldMax TSLA Option Income Strategy ETF', issuer: 'YieldMax', expenseRatio: 1.01,
+      note: 'Sells calls against a synthetic long position in one stock. The distribution rate looks enormous because '
+        + 'it is computed on a share price that has fallen a long way; total return since launch is a fraction of the '
+        + 'distribution rate, and the fund files Section 19a notices showing much of the payout as return of capital. '
+        + 'You keep the downside of the single stock and sell away its upside.' },
+    { symbol: 'NVDY', name: 'YieldMax NVDA Option Income Strategy ETF', issuer: 'YieldMax', expenseRatio: 0.99,
+      note: 'The same structure on a single semiconductor stock. In a year when the underlying doubled, this returned a '
+        + 'small fraction of that while paying a distribution rate in the high double digits — which is the clearest '
+        + 'possible demonstration that a distribution rate is not a return.' },
+    { symbol: 'MSTY', name: 'YieldMax MSTR Option Income Strategy ETF', issuer: 'YieldMax', expenseRatio: 0.99,
+      note: 'Option income on the most volatile large-cap in the market, which is why the distribution rate is the '
+        + 'highest here. Volatility that high is priced that high for a reason: the same swings that fund the payout '
+        + 'take the NAV with them, and the payout is substantially return of capital.' },
   ],
   bond_etf: [
     { symbol: 'HYG', name: 'iShares iBoxx $ High Yield Corporate Bond ETF', issuer: 'iShares', expenseRatio: 0.49, creditRating: 'BB-' },
@@ -293,6 +434,152 @@ const UNIVERSE = {
         + 'never taken a loss at the AAA level, which is a strong record and not a guarantee.' },
     { symbol: 'ICSH', name: 'iShares Ultra Short-Term Bond ETF', issuer: 'iShares', expenseRatio: 0.08, creditRating: 'A',
       assetClass: baseC.ASSET_CLASS.CORP_BOND, taxTreatment: baseC.TAX_TREATMENT.ORDINARY },
+  ],
+
+  // The baseline. Nothing here is bought for its dividend, and that is exactly
+  // why it belongs in a yield screener: without it, every 12% distribution on
+  // the list has nothing honest to be compared against.
+  core_index: [
+    { symbol: 'VOO', name: 'Vanguard S&P 500 ETF', issuer: 'Vanguard', expenseRatio: 0.03 },
+    { symbol: 'IVV', name: 'iShares Core S&P 500 ETF', issuer: 'iShares', expenseRatio: 0.03 },
+    { symbol: 'SPLG', name: 'SPDR Portfolio S&P 500 ETF', issuer: 'State Street SPDR', expenseRatio: 0.02 },
+    { symbol: 'VTI', name: 'Vanguard Total Stock Market ETF', issuer: 'Vanguard', expenseRatio: 0.03 },
+    { symbol: 'ITOT', name: 'iShares Core S&P Total U.S. Stock Market ETF', issuer: 'iShares', expenseRatio: 0.03 },
+    { symbol: 'SCHB', name: 'Schwab U.S. Broad Market ETF', issuer: 'Charles Schwab', expenseRatio: 0.03 },
+    { symbol: 'SPTM', name: 'SPDR Portfolio S&P 1500 Composite Stock Market ETF', issuer: 'State Street SPDR', expenseRatio: 0.03 },
+    { symbol: 'SCHX', name: 'Schwab U.S. Large-Cap ETF', issuer: 'Charles Schwab', expenseRatio: 0.03 },
+    { symbol: 'VV', name: 'Vanguard Large-Cap ETF', issuer: 'Vanguard', expenseRatio: 0.04 },
+    { symbol: 'QQQM', name: 'Invesco NASDAQ 100 ETF', issuer: 'Invesco', expenseRatio: 0.15,
+      note: 'A half-percent dividend on a growth index. Everything this returns is price, which is why it sits on the '
+        + 'movement track and not the income one — ranking it on its yield would be arithmetically true and useless.' },
+  ],
+
+  // A whole retirement portfolio in one ticker, across all three big glidepaths.
+  // The yield rises as the target year approaches because the bond share does.
+  target_date: [
+    { symbol: 'VTINX', name: 'Vanguard Target Retirement Income Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VTTVX', name: 'Vanguard Target Retirement 2025 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VTHRX', name: 'Vanguard Target Retirement 2030 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VTTHX', name: 'Vanguard Target Retirement 2035 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VFORX', name: 'Vanguard Target Retirement 2040 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VTIVX', name: 'Vanguard Target Retirement 2045 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VFIFX', name: 'Vanguard Target Retirement 2050 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VFFVX', name: 'Vanguard Target Retirement 2055 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VTTSX', name: 'Vanguard Target Retirement 2060 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'VLXVX', name: 'Vanguard Target Retirement 2065 Fund', issuer: 'Vanguard', expenseRatio: 0.08, minInvestment: 1000 },
+    { symbol: 'FIKFX', name: 'Fidelity Freedom Index Income Fund', issuer: 'Fidelity Investments', expenseRatio: 0.12 },
+    { symbol: 'FXIFX', name: 'Fidelity Freedom Index 2030 Fund', issuer: 'Fidelity Investments', expenseRatio: 0.12 },
+    { symbol: 'FBIFX', name: 'Fidelity Freedom Index 2040 Fund', issuer: 'Fidelity Investments', expenseRatio: 0.12 },
+    { symbol: 'FIPFX', name: 'Fidelity Freedom Index 2050 Fund', issuer: 'Fidelity Investments', expenseRatio: 0.12 },
+    { symbol: 'SWYMX', name: 'Schwab Target 2050 Index Fund', issuer: 'Charles Schwab', expenseRatio: 0.08 },
+    { symbol: 'SWYOX', name: 'Schwab Target 2060 Index Fund', issuer: 'Charles Schwab', expenseRatio: 0.08 },
+  ],
+
+  core_bond: [
+    { symbol: 'AGG', name: 'iShares Core U.S. Aggregate Bond ETF', issuer: 'iShares', expenseRatio: 0.03, creditRating: 'AA' },
+    { symbol: 'IUSB', name: 'iShares Core Total USD Bond Market ETF', issuer: 'iShares', expenseRatio: 0.06, creditRating: 'A+' },
+    { symbol: 'SPAB', name: 'SPDR Portfolio Aggregate Bond ETF', issuer: 'State Street SPDR', expenseRatio: 0.03, creditRating: 'AA' },
+    { symbol: 'SCHZ', name: 'Schwab U.S. Aggregate Bond ETF', issuer: 'Charles Schwab', expenseRatio: 0.03, creditRating: 'AA' },
+    { symbol: 'FXNAX', name: 'Fidelity U.S. Bond Index Fund', issuer: 'Fidelity Investments', expenseRatio: 0.025, creditRating: 'AA' },
+    { symbol: 'BNDX', name: 'Vanguard Total International Bond ETF', issuer: 'Vanguard', expenseRatio: 0.07, creditRating: 'A+',
+      note: 'Foreign investment-grade bonds hedged back to dollars, which removes the currency and leaves the foreign '
+        + 'rate cycle. The hedge is what makes the yield look low: it is a US-rate-equivalent yield, not the coupon.' },
+  ],
+
+  tips: [
+    { symbol: 'TIP', name: 'iShares TIPS Bond ETF', issuer: 'iShares', expenseRatio: 0.18,
+      assetClass: baseC.ASSET_CLASS.GOVT_BOND, insurance: baseC.INSURANCE.NONE, creditRating: 'AA+' },
+    { symbol: 'SCHP', name: 'Schwab U.S. TIPS ETF', issuer: 'Charles Schwab', expenseRatio: 0.03,
+      assetClass: baseC.ASSET_CLASS.GOVT_BOND, insurance: baseC.INSURANCE.NONE, creditRating: 'AA+' },
+    { symbol: 'VTIP', name: 'Vanguard Short-Term Inflation-Protected Securities ETF', issuer: 'Vanguard', expenseRatio: 0.03,
+      assetClass: baseC.ASSET_CLASS.GOVT_BOND, insurance: baseC.INSURANCE.NONE, creditRating: 'AA+',
+      note: 'Short-dated TIPS, so almost all of the return is the inflation accrual and almost none of it is rate risk. '
+        + 'The closest listed equivalent to an I bond, minus the purchase cap and minus the deflation floor.' },
+    { symbol: 'STIP', name: 'iShares 0-5 Year TIPS Bond ETF', issuer: 'iShares', expenseRatio: 0.03,
+      assetClass: baseC.ASSET_CLASS.GOVT_BOND, insurance: baseC.INSURANCE.NONE, creditRating: 'AA+' },
+    { symbol: 'TIPX', name: 'SPDR Bloomberg 1-10 Year TIPS ETF', issuer: 'State Street SPDR', expenseRatio: 0.15,
+      assetClass: baseC.ASSET_CLASS.GOVT_BOND, insurance: baseC.INSURANCE.NONE, creditRating: 'AA+' },
+    { symbol: 'LTPZ', name: 'PIMCO 15+ Year U.S. TIPS Index ETF', issuer: 'PIMCO', expenseRatio: 0.20,
+      assetClass: baseC.ASSET_CLASS.GOVT_BOND, insurance: baseC.INSURANCE.NONE, creditRating: 'AA+',
+      note: 'Twenty years of real duration. It is inflation-protected and it is still one of the most volatile bond '
+        + 'funds in this app: protection against CPI is not protection against real yields moving.' },
+  ],
+
+  muni_state: [
+    { symbol: 'VCITX', name: 'Vanguard California Long-Term Tax-Exempt Fund', issuer: 'Vanguard', expenseRatio: 0.17, minInvestment: 3000, stateOfIssue: 'CA' },
+    { symbol: 'VNYTX', name: 'Vanguard New York Long-Term Tax-Exempt Fund', issuer: 'Vanguard', expenseRatio: 0.17, minInvestment: 3000, stateOfIssue: 'NY' },
+    { symbol: 'VNJTX', name: 'Vanguard New Jersey Long-Term Tax-Exempt Fund', issuer: 'Vanguard', expenseRatio: 0.17, minInvestment: 3000, stateOfIssue: 'NJ' },
+    { symbol: 'VPAIX', name: 'Vanguard Pennsylvania Long-Term Tax-Exempt Fund', issuer: 'Vanguard', expenseRatio: 0.17, minInvestment: 3000, stateOfIssue: 'PA' },
+    { symbol: 'VOHIX', name: 'Vanguard Ohio Long-Term Tax-Exempt Fund', issuer: 'Vanguard', expenseRatio: 0.17, minInvestment: 3000, stateOfIssue: 'OH' },
+    { symbol: 'VMATX', name: 'Vanguard Massachusetts Tax-Exempt Fund', issuer: 'Vanguard', expenseRatio: 0.16, minInvestment: 3000, stateOfIssue: 'MA' },
+    { symbol: 'FCTFX', name: 'Fidelity California Municipal Income Fund', issuer: 'Fidelity Investments', expenseRatio: 0.46, stateOfIssue: 'CA' },
+    { symbol: 'FTFMX', name: 'Fidelity New York Municipal Income Fund', issuer: 'Fidelity Investments', expenseRatio: 0.46, stateOfIssue: 'NY' },
+  ],
+
+  intl_income: [
+    { symbol: 'VXUS', name: 'Vanguard Total International Stock ETF', issuer: 'Vanguard', expenseRatio: 0.05 },
+    { symbol: 'VEA', name: 'Vanguard FTSE Developed Markets ETF', issuer: 'Vanguard', expenseRatio: 0.03 },
+    { symbol: 'VWO', name: 'Vanguard FTSE Emerging Markets ETF', issuer: 'Vanguard', expenseRatio: 0.07 },
+    { symbol: 'VYMI', name: 'Vanguard International High Dividend Yield ETF', issuer: 'Vanguard', expenseRatio: 0.17 },
+    { symbol: 'IDV', name: 'iShares International Select Dividend ETF', issuer: 'iShares', expenseRatio: 0.51,
+      note: 'Concentrated in European and UK financials, energy and telecoms — high payout ratios in cyclical sectors, '
+        + 'which is why the distribution has been cut hard in past downturns and why it recovers hard afterwards.' },
+    { symbol: 'SCHY', name: 'Schwab International Dividend Equity ETF', issuer: 'Charles Schwab', expenseRatio: 0.14 },
+    { symbol: 'DEM', name: 'WisdomTree Emerging Markets High Dividend Fund', issuer: 'WisdomTree', expenseRatio: 0.63 },
+    { symbol: 'DVYE', name: 'iShares Emerging Markets Dividend ETF', issuer: 'iShares', expenseRatio: 0.49,
+      note: 'The highest dividend yield in this group and the most concentrated. Emerging-market payouts track '
+        + 'commodity earnings, so the trailing figure is often a peak that is about to be cut.' },
+  ],
+
+  em_debt: [
+    { symbol: 'VWOB', name: 'Vanguard Emerging Markets Government Bond ETF', issuer: 'Vanguard', expenseRatio: 0.20, creditRating: 'BB+' },
+    { symbol: 'PCY', name: 'Invesco Emerging Markets Sovereign Debt ETF', issuer: 'Invesco', expenseRatio: 0.50, creditRating: 'BB' },
+    { symbol: 'EMHY', name: 'iShares J.P. Morgan EM High Yield Bond ETF', issuer: 'iShares', expenseRatio: 0.50, creditRating: 'B+' },
+    { symbol: 'EMLC', name: 'VanEck J.P. Morgan EM Local Currency Bond ETF', issuer: 'VanEck', expenseRatio: 0.30, creditRating: 'BBB-',
+      note: 'Local-currency debt, which means the dollar decides most of the return. The coupon is high because those '
+        + 'currencies are expected to depreciate; sometimes they depreciate by less than that, and sometimes by more.' },
+    { symbol: 'EBND', name: 'SPDR Bloomberg Emerging Markets Local Bond ETF', issuer: 'State Street SPDR', expenseRatio: 0.30, creditRating: 'BBB-' },
+  ],
+
+  infrastructure: [
+    { symbol: 'XLU', name: 'Utilities Select Sector SPDR Fund', issuer: 'State Street SPDR', expenseRatio: 0.08 },
+    { symbol: 'VPU', name: 'Vanguard Utilities ETF', issuer: 'Vanguard', expenseRatio: 0.09 },
+    { symbol: 'IGF', name: 'iShares Global Infrastructure ETF', issuer: 'iShares', expenseRatio: 0.42 },
+    { symbol: 'GII', name: 'SPDR S&P Global Infrastructure ETF', issuer: 'State Street SPDR', expenseRatio: 0.40 },
+    { symbol: 'AMLP', name: 'Alerian MLP ETF', issuer: 'ALPS / SS&C', expenseRatio: 0.85,
+      taxTreatment: baseC.TAX_TREATMENT.ROC,
+      note: 'Pipeline partnerships in a fund that is itself taxed as a C-corporation, so it accrues a deferred tax '
+        + 'liability that quietly drags on NAV. Most of the distribution is return of capital: it is not taxed now, it '
+        + 'reduces your cost basis instead, and the bill arrives when you sell. Unlike owning the MLPs directly there '
+        + 'is no K-1, which is the whole reason this wrapper exists.' },
+    { symbol: 'MLPA', name: 'Global X MLP ETF', issuer: 'Global X', expenseRatio: 0.45,
+      taxTreatment: baseC.TAX_TREATMENT.ROC,
+      note: 'The same C-corporation structure and the same deferred tax drag as AMLP, at roughly half the fee.' },
+  ],
+
+  senior_loan_clo: [
+    { symbol: 'FTSL', name: 'First Trust Senior Loan Fund', issuer: 'First Trust', expenseRatio: 0.86, creditRating: 'B+' },
+    { symbol: 'SEIX', name: 'Virtus Seix Senior Loan ETF', issuer: 'Virtus', expenseRatio: 0.62, creditRating: 'B+' },
+    { symbol: 'JBBB', name: 'Janus Henderson B-BBB CLO ETF', issuer: 'Janus Henderson', expenseRatio: 0.49, creditRating: 'BBB-',
+      note: 'The mezzanine tranches, which is where the extra three points over a AAA CLO fund come from. These take '
+        + 'losses long before the AAAs do, and in a real default cycle they take them all at once.' },
+    { symbol: 'CLOA', name: 'BlackRock AAA CLO ETF', issuer: 'BlackRock', expenseRatio: 0.20, creditRating: 'AAA' },
+    { symbol: 'ICLO', name: 'Invesco AAA CLO Floating Rate Note ETF', issuer: 'Invesco', expenseRatio: 0.26, creditRating: 'AAA' },
+    { symbol: 'AAA', name: 'Alternative Access First Priority CLO Bond ETF', issuer: 'Alternative Access Funds', expenseRatio: 0.25, creditRating: 'AAA' },
+    { symbol: 'CLOZ', name: 'Panagram BBB-B CLO ETF', issuer: 'Panagram Structured Asset Management', expenseRatio: 0.50, creditRating: 'BB+',
+      note: 'BBB and BB CLO tranches. An eight-plus percent yield on floating-rate paper with no duration is not free: '
+        + 'it is the price of standing near the front of the loss queue in a leveraged loan pool.' },
+  ],
+
+  money_market_etf: [
+    { symbol: 'TBIL', name: 'US Treasury 3 Month Bill ETF', issuer: 'F/m Investments', expenseRatio: 0.15, insurance: baseC.INSURANCE.NONE },
+    { symbol: 'XBIL', name: 'US Treasury 6 Month Bill ETF', issuer: 'F/m Investments', expenseRatio: 0.15, insurance: baseC.INSURANCE.NONE },
+    { symbol: 'OBIL', name: 'US Treasury 12 Month Bill ETF', issuer: 'F/m Investments', expenseRatio: 0.15, insurance: baseC.INSURANCE.NONE },
+    { symbol: 'CLIP', name: 'Global X 1-3 Month T-Bill ETF', issuer: 'Global X', expenseRatio: 0.07, insurance: baseC.INSURANCE.NONE },
+    { symbol: 'GBIL', name: 'Goldman Sachs Access Treasury 0-1 Year ETF', issuer: 'Goldman Sachs', expenseRatio: 0.12, insurance: baseC.INSURANCE.NONE },
+    { symbol: 'UTWO', name: 'US Treasury 2 Year Note ETF', issuer: 'F/m Investments', expenseRatio: 0.15, insurance: baseC.INSURANCE.NONE,
+      note: 'A single point on the curve rather than a money market: two years of duration means a real price move when '
+        + 'rates do. It is here because holding one maturity, rather than a ladder, is how you take a view on cuts.' },
   ],
 };
 
@@ -661,6 +948,15 @@ function buildOpportunity(entry, stats, { schema = baseSchema, C = baseC, dataAs
     notes.push(`Headline is the trailing 12-month yield (${trailing.toFixed(2)}%). Annualising the latest payment instead `
       + `gives ${forward.toFixed(2)}% — the gap is the payout changing, not free money.`);
   }
+  if (entry.stateOfIssue) {
+    // Deliberately not upgraded to MUNI_TRIPLE_EXEMPT for a resident: this
+    // adapter has no view of the user's state, and quietly handing a New Yorker
+    // a California tax break would overstate the after-tax yield on the row that
+    // is hardest to check.
+    notes.push(`Single-state ${entry.stateOfIssue} fund. The federal exemption applies to anyone; the ${entry.stateOfIssue} `
+      + 'state and local exemption applies only to residents, and the after-tax figure below claims only the federal one. '
+      + `If you do live in ${entry.stateOfIssue}, your real after-tax yield is higher than shown.`);
+  }
   if (['cef', 'bdc', 'mortgage_reit'].includes(entry.category)) {
     notes.push('Premium/discount to NAV, return-of-capital share and distribution coverage are left blank rather than '
       + 'guessed: the price feed does not carry them. Look them up before treating this yield as income.');
@@ -695,7 +991,10 @@ function buildOpportunity(entry, stats, { schema = baseSchema, C = baseC, dataAs
     liquidity: C.LIQUIDITY.DAILY,
 
     price,
-    minInvestment: price,                              // one share
+    // One share, unless the fund says otherwise. Open-end mutual funds have a
+    // real account minimum that the NAV gives no hint of — a $1,000 target-date
+    // minimum shown as "$47" is a lie the reader has no way to catch.
+    minInvestment: num(entry.minInvestment) ?? price,
     volume: num(stats?.dollarVolume),
 
     expenseRatio: num(entry.expenseRatio),
@@ -714,10 +1013,19 @@ function buildOpportunity(entry, stats, { schema = baseSchema, C = baseC, dataAs
     },
 
     taxTreatment,
+    stateOfIssue: entry.stateOfIssue || null,
+    // Some rows genuinely know their own track better than the yield rule does.
+    // Left unset, schema.inferTrack decides from the rate, which is right for
+    // nearly everything here.
+    track: entry.track || null,
     url: quotePage(symbol),
     notes: notes.filter(Boolean).join(' '),
-    accessNotes: cat.access ? `${ACCESS_NOTES} ${cat.access}` : ACCESS_NOTES,
-    requirements: ['Brokerage account'],
+    // cat.accessNotes REPLACES the default (a mutual fund does not trade like a
+    // stock); cat.access only appends a caveat to it.
+    accessNotes: cat.accessNotes || (cat.access ? `${ACCESS_NOTES} ${cat.access}` : ACCESS_NOTES),
+    requirements: cat.accessNotes
+      ? ['Brokerage or fund-company account', ...(num(entry.minInvestment) ? [`$${num(entry.minInvestment).toLocaleString()} minimum initial investment`] : [])]
+      : ['Brokerage account'],
     dataAsOf: dataAsOf || stats?.dataAsOf || null,
     seed: !!seed,
   };
@@ -786,7 +1094,7 @@ async function fetchSymbol(ctx, entry) {
     if (ctx.signal?.aborted) return { entry, series: null, attempts, aborted: true };
     try {
       const payload = await http.getJSON(chartUrl(host, entry.symbol), {
-        signal: ctx.signal, timeout: 20000, retries: 1, concurrency: 3,
+        signal: ctx.signal, timeout: 20000, retries: 1, concurrency: 6,
       });
       const series = parseChart(payload);
       if (series && !series.error && (series.price !== null || series.adj?.length)) {
@@ -841,7 +1149,12 @@ async function fetchLive(ctx) {
 
   ctx.log?.(`funds: fetching ${entries.length} symbols from the Yahoo chart endpoint`);
   const fallback = seedYieldIndex(ctx.seedDir);
-  const results = await mapLimited(entries, 3, (entry) => fetchSymbol(ctx, entry));
+  // One request per symbol is not a choice: Yahoo publishes no batch endpoint
+  // that carries dividend events, and the dividend stream is the entire point of
+  // this source. The only lever is how many run at once, and six is where the
+  // per-host semaphore in http.js and Yahoo's own tolerance meet — enough to keep
+  // a 160-symbol universe inside a reasonable refresh, short of the rate limit.
+  const results = await mapLimited(entries, 6, (entry) => fetchSymbol(ctx, entry));
 
   const rows = [];
   const failed = [];
@@ -868,7 +1181,9 @@ async function fetchLive(ctx) {
 
   const built = buildAll(rows, { schema, C, seed: false });
 
-  notes.push(`${built.opportunities.length} of ${entries.length} symbols priced and yielded.`);
+  notes.push(`${built.opportunities.length} of ${entries.length} symbols priced and yielded, one request each — `
+    + 'Yahoo has no batch endpoint that carries dividend events, so a wider universe costs proportionally more requests. '
+    + 'Trim it with settings.sources.funds.exclude if a refresh is taking too long.');
   if (viaStooq) notes.push(`${viaStooq} symbol(s) fell back to Stooq for price; their yields come from the bundled snapshot.`);
   if (built.skipped.length) notes.push(`${built.skipped.length} row(s) dropped while mapping: ${built.skipped.slice(0, 10).join(', ')}.`);
   if (failed.length) {

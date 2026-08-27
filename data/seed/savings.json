@@ -18,7 +18,10 @@
       "minInvestment": 0,
       "url": "https://www.ally.com/bank/online-savings-account/",
       "accessNotes": "Open online in about ten minutes with an SSN and a funding account; no minimum deposit, no monthly fee, six free transfers per cycle.",
-      "requirements": ["No minimum balance", "US resident with an SSN or ITIN"],
+      "requirements": [
+        "No minimum balance",
+        "US resident with an SSN or ITIN"
+      ],
       "notes": "Rate is set by the bank and can change any day, including the day after you fund the account."
     },
     {
@@ -32,7 +35,9 @@
       "minInvestment": 0,
       "url": "https://www.marcus.com/us/en/savings/high-yield-savings",
       "accessNotes": "Open online, no minimum; link an external account and pull funds in. Deposits sit at Goldman Sachs Bank USA, not at the broker-dealer.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "Marcus has historically offered a small rate boost through partner referral links; the base rate is what is shown here."
     },
     {
@@ -46,7 +51,9 @@
       "minInvestment": 0,
       "url": "https://www.americanexpress.com/en-us/banking/online-savings/high-yield-savings-account/",
       "accessNotes": "Open online; no minimum and no monthly fee. Transfers are ACH only — there is no debit card and no branch network.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "No ATM access at all, so this is a place to park money rather than to spend from."
     },
     {
@@ -60,7 +67,9 @@
       "minInvestment": 0,
       "url": "https://www.discover.com/online-banking/savings-account/",
       "accessNotes": "Open online with no minimum; fund by ACH, wire, or direct deposit.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "Discover Bank is now part of Capital One; product terms have so far been unchanged but are worth re-checking."
     },
     {
@@ -74,7 +83,9 @@
       "minInvestment": 0,
       "url": "https://www.capitalone.com/bank/savings-accounts/online-performance-savings-account/",
       "accessNotes": "Open online or in a Capital One Cafe; no minimum, and unlike most online banks there is branch and ATM access.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "One rate for all balances — Capital One dropped the old tiered 360 Savings pricing, which is why the legacy 360 Savings account pays far less."
     },
     {
@@ -88,7 +99,9 @@
       "minInvestment": 0,
       "url": "https://www.synchronybank.com/banking/high-yield-savings/",
       "accessNotes": "Open online with no minimum; includes an optional ATM card, which is unusual for a high-yield savings account.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "Synchrony is a credit-card bank funding its card book with deposits, which is why it tends to sit near the top of the rate tables."
     },
     {
@@ -102,7 +115,9 @@
       "minInvestment": 0,
       "url": "https://www.banking.barclaysus.com/online-savings.html",
       "accessNotes": "Open online; ACH transfers only, no ATM card, no branches.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "Deposits are at Barclays Bank Delaware, a separately capitalised US bank, not at the UK parent."
     },
     {
@@ -134,7 +149,10 @@
       "minInvestment": 1,
       "url": "https://www.wealthfront.com/cash",
       "accessNotes": "Open a Wealthfront brokerage account online, $1 minimum; money is swept to partner banks, and same-day withdrawals are capped.",
-      "requirements": ["Wealthfront brokerage account", "$1 minimum to open"],
+      "requirements": [
+        "Wealthfront brokerage account",
+        "$1 minimum to open"
+      ],
       "notes": "This is a brokerage sweep, not a bank account. FDIC coverage is pass-through from the program banks and only exists once the cash actually lands at one of them; the aggregate limit is far above $250k but depends on the current bank list."
     },
     {
@@ -149,7 +167,9 @@
       "minInvestment": 0,
       "url": "https://www.betterment.com/cash-reserve",
       "accessNotes": "Open through the Betterment app; no minimum, no fee on Cash Reserve, transfers settle in one to two business days.",
-      "requirements": ["Betterment account"],
+      "requirements": [
+        "Betterment account"
+      ],
       "notes": "Betterment has repeatedly run a boosted rate for new customers for their first few months; the number here is the ongoing base rate, which is the one that matters after the boost lapses. Cash is swept to program banks, so FDIC coverage is pass-through."
     },
     {
@@ -163,7 +183,9 @@
       "minInvestment": 0,
       "url": "https://www.baskbank.com/savings/interest-savings-account",
       "accessNotes": "Open online; ACH only, no ATM card. Bask also offers an account that pays American Airlines miles instead of interest — that is a different product and usually a worse deal.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "Bask is the direct-bank brand of Texas Capital Bank; FDIC insurance is shared with any other Texas Capital deposits you hold."
     },
     {
@@ -177,7 +199,9 @@
       "minInvestment": 0,
       "url": "https://www.ufbdirect.com/savings",
       "accessNotes": "Open online with no minimum; includes an ATM card.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "confidence": 0.6,
       "notes": "UFB has a long habit of launching a freshly-named savings product at a top rate and quietly leaving existing customers on the old, lower one. Check which product name your account is actually on, not the one on the website."
     },
@@ -192,7 +216,9 @@
       "minInvestment": 0,
       "url": "https://www.everbank.com/banking/savings/performance-savings",
       "accessNotes": "Open online; no minimum, no monthly fee.",
-      "requirements": ["No minimum balance"],
+      "requirements": [
+        "No minimum balance"
+      ],
       "notes": "EverBank commits publicly to keeping existing customers on the same rate as new ones, which is the opposite of the usual online-bank practice."
     },
     {
@@ -262,7 +288,9 @@
       "minInvestment": 0,
       "url": "https://investor.vanguard.com/accounts-plans/vanguard-cash-plus-account",
       "accessNotes": "Open inside an existing Vanguard account; balances sweep to partner banks and can be moved into Vanguard funds without leaving the platform.",
-      "requirements": ["Vanguard brokerage account"],
+      "requirements": [
+        "Vanguard brokerage account"
+      ],
       "notes": "Bank sweep, so FDIC-insured across several program banks — a different product from Vanguard's money market funds, which are not insured but usually yield a little more."
     },
     {
@@ -277,10 +305,11 @@
       "minInvestment": 0,
       "url": "https://www.fidelity.com/cash-management/fidelity-cash-management-account/overview",
       "accessNotes": "Open online; free ATM withdrawals worldwide with fee reimbursement, which is the real reason to hold one.",
-      "requirements": ["Fidelity account"],
+      "requirements": [
+        "Fidelity account"
+      ],
       "notes": "Listed because the contrast matters: the FDIC sweep pays far less than SPAXX sitting in the same account. If you hold a Fidelity CMA, the cash usually belongs in the money market fund, not the sweep."
     },
-
     {
       "id": "spaxx",
       "kind": "money_market_fund",
@@ -415,7 +444,6 @@
       "accessNotes": "Buy as a fund position in a Schwab account; no minimum, T+1 settlement.",
       "notes": "Treasury-only portfolio, so most of the income is state-tax-exempt — the exact share is published annually and varies. The 0.34% fee is why it trails Vanguard's Treasury fund."
     },
-
     {
       "id": "synchrony-cd-3mo",
       "kind": "cd",
@@ -429,7 +457,9 @@
       "minInvestment": 0,
       "url": "https://www.synchronybank.com/banking/cds/",
       "accessNotes": "Open online with no minimum; rate is locked at funding and the CD auto-renews unless you act during the 10-day grace period.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "On a 3-month CD the early withdrawal penalty is the entire term's interest, so treat this as genuinely locked money."
     },
     {
@@ -445,7 +475,9 @@
       "minInvestment": 0,
       "url": "https://www.ally.com/bank/high-yield-cd/",
       "accessNotes": "Open online with no minimum; Ally's Ten Day Best Rate guarantee gives you the best rate it offers in the ten days after you fund.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "Ally's penalty schedule is one of the mildest in the market — 60 days of interest on terms of 24 months or less."
     },
     {
@@ -461,7 +493,9 @@
       "minInvestment": 500,
       "url": "https://www.marcus.com/us/en/savings/high-yield-cds",
       "accessNotes": "Open online with $500; you have 10 days after opening to fund it and the rate is guaranteed over that window.",
-      "requirements": ["$500 minimum deposit"],
+      "requirements": [
+        "$500 minimum deposit"
+      ],
       "notes": "Auto-renews at whatever the rate is on the maturity date. Set a calendar reminder for the grace period."
     },
     {
@@ -477,7 +511,9 @@
       "minInvestment": 500,
       "url": "https://www.marcus.com/us/en/savings/high-yield-cds",
       "accessNotes": "Open online with $500 minimum.",
-      "requirements": ["$500 minimum deposit"],
+      "requirements": [
+        "$500 minimum deposit"
+      ],
       "notes": "Odd terms like 9 and 13 months are where banks put their promotional pricing, which is why this can beat the 1-year."
     },
     {
@@ -493,7 +529,9 @@
       "minInvestment": 0,
       "url": "https://www.capitalone.com/bank/cds/online-cds/",
       "accessNotes": "Open online with no minimum; choose monthly, annual, or at-maturity interest payout when you open it.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "Compare against the 1-year Treasury before locking: a Treasury of the same maturity is state-tax-free and can be sold any day."
     },
     {
@@ -545,7 +583,9 @@
       "minInvestment": 0,
       "url": "https://www.discover.com/online-banking/cd/",
       "accessNotes": "Open online with no minimum; interest can be paid out monthly or compounded to maturity.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "Six months of interest on an 18-month CD wipes out a third of the total return if you break it early."
     },
     {
@@ -579,7 +619,9 @@
       "minInvestment": 0,
       "url": "https://www.synchronybank.com/banking/cds/",
       "accessNotes": "Open online with no minimum.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "The 2-year point is where the curve is flattest right now — you are locking two years of rate risk for less than the 9-month CD pays."
     },
     {
@@ -595,7 +637,9 @@
       "minInvestment": 0,
       "url": "https://www.ally.com/bank/high-yield-cd/",
       "accessNotes": "Open online with no minimum.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "90 days of interest on a 3-year term makes this one of the cheapest long CDs to break — that optionality is worth real basis points if rates rise."
     },
     {
@@ -611,7 +655,9 @@
       "minInvestment": 0,
       "url": "https://www.discover.com/online-banking/cd/",
       "accessNotes": "Open online with no minimum.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "Locking three years below the 3-month rate is a bet that rates fall further. That bet may be right, but name it before you make it."
     },
     {
@@ -627,7 +673,9 @@
       "minInvestment": 0,
       "url": "https://www.banking.barclaysus.com/online-cds.html",
       "accessNotes": "Open online with no minimum; interest is credited monthly and can be transferred out.",
-      "requirements": ["No minimum deposit"],
+      "requirements": [
+        "No minimum deposit"
+      ],
       "notes": "Five years of insured, contractually fixed income. The risk here is not credit, it is that you are still holding 3.5% in year four."
     },
     {
@@ -648,7 +696,6 @@
       "accessNotes": "Open in online banking once membership is established; dividends can be paid monthly to a share account.",
       "notes": "Credit unions usually pay more than banks at the long end because they have no shareholders to pay first."
     },
-
     {
       "id": "ally-no-penalty-cd-11mo",
       "kind": "no_penalty_cd",
@@ -661,7 +708,10 @@
       "insurance": "fdic",
       "minInvestment": 0,
       "url": "https://www.ally.com/bank/no-penalty-cd/",
-      "requirements": ["Withdrawal must be the full balance — no partial withdrawals", "Locked for the first 6 days after funding"],
+      "requirements": [
+        "Withdrawal must be the full balance — no partial withdrawals",
+        "Locked for the first 6 days after funding"
+      ],
       "accessNotes": "Open online with no minimum; after six days you can close it and take principal plus all interest earned, any day, for any reason.",
       "notes": "The genuinely useful product on this list: a rate close to a term CD with an option to walk away free. If rates rise you break it and re-open at the new rate; if they fall you keep the old one."
     },
@@ -677,7 +727,11 @@
       "insurance": "fdic",
       "minInvestment": 500,
       "url": "https://www.marcus.com/us/en/savings/no-penalty-cd",
-      "requirements": ["$500 minimum deposit", "Withdrawal must be the full balance", "Locked for the first 7 days after funding"],
+      "requirements": [
+        "$500 minimum deposit",
+        "Withdrawal must be the full balance",
+        "Locked for the first 7 days after funding"
+      ],
       "accessNotes": "Open online with $500; withdraw the full balance any time after the first week with no penalty.",
       "notes": "Marcus also offers 7 and 20 month no-penalty terms; the 13 month usually prices best."
     },
@@ -693,9 +747,944 @@
       "insurance": "fdic",
       "minInvestment": 0,
       "url": "https://www.synchronybank.com/banking/no-penalty-cd/",
-      "requirements": ["Withdrawal must be the full balance", "Locked for the first 6 days after funding"],
+      "requirements": [
+        "Withdrawal must be the full balance",
+        "Locked for the first 6 days after funding"
+      ],
       "accessNotes": "Open online with no minimum; full balance withdrawable without penalty after the first six days.",
       "notes": "Compare the give-up against Synchrony's own savings rate — if a no-penalty CD pays less than the bank's liquid savings account, it is strictly worse."
+    },
+    {
+      "id": "lendingclub-levelup-savings",
+      "kind": "savings",
+      "name": "LendingClub LevelUp Savings",
+      "provider": "LendingClub Bank, N.A.",
+      "fdicName": "LendingClub Bank, National Association",
+      "apy": 4.05,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.lendingclub.com/banking/savings",
+      "requirements": [
+        "Deposit at least $250 a month to earn the higher tier"
+      ],
+      "accessNotes": "Open online in a few minutes; the top tier is earned by a monthly $250 deposit, checked each statement cycle.",
+      "notes": "Two-tier rate: miss the monthly deposit and the rate drops by roughly half a point. The tier test is a deposit, not a spend, so a standing transfer satisfies it permanently."
+    },
+    {
+      "id": "axos-one-savings",
+      "kind": "savings",
+      "name": "Axos ONE Savings",
+      "provider": "Axos Bank",
+      "fdicName": "Axos Bank",
+      "apy": 4.0,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.axosbank.com/personal/savings",
+      "requirements": [
+        "$1,500 of qualifying direct deposits each month for the top tier",
+        "Paired Axos ONE checking account"
+      ],
+      "accessNotes": "Open the paired checking and savings together online; the rate tier is recalculated every monthly cycle from your direct deposits.",
+      "confidence": 0.6,
+      "notes": "The headline needs a real paycheque routed here every month. Without the direct deposit it pays a base rate closer to a large branch bank."
+    },
+    {
+      "id": "cit-platinum-savings",
+      "kind": "savings",
+      "name": "CIT Bank Platinum Savings",
+      "provider": "CIT Bank (First Citizens)",
+      "fdicName": "First-Citizens Bank & Trust Company",
+      "apy": 3.95,
+      "insurance": "fdic",
+      "minInvestment": 5000,
+      "url": "https://www.cit.com/cit-bank/savings/platinum-savings",
+      "requirements": [
+        "$5,000 balance required for the top tier"
+      ],
+      "accessNotes": "Open online with $100; the advertised rate only starts at a $5,000 balance, below which it pays a small fraction of it.",
+      "notes": "A balance-tier product rather than a flat rate. CIT is a division of First Citizens Bank, so the insurance and the $250k limit sit at First Citizens."
+    },
+    {
+      "id": "bread-savings",
+      "kind": "savings",
+      "name": "Bread Savings High-Yield Savings",
+      "provider": "Bread Financial",
+      "fdicName": "Comenity Capital Bank",
+      "apy": 3.9,
+      "insurance": "fdic",
+      "minInvestment": 100,
+      "url": "https://www.breadfinancial.com/en/bread-savings.html",
+      "requirements": [
+        "$100 to open"
+      ],
+      "accessNotes": "Open online; ACH transfers only, no branches and no ATM card. Deposits are held at Comenity Capital Bank.",
+      "notes": "The bank on the FDIC certificate is Comenity Capital Bank, not the Bread brand — worth knowing if you already hold deposits there through a store card."
+    },
+    {
+      "id": "forbright-growth-savings",
+      "kind": "savings",
+      "name": "Forbright Bank Growth Savings",
+      "provider": "Forbright Bank",
+      "fdicName": "Forbright Bank",
+      "apy": 3.95,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.forbrightbank.com/personal-banking/savings/",
+      "requirements": [
+        "No minimum balance"
+      ],
+      "accessNotes": "Open online; a straightforward flat-rate account with no tiers, no direct deposit test and no balance cap.",
+      "notes": "One of the plainer accounts on this list: no hoops at all, which is worth a few basis points of headline rate to most people."
+    },
+    {
+      "id": "bmo-alto-online-savings",
+      "kind": "savings",
+      "name": "BMO Alto Online Savings",
+      "provider": "BMO Alto (BMO Bank, N.A.)",
+      "fdicName": "BMO Bank National Association",
+      "apy": 3.9,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.bmoalto.com/",
+      "requirements": [
+        "No minimum balance",
+        "Online-only — no branch or phone servicing"
+      ],
+      "accessNotes": "Open online at BMO Alto, which is a separate online-only brand of BMO Bank; existing BMO branch customers cannot see these accounts in their normal banking login.",
+      "notes": "Alto deposits share the same $250,000 FDIC limit as any other BMO Bank deposit, so a branch balance and an Alto balance are added together, not insured separately."
+    },
+    {
+      "id": "quontic-high-yield-savings",
+      "kind": "savings",
+      "name": "Quontic Bank High Yield Savings",
+      "provider": "Quontic Bank",
+      "fdicName": "Quontic Bank",
+      "apy": 3.85,
+      "insurance": "fdic",
+      "minInvestment": 100,
+      "url": "https://www.quontic.com/savings/high-yield-savings/",
+      "requirements": [
+        "$100 to open"
+      ],
+      "accessNotes": "Open online; Quontic is a community development financial institution, so deposits fund lending in underserved areas.",
+      "notes": "Six-withdrawal-per-cycle limit is enforced here, unlike at several competitors who dropped it after Regulation D was relaxed."
+    },
+    {
+      "id": "laurel-road-high-yield-savings",
+      "kind": "savings",
+      "name": "Laurel Road High Yield Savings",
+      "provider": "Laurel Road (KeyBank)",
+      "fdicName": "KeyBank National Association",
+      "apy": 3.8,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.laurelroad.com/savings/high-yield-savings/",
+      "requirements": [
+        "No minimum balance"
+      ],
+      "accessNotes": "Open online; Laurel Road is a digital brand of KeyBank, so the deposit sits on KeyBank’s certificate.",
+      "notes": "If you already bank at KeyBank, this balance shares the same $250,000 insurance limit rather than adding a new one."
+    },
+    {
+      "id": "popular-direct-select-savings",
+      "kind": "savings",
+      "name": "Popular Direct Select Savings",
+      "provider": "Popular Direct (Popular Bank)",
+      "fdicName": "Popular Bank",
+      "apy": 3.9,
+      "insurance": "fdic",
+      "minInvestment": 100,
+      "url": "https://www.populardirect.com/savings/",
+      "requirements": [
+        "$100 to open"
+      ],
+      "accessNotes": "Open online; funding must come by ACH or wire from an account in your own name, and the first transfer can take several business days to clear.",
+      "notes": "Popular Direct is the online arm of Popular Bank, the US subsidiary of Puerto Rico’s Banco Popular. Deposits are ordinary US FDIC-insured deposits."
+    },
+    {
+      "id": "tab-bank-high-yield-savings",
+      "kind": "savings",
+      "name": "TAB Bank High Yield Savings",
+      "provider": "TAB Bank",
+      "fdicName": "Transportation Alliance Bank, Inc.",
+      "apy": 3.85,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.tabbank.com/high-yield-savings/",
+      "requirements": [
+        "No minimum balance"
+      ],
+      "accessNotes": "Open online; TAB is a Utah industrial bank whose FDIC certificate reads Transportation Alliance Bank.",
+      "notes": "Small bank, ordinary insurance. The legal name on the register is nothing like the brand, which is the usual reason a lookup here fails."
+    },
+    {
+      "id": "live-oak-bank-savings",
+      "kind": "savings",
+      "name": "Live Oak Bank High Yield Savings",
+      "provider": "Live Oak Bank",
+      "fdicName": "Live Oak Banking Company",
+      "apy": 3.9,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.liveoakbank.com/personal-banking/high-yield-savings/",
+      "requirements": [
+        "No minimum balance"
+      ],
+      "accessNotes": "Open online; Live Oak is primarily an SBA lender that funds itself with retail deposits, which is why the rate stays competitive.",
+      "notes": "Deposit-funded business lender. That is a perfectly ordinary bank model and the FDIC coverage is identical, but it does mean the rate tracks their loan demand."
+    },
+    {
+      "id": "jenius-bank-savings",
+      "kind": "savings",
+      "name": "Jenius Bank Savings",
+      "provider": "Jenius Bank (SMBC MANUBANK)",
+      "fdicName": "SMBC MANUBANK",
+      "apy": 3.95,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.jeniusbank.com/savings",
+      "requirements": [
+        "No minimum balance"
+      ],
+      "accessNotes": "Open online; Jenius is the US digital brand of Sumitomo Mitsui Banking Corporation, and deposits sit at SMBC MANUBANK.",
+      "notes": "New-ish US brand of a very old Japanese bank. The FDIC certificate is SMBC MANUBANK, which is what a register lookup has to match."
+    },
+    {
+      "id": "my-banking-direct-savings",
+      "kind": "savings",
+      "name": "My Banking Direct High Yield Savings",
+      "provider": "My Banking Direct (Flagstar Bank)",
+      "fdicName": "Flagstar Bank, N.A.",
+      "apy": 4.0,
+      "insurance": "fdic",
+      "minInvestment": 500,
+      "url": "https://www.mybankingdirect.com/",
+      "requirements": [
+        "$500 to open",
+        "New money only — transfers from an existing Flagstar account do not qualify"
+      ],
+      "accessNotes": "Open online; a digital brand of Flagstar Bank, so the deposit shares Flagstar’s $250,000 insurance limit.",
+      "notes": "Rate leaders at this end of the table change hands monthly. Treat the level as indicative and check the page before moving a large balance."
+    },
+    {
+      "id": "schwab-bank-investor-savings",
+      "kind": "savings",
+      "name": "Schwab Bank Investor Savings",
+      "provider": "Charles Schwab Bank",
+      "fdicName": "Charles Schwab Bank, SSB",
+      "apy": 0.4,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.schwab.com/checking",
+      "requirements": [
+        "Schwab brokerage or bank account"
+      ],
+      "accessNotes": "Open alongside a Schwab brokerage account; unlimited ATM fee rebates worldwide and no foreign transaction fee, which is the actual reason to hold it.",
+      "notes": "The rate is poor and that is the point of listing it: Schwab pays this on bank cash while SWVXX in the same login pays several times more. Uninvested cash at a broker is a decision, not a default."
+    },
+    {
+      "id": "robinhood-gold-cash-sweep",
+      "kind": "savings",
+      "name": "Robinhood Gold Cash Sweep",
+      "provider": "Robinhood",
+      "fdicName": null,
+      "apy": 4.0,
+      "insurance": "fdic",
+      "liquidity": "daily",
+      "minInvestment": 0,
+      "url": "https://robinhood.com/us/en/support/articles/cash-sweep-program/",
+      "requirements": [
+        "Robinhood Gold subscription ($5 a month)",
+        "Cash sweep must be enabled in settings"
+      ],
+      "accessNotes": "Swept to partner banks from a Robinhood brokerage account; the higher rate applies only while a Gold subscription is active, so on a small balance the $60 a year can exceed the extra interest.",
+      "confidence": 0.55,
+      "notes": "Insurance is through the program banks, not Robinhood, and coverage depends on how many banks your balance is spread across. Without Gold the sweep rate falls by roughly three points."
+    },
+    {
+      "id": "bofa-preferred-deposit",
+      "kind": "savings",
+      "name": "Bank of America Preferred Deposit",
+      "provider": "Merrill / Bank of America",
+      "fdicName": "Bank of America, National Association",
+      "apy": 3.75,
+      "insurance": "fdic",
+      "liquidity": "daily",
+      "minInvestment": 100000,
+      "url": "https://www.merrilledge.com/",
+      "requirements": [
+        "$100,000 initial deposit",
+        "Merrill or Bank of America investment account"
+      ],
+      "accessNotes": "Bought as a position inside a Merrill account, not opened as a bank account. The $100,000 opening minimum is the barrier; after that the balance can fall below it.",
+      "notes": "A bank deposit that trades like a fund position inside the brokerage. Settlement is next business day, so it is not the place for money you need this afternoon."
+    },
+    {
+      "id": "etrade-premium-savings",
+      "kind": "savings",
+      "name": "E*TRADE Premium Savings",
+      "provider": "Morgan Stanley Private Bank",
+      "fdicName": "Morgan Stanley Private Bank, National Association",
+      "apy": 3.85,
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://us.etrade.com/bank/savings-accounts",
+      "requirements": [
+        "E*TRADE brokerage or bank account"
+      ],
+      "accessNotes": "Open inside an E*TRADE login; balances sweep across Morgan Stanley program banks, which raises the effective insured limit above $250,000.",
+      "notes": "Multi-bank sweep programs can insure well past $250,000, but only across the banks in the program — check the current bank list if that is why you are here."
+    },
+    {
+      "id": "ibkr-cash-interest",
+      "kind": "savings",
+      "name": "Interactive Brokers Cash Interest (IBKR Pro)",
+      "provider": "Interactive Brokers LLC",
+      "fdicName": null,
+      "apy": 3.4,
+      "insurance": "sipc",
+      "liquidity": "daily",
+      "minInvestment": 10000,
+      "url": "https://www.interactivebrokers.com/en/accounts/fees/pricing-interest-rates.php",
+      "requirements": [
+        "IBKR Pro account",
+        "Interest is paid only on the balance above $10,000",
+        "Not paid on the first $10,000 for accounts under $100,000"
+      ],
+      "accessNotes": "Paid automatically on idle USD in an IBKR Pro brokerage account. Nothing to open and nothing to sweep — but IBKR Lite pays a materially lower rate on the same cash.",
+      "confidence": 0.55,
+      "notes": "This is broker credit interest, not a deposit: SIPC covers the broker failing, never a loss. The blended rate on a small account is well below the headline because the first $10,000 earns nothing."
+    },
+    {
+      "id": "alliant-high-rate-savings",
+      "kind": "savings",
+      "name": "Alliant Credit Union High-Rate Savings",
+      "provider": "Alliant Credit Union",
+      "apy": 3.6,
+      "insurance": "ncua",
+      "minInvestment": 5,
+      "url": "https://www.alliantcreditunion.org/bank/high-rate-savings",
+      "requirements": [
+        "Credit union membership required — anyone can qualify by joining Foster Care to Success, and Alliant pays the $5 fee",
+        "Keep $100 average daily balance to earn the rate",
+        "eStatements required"
+      ],
+      "accessNotes": "Join online in one sitting through the charity route, keep $5 in the share account, then open High-Rate Savings inside online banking.",
+      "notes": "NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "becu-member-advantage-savings",
+      "kind": "savings",
+      "name": "BECU Member Advantage Savings",
+      "provider": "Boeing Employees Credit Union",
+      "apy": 6.17,
+      "insurance": "ncua",
+      "minInvestment": 5,
+      "maxInvestment": 500,
+      "url": "https://www.becu.org/bank/savings",
+      "requirements": [
+        "Membership limited to Washington State residents, Boeing employees and their families",
+        "Top rate applies only to the first $500 of the balance"
+      ],
+      "accessNotes": "Join online if you live, work or worship in Washington State, keep $5 in the member share, then the Member Advantage rate applies automatically.",
+      "confidence": 0.6,
+      "notes": "A very high rate on $500, which is about $30 a year. Worth taking if you are already a member and not worth relocating for. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "secu-nc-share-savings",
+      "kind": "savings",
+      "name": "SECU North Carolina Share Savings",
+      "provider": "State Employees Credit Union",
+      "apy": 2.75,
+      "insurance": "ncua",
+      "minInvestment": 25,
+      "url": "https://www.ncsecu.org/",
+      "requirements": [
+        "Membership limited to North Carolina state employees, federal employees in NC, and their families"
+      ],
+      "accessNotes": "Join at a branch or online if you are eligible through employment or a family member; SECU has no reciprocal or charity-donation route in.",
+      "notes": "A genuinely closed field of membership, unlike most of the credit unions here. Listed because if you are eligible its rates on longer certificates are among the best available. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "connexus-high-yield-savings",
+      "kind": "savings",
+      "name": "Connexus Credit Union High Yield Savings",
+      "provider": "Connexus Credit Union",
+      "apy": 3.7,
+      "insurance": "ncua",
+      "minInvestment": 5,
+      "url": "https://www.connexuscu.org/savings/high-yield-savings/",
+      "requirements": [
+        "Credit union membership required — open to anyone through a $5 donation to the Connexus Association",
+        "$1,000 minimum balance to earn the rate"
+      ],
+      "accessNotes": "Join online through the association route, fund the $5 share account, then open High Yield Savings.",
+      "notes": "NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "navyfederal-money-market-savings",
+      "kind": "savings",
+      "name": "Navy Federal Money Market Savings Account",
+      "provider": "Navy Federal Credit Union",
+      "apy": 2.25,
+      "insurance": "ncua",
+      "minInvestment": 2500,
+      "url": "https://www.navyfederal.org/checking-savings/savings/money-market.html",
+      "requirements": [
+        "Membership limited to armed forces, veterans, DoD personnel and their family members",
+        "$2,500 minimum for the quoted tier"
+      ],
+      "accessNotes": "Join online with a military, veteran or family connection, then open the MMSA inside online banking.",
+      "notes": "This is a credit union deposit account, not a money market mutual fund: the balance is insured and the rate is administered. The name collides with the funds further down this list, which are securities. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "consumers-cu-rewards-checking",
+      "kind": "savings",
+      "name": "Consumers Credit Union Rewards Checking",
+      "provider": "Consumers Credit Union",
+      "apy": 5.0,
+      "insurance": "ncua",
+      "subType": "reward_checking",
+      "minInvestment": 0,
+      "maxInvestment": 10000,
+      "url": "https://www.myconsumers.org/banking/checking-accounts/rewards-checking",
+      "requirements": [
+        "Credit union membership required — open to anyone through a $5 payment to the Consumers Cooperative Association",
+        "At least 12 debit card purchases each month",
+        "Qualifying direct deposit each month",
+        "Spend on a Consumers credit card to reach the top tier",
+        "Top rate applies only to the first $10,000"
+      ],
+      "accessNotes": "Join online through the cooperative association, open Rewards Checking, then meet all three monthly tests. Miss any one of them in a month and that month pays essentially nothing.",
+      "confidence": 0.55,
+      "notes": "The archetype of this category: a great rate on $10,000 with three separate monthly tests, and the top tier needs credit card spend as well. Twelve debit purchases a month is the part people quietly fail. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "landmark-cu-premium-checking",
+      "kind": "savings",
+      "name": "Landmark Credit Union Premium Checking",
+      "provider": "Landmark Credit Union",
+      "apy": 7.5,
+      "insurance": "ncua",
+      "subType": "reward_checking",
+      "minInvestment": 0,
+      "maxInvestment": 500,
+      "url": "https://www.landmarkcu.com/checking/",
+      "requirements": [
+        "Membership open to residents of Wisconsin and northern Illinois",
+        "eStatements and one direct deposit or ACH each month",
+        "Top rate applies only to the first $500"
+      ],
+      "accessNotes": "Join online if you live in the eligible counties, open Premium Checking and set up any recurring deposit.",
+      "confidence": 0.55,
+      "notes": "The highest headline rate in this whole source and worth about $37 a year. It is on the list to show what the number actually buys once the cap is applied. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "genisys-cu-genius-checking",
+      "kind": "savings",
+      "name": "Genisys Credit Union Genius Checking",
+      "provider": "Genisys Credit Union",
+      "apy": 4.07,
+      "insurance": "ncua",
+      "subType": "reward_checking",
+      "minInvestment": 0,
+      "maxInvestment": 7500,
+      "url": "https://www.genisyscu.org/checking/",
+      "requirements": [
+        "Credit union membership required — open nationally through a $5 share deposit",
+        "At least 10 debit card purchases of $5 or more each month",
+        "eStatements required",
+        "Top rate applies only to the first $7,500"
+      ],
+      "accessNotes": "Join online, open Genius Checking, and route ten or more everyday card purchases through it each month.",
+      "confidence": 0.55,
+      "notes": "The $5 per purchase floor is the trap in this one: ten coffees at $4.50 do not count. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "lake-michigan-cu-max-checking",
+      "kind": "savings",
+      "name": "Lake Michigan Credit Union Max Checking",
+      "provider": "Lake Michigan Credit Union",
+      "apy": 3.0,
+      "insurance": "ncua",
+      "subType": "reward_checking",
+      "minInvestment": 0,
+      "maxInvestment": 15000,
+      "url": "https://www.lmcu.org/personal-banking/checking/",
+      "requirements": [
+        "Credit union membership required — open nationally through a $5 donation to the ALS Association",
+        "At least 10 debit card purchases each month",
+        "Four logins to online banking each month",
+        "eStatements and one direct deposit each month",
+        "Top rate applies only to the first $15,000"
+      ],
+      "accessNotes": "Join online through the charity route, open Max Checking, and meet four separate monthly tests including logging in at least four times.",
+      "confidence": 0.55,
+      "notes": "The largest balance cap of the reward checking accounts here, which is what makes the modest headline rate the most useful one of the group. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "presidential-advantage-checking",
+      "kind": "savings",
+      "name": "Presidential Bank Advantage Checking",
+      "provider": "Presidential Bank, FSB",
+      "fdicName": "Presidential Bank, FSB",
+      "apy": 2.25,
+      "insurance": "fdic",
+      "subType": "reward_checking",
+      "minInvestment": 500,
+      "maxInvestment": 25000,
+      "url": "https://www.presidential.com/personal/checking",
+      "requirements": [
+        "$500 to open",
+        "At least $500 a month in direct deposits",
+        "At least seven electronic transactions or bill payments each month",
+        "Top rate applies only to the first $25,000"
+      ],
+      "accessNotes": "Open online; the monthly tests are a direct deposit plus seven electronic transactions, both measured per statement cycle.",
+      "confidence": 0.6,
+      "notes": "A bank rather than a credit union, with the highest cap of the reward accounts here. Above $25,000 the excess earns a rate close to zero, so the blended yield on a large balance is poor."
+    },
+    {
+      "id": "fdrxx",
+      "kind": "money_market_fund",
+      "name": "Fidelity Government Cash Reserves",
+      "symbol": "FDRXX",
+      "provider": "Fidelity Investments",
+      "apy": 3.66,
+      "expenseRatio": 0.34,
+      "minInvestment": 0,
+      "url": "https://fundresearch.fidelity.com/mutual-funds/summary/316067107",
+      "accessNotes": "Buy as a fund position in any Fidelity account; also available as the core position on some account types.",
+      "notes": "Government fund holding agency paper and repo. Slightly cheaper than SPAXX and usually yields a few basis points more for the same portfolio."
+    },
+    {
+      "id": "fzfxx",
+      "kind": "money_market_fund",
+      "name": "Fidelity Treasury Money Market Fund",
+      "symbol": "FZFXX",
+      "provider": "Fidelity Investments",
+      "apy": 3.58,
+      "expenseRatio": 0.42,
+      "minInvestment": 0,
+      "url": "https://fundresearch.fidelity.com/mutual-funds/summary/31617H201",
+      "accessNotes": "Buy as a fund position in a Fidelity brokerage account; available as a core position on Cash Management accounts.",
+      "notes": "Holds Treasuries and Treasury repo. The repo leg is not state-tax exempt, so this is not the state-exempt fund — FDLXX is the one for that."
+    },
+    {
+      "id": "ftexx",
+      "kind": "money_market_fund",
+      "name": "Fidelity Municipal Money Market Fund",
+      "symbol": "FTEXX",
+      "provider": "Fidelity Investments",
+      "apy": 2.4,
+      "expenseRatio": 0.42,
+      "taxTreatment": "muni_federal_exempt",
+      "minInvestment": 0,
+      "url": "https://fundresearch.fidelity.com/mutual-funds/summary/316337109",
+      "accessNotes": "Buy as a fund position in any Fidelity account, no minimum.",
+      "notes": "Federally tax-exempt income, so the headline understates it badly for a high bracket: at 37% this 2.40% is worth about 3.81% pre-tax. Muni money market yields swing seasonally with issuance."
+    },
+    {
+      "id": "snvxx",
+      "kind": "money_market_fund",
+      "name": "Schwab Government Money Fund - Investor Shares",
+      "symbol": "SNVXX",
+      "provider": "Charles Schwab",
+      "apy": 3.55,
+      "expenseRatio": 0.34,
+      "minInvestment": 0,
+      "url": "https://www.schwab.com/money-market-funds",
+      "accessNotes": "Buy as a fund position in a Schwab brokerage account; Schwab does not auto-sweep into it, so this has to be bought deliberately.",
+      "notes": "Government fund with a large repo sleeve. Schwab sweeps uninvested cash into a low-paying bank deposit by default, which is why buying one of these funds by hand is worth several points a year."
+    },
+    {
+      "id": "snoxx",
+      "kind": "money_market_fund",
+      "name": "Schwab Treasury Obligations Money Fund - Investor Shares",
+      "symbol": "SNOXX",
+      "provider": "Charles Schwab",
+      "apy": 3.52,
+      "expenseRatio": 0.34,
+      "minInvestment": 0,
+      "url": "https://www.schwab.com/money-market-funds",
+      "accessNotes": "Buy as a fund position in a Schwab brokerage account.",
+      "notes": "Treasuries plus Treasury repo. The repo income is taxable in your state, so despite the name this is not the state-exempt option; SNSXX is."
+    },
+    {
+      "id": "swtxx",
+      "kind": "money_market_fund",
+      "name": "Schwab Municipal Money Fund - Investor Shares",
+      "symbol": "SWTXX",
+      "provider": "Charles Schwab",
+      "apy": 2.3,
+      "expenseRatio": 0.34,
+      "taxTreatment": "muni_federal_exempt",
+      "minInvestment": 0,
+      "url": "https://www.schwab.com/money-market-funds",
+      "accessNotes": "Buy as a fund position in a Schwab brokerage account.",
+      "notes": "Federally exempt income. Compare it against the taxable funds only after the app has grossed it up — at a 32% bracket this 2.30% is worth about 3.38% pre-tax."
+    },
+    {
+      "id": "marcus-cd-12mo",
+      "kind": "cd",
+      "name": "Marcus by Goldman Sachs 12 Month High-Yield CD",
+      "provider": "Marcus by Goldman Sachs",
+      "fdicName": "Goldman Sachs Bank USA",
+      "apy": 3.8,
+      "termDays": 365,
+      "earlyExitPenalty": "270 days interest",
+      "insurance": "fdic",
+      "minInvestment": 500,
+      "url": "https://www.marcus.com/us/en/savings/high-yield-cds",
+      "requirements": [
+        "$500 minimum deposit"
+      ],
+      "accessNotes": "Open online with $500; Marcus applies a ten-day rate guarantee after funding.",
+      "notes": "A 270-day penalty on a 12-month CD is severe — breaking it in the first nine months can cost more interest than you have earned."
+    },
+    {
+      "id": "breadsavings-cd-24mo",
+      "kind": "cd",
+      "name": "Bread Savings 2 Year High-Yield CD",
+      "provider": "Bread Financial",
+      "fdicName": "Comenity Capital Bank",
+      "apy": 3.7,
+      "termDays": 730,
+      "earlyExitPenalty": "180 days interest",
+      "insurance": "fdic",
+      "minInvestment": 1500,
+      "url": "https://www.breadfinancial.com/en/bread-savings.html",
+      "requirements": [
+        "$1,500 minimum deposit"
+      ],
+      "accessNotes": "Open online with $1,500; the deposit is held at Comenity Capital Bank.",
+      "notes": "Middle rung of a ladder. Bread has historically priced the two- and three-year terms above the one-year, which is unusual and worth checking against the curve."
+    },
+    {
+      "id": "breadsavings-cd-48mo",
+      "kind": "cd",
+      "name": "Bread Savings 4 Year High-Yield CD",
+      "provider": "Bread Financial",
+      "fdicName": "Comenity Capital Bank",
+      "apy": 3.6,
+      "termDays": 1461,
+      "earlyExitPenalty": "365 days interest",
+      "insurance": "fdic",
+      "minInvestment": 1500,
+      "url": "https://www.breadfinancial.com/en/bread-savings.html",
+      "requirements": [
+        "$1,500 minimum deposit"
+      ],
+      "accessNotes": "Open online with $1,500.",
+      "notes": "The four-year rung most banks skip. A full year of interest as the break penalty makes this a genuine commitment, not a flexible parking spot."
+    },
+    {
+      "id": "salliemae-cd-18mo",
+      "kind": "cd",
+      "name": "Sallie Mae Bank 18 Month CD",
+      "provider": "Sallie Mae Bank",
+      "fdicName": "Sallie Mae Bank",
+      "apy": 3.65,
+      "termDays": 548,
+      "earlyExitPenalty": "180 days interest",
+      "insurance": "fdic",
+      "minInvestment": 2500,
+      "url": "https://www.salliemae.com/banking/certificates-of-deposit/",
+      "requirements": [
+        "$2,500 minimum deposit"
+      ],
+      "accessNotes": "Open online with $2,500; Sallie Mae Bank is a Utah industrial bank and the deposit is ordinary FDIC-insured money.",
+      "notes": "Sallie Mae is better known for student loans; the bank side funds them with retail CDs, which is why the rates stay near the top of the table."
+    },
+    {
+      "id": "firstinternet-cd-36mo",
+      "kind": "cd",
+      "name": "First Internet Bank 3 Year CD",
+      "provider": "First Internet Bank of Indiana",
+      "fdicName": "First Internet Bank of Indiana",
+      "apy": 3.55,
+      "termDays": 1095,
+      "earlyExitPenalty": "180 days interest",
+      "insurance": "fdic",
+      "minInvestment": 1000,
+      "url": "https://www.firstib.com/personal/savings/certificates-of-deposit",
+      "requirements": [
+        "$1,000 minimum deposit"
+      ],
+      "accessNotes": "Open online with $1,000; one of the oldest branchless banks in the US.",
+      "notes": "A plain three-year rung with a mild penalty relative to the term."
+    },
+    {
+      "id": "quontic-cd-6mo",
+      "kind": "cd",
+      "name": "Quontic Bank 6 Month CD",
+      "provider": "Quontic Bank",
+      "fdicName": "Quontic Bank",
+      "apy": 3.75,
+      "termDays": 182,
+      "earlyExitPenalty": "90 days interest",
+      "insurance": "fdic",
+      "minInvestment": 500,
+      "url": "https://www.quontic.com/cds/",
+      "requirements": [
+        "$500 minimum deposit"
+      ],
+      "accessNotes": "Open online with $500.",
+      "notes": "Short rung, mild penalty. On a six-month CD a 90-day penalty means breaking it early wipes out roughly half the interest."
+    },
+    {
+      "id": "popular-direct-cd-12mo",
+      "kind": "cd",
+      "name": "Popular Direct 12 Month CD",
+      "provider": "Popular Bank",
+      "fdicName": "Popular Bank",
+      "apy": 3.85,
+      "termDays": 365,
+      "earlyExitPenalty": "270 days interest",
+      "insurance": "fdic",
+      "minInvestment": 10000,
+      "url": "https://www.populardirect.com/cds/",
+      "requirements": [
+        "$10,000 minimum deposit"
+      ],
+      "accessNotes": "Open online with $10,000 — one of the higher minimums in this table, and the reason the rate is competitive.",
+      "notes": "Popular Direct usually prices at or near the top of the one-year market and pays for it with a $10,000 minimum and a harsh penalty."
+    },
+    {
+      "id": "liveoak-cd-12mo",
+      "kind": "cd",
+      "name": "Live Oak Bank 12 Month CD",
+      "provider": "Live Oak Banking Company",
+      "fdicName": "Live Oak Banking Company",
+      "apy": 3.8,
+      "termDays": 365,
+      "earlyExitPenalty": "90 days interest",
+      "insurance": "fdic",
+      "minInvestment": 2500,
+      "url": "https://www.liveoakbank.com/personal-banking/cds/",
+      "requirements": [
+        "$2,500 minimum deposit"
+      ],
+      "accessNotes": "Open online with $2,500; funding is ACH only.",
+      "notes": "A competitive one-year rate with an unusually mild 90-day penalty, which makes it a reasonable place to sit if you might need to break it."
+    },
+    {
+      "id": "alliant-certificate-24mo",
+      "kind": "cd",
+      "name": "Alliant Credit Union 24 Month Certificate",
+      "provider": "Alliant Credit Union",
+      "apy": 3.8,
+      "termDays": 730,
+      "earlyExitPenalty": "120 days dividends",
+      "insurance": "ncua",
+      "minInvestment": 1000,
+      "url": "https://www.alliantcreditunion.org/bank/certificates",
+      "requirements": [
+        "Credit union membership required — anyone can qualify by joining Foster Care to Success, and Alliant pays the $5 fee",
+        "$1,000 minimum deposit"
+      ],
+      "accessNotes": "Join online through the charity route, then open the certificate inside online banking.",
+      "notes": "The two-year rung of an Alliant ladder. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "penfed-certificate-60mo",
+      "kind": "cd",
+      "name": "PenFed 5 Year Money Market Certificate",
+      "provider": "PenFed Credit Union",
+      "apy": 3.8,
+      "termDays": 1826,
+      "earlyExitPenalty": "365 days dividends",
+      "insurance": "ncua",
+      "minInvestment": 1000,
+      "url": "https://www.penfed.org/savings/certificates",
+      "requirements": [
+        "Credit union membership is open to anyone — no military connection required since 2019",
+        "$1,000 minimum deposit"
+      ],
+      "accessNotes": "Join online in a couple of minutes, then open the certificate; PenFed dropped its military eligibility requirement in 2019 and is now open to all.",
+      "notes": "The long rung. A full year of dividends as the penalty is standard on five-year credit union certificates and makes early exit genuinely expensive. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "connexus-certificate-36mo",
+      "kind": "cd",
+      "name": "Connexus Credit Union 36 Month Share Certificate",
+      "provider": "Connexus Credit Union",
+      "apy": 3.7,
+      "termDays": 1095,
+      "earlyExitPenalty": "180 days dividends",
+      "insurance": "ncua",
+      "minInvestment": 5000,
+      "url": "https://www.connexuscu.org/savings/share-certificates/",
+      "requirements": [
+        "Credit union membership required — open to anyone through a $5 donation to the Connexus Association",
+        "$5,000 minimum deposit"
+      ],
+      "accessNotes": "Join online through the association route, then open the certificate.",
+      "notes": "Connexus prices its longer certificates aggressively but asks for a $5,000 minimum. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "firsttech-certificate-12mo",
+      "kind": "cd",
+      "name": "First Tech Federal Credit Union 12 Month Certificate",
+      "provider": "First Tech Federal Credit Union",
+      "apy": 3.85,
+      "termDays": 365,
+      "earlyExitPenalty": "180 days dividends",
+      "insurance": "ncua",
+      "minInvestment": 500,
+      "url": "https://www.firsttechfed.com/save/certificates",
+      "requirements": [
+        "Credit union membership required — join through an employer, or through the Financial Fitness Association for $8",
+        "$500 minimum deposit"
+      ],
+      "accessNotes": "Join online through the Financial Fitness Association route if you have no employer link, then open the certificate.",
+      "notes": "The association route is the standard way in for anyone whose employer is not on the list. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "discover-cd-120mo",
+      "kind": "cd",
+      "name": "Discover 10 Year CD",
+      "provider": "Discover Bank",
+      "fdicName": "Discover Bank",
+      "apy": 3.4,
+      "termDays": 3653,
+      "earlyExitPenalty": "24 months interest",
+      "insurance": "fdic",
+      "minInvestment": 0,
+      "url": "https://www.discover.com/online-banking/cd/",
+      "requirements": [
+        "No minimum deposit"
+      ],
+      "accessNotes": "Open online with no minimum. Ten-year retail CDs are rare and Discover is one of the few banks still offering one.",
+      "notes": "Two years of interest as the break penalty, and no secondary market to sell into. Locking a decade of money at a rate near the five-year one is rarely the right trade — it is here because the app should be able to show you the whole curve."
+    },
+    {
+      "id": "navyfederal-certificate-3mo",
+      "kind": "cd",
+      "name": "Navy Federal 3 Month Certificate",
+      "provider": "Navy Federal Credit Union",
+      "apy": 3.5,
+      "termDays": 91,
+      "earlyExitPenalty": "90 days dividends",
+      "insurance": "ncua",
+      "minInvestment": 1000,
+      "url": "https://www.navyfederal.org/checking-savings/checking/certificates.html",
+      "requirements": [
+        "Membership limited to armed forces, veterans, DoD personnel and their family members",
+        "$1,000 minimum deposit"
+      ],
+      "accessNotes": "Join online with a military, veteran or family connection, then open the certificate inside online banking.",
+      "notes": "On a three-month term a 90-day penalty means breaking it costs everything you earned. NCUA insurance is the credit union equivalent of FDIC and is backed the same way, up to $250,000 per owner per institution."
+    },
+    {
+      "id": "brokered-cd-3mo",
+      "kind": "cd",
+      "name": "Brokered CD ladder rung — 3 month new issue",
+      "provider": "Fidelity / Schwab / Vanguard new-issue desk",
+      "fdicName": null,
+      "apy": 3.6,
+      "termDays": 91,
+      "earlyExitPenalty": "No early withdrawal exists. The only exit is selling on the secondary market at whatever price it fetches, which is below par whenever rates have risen, plus a mark-down of roughly $1 per $1,000.",
+      "insurance": "fdic",
+      "subType": "brokered_cd",
+      "minInvestment": 1000,
+      "url": "https://www.fidelity.com/fixed-income-bonds/cds",
+      "requirements": [
+        "Brokerage account",
+        "$1,000 minimum and $1,000 increments",
+        "Issuing bank varies by offering — check your existing balance at that bank"
+      ],
+      "accessNotes": "Bought from the new-issue CD list inside a brokerage account, in $1,000 increments, with no fee on new issues. Interest is paid to the brokerage cash balance and does not compound inside the CD, which is why a brokered CD’s stated rate is a simple rate and a bank CD’s is an APY.",
+      "confidence": 0.55,
+      "notes": "Brokered CDs are issued by a bank and distributed through a broker: the FDIC insurance is the issuing bank’s and counts against your $250,000 limit at THAT bank, not at the brokerage. The issuing bank changes with every new-issue offering, which is why no bank is named here. Most are non-callable at these terms, but callable issues sit on the same list and pay a little more for the privilege — check the call schedule before buying."
+    },
+    {
+      "id": "brokered-cd-6mo",
+      "kind": "cd",
+      "name": "Brokered CD ladder rung — 6 month new issue",
+      "provider": "Fidelity / Schwab / Vanguard new-issue desk",
+      "fdicName": null,
+      "apy": 3.7,
+      "termDays": 182,
+      "earlyExitPenalty": "No early withdrawal exists. The only exit is selling on the secondary market at whatever price it fetches, which is below par whenever rates have risen, plus a mark-down of roughly $1 per $1,000.",
+      "insurance": "fdic",
+      "subType": "brokered_cd",
+      "minInvestment": 1000,
+      "url": "https://www.fidelity.com/fixed-income-bonds/cds",
+      "requirements": [
+        "Brokerage account",
+        "$1,000 minimum and $1,000 increments",
+        "Issuing bank varies by offering — check your existing balance at that bank"
+      ],
+      "accessNotes": "Bought from the new-issue CD list inside a brokerage account, in $1,000 increments, with no fee on new issues. Interest is paid to the brokerage cash balance and does not compound inside the CD, which is why a brokered CD’s stated rate is a simple rate and a bank CD’s is an APY.",
+      "confidence": 0.55,
+      "notes": "Brokered CDs are issued by a bank and distributed through a broker: the FDIC insurance is the issuing bank’s and counts against your $250,000 limit at THAT bank, not at the brokerage. The issuing bank changes with every new-issue offering, which is why no bank is named here. Most are non-callable at these terms, but callable issues sit on the same list and pay a little more for the privilege — check the call schedule before buying."
+    },
+    {
+      "id": "brokered-cd-12mo",
+      "kind": "cd",
+      "name": "Brokered CD ladder rung — 1 year new issue",
+      "provider": "Fidelity / Schwab / Vanguard new-issue desk",
+      "fdicName": null,
+      "apy": 3.8,
+      "termDays": 365,
+      "earlyExitPenalty": "No early withdrawal exists. The only exit is selling on the secondary market at whatever price it fetches, which is below par whenever rates have risen, plus a mark-down of roughly $1 per $1,000.",
+      "insurance": "fdic",
+      "subType": "brokered_cd",
+      "minInvestment": 1000,
+      "url": "https://www.fidelity.com/fixed-income-bonds/cds",
+      "requirements": [
+        "Brokerage account",
+        "$1,000 minimum and $1,000 increments",
+        "Issuing bank varies by offering — check your existing balance at that bank"
+      ],
+      "accessNotes": "Bought from the new-issue CD list inside a brokerage account, in $1,000 increments, with no fee on new issues. Interest is paid to the brokerage cash balance and does not compound inside the CD, which is why a brokered CD’s stated rate is a simple rate and a bank CD’s is an APY.",
+      "confidence": 0.55,
+      "notes": "Brokered CDs are issued by a bank and distributed through a broker: the FDIC insurance is the issuing bank’s and counts against your $250,000 limit at THAT bank, not at the brokerage. The issuing bank changes with every new-issue offering, which is why no bank is named here. Most are non-callable at these terms, but callable issues sit on the same list and pay a little more for the privilege — check the call schedule before buying."
+    },
+    {
+      "id": "brokered-cd-24mo",
+      "kind": "cd",
+      "name": "Brokered CD ladder rung — 2 year new issue",
+      "provider": "Fidelity / Schwab / Vanguard new-issue desk",
+      "fdicName": null,
+      "apy": 3.75,
+      "termDays": 730,
+      "earlyExitPenalty": "No early withdrawal exists. The only exit is selling on the secondary market at whatever price it fetches, which is below par whenever rates have risen, plus a mark-down of roughly $1 per $1,000.",
+      "insurance": "fdic",
+      "subType": "brokered_cd",
+      "minInvestment": 1000,
+      "url": "https://www.fidelity.com/fixed-income-bonds/cds",
+      "requirements": [
+        "Brokerage account",
+        "$1,000 minimum and $1,000 increments",
+        "Issuing bank varies by offering — check your existing balance at that bank"
+      ],
+      "accessNotes": "Bought from the new-issue CD list inside a brokerage account, in $1,000 increments, with no fee on new issues. Interest is paid to the brokerage cash balance and does not compound inside the CD, which is why a brokered CD’s stated rate is a simple rate and a bank CD’s is an APY.",
+      "confidence": 0.55,
+      "notes": "Brokered CDs are issued by a bank and distributed through a broker: the FDIC insurance is the issuing bank’s and counts against your $250,000 limit at THAT bank, not at the brokerage. The issuing bank changes with every new-issue offering, which is why no bank is named here. Most are non-callable at these terms, but callable issues sit on the same list and pay a little more for the privilege — check the call schedule before buying."
+    },
+    {
+      "id": "brokered-cd-60mo",
+      "kind": "cd",
+      "name": "Brokered CD ladder rung — 5 year new issue",
+      "provider": "Fidelity / Schwab / Vanguard new-issue desk",
+      "fdicName": null,
+      "apy": 3.85,
+      "termDays": 1826,
+      "earlyExitPenalty": "No early withdrawal exists. The only exit is selling on the secondary market at whatever price it fetches, which is below par whenever rates have risen, plus a mark-down of roughly $1 per $1,000.",
+      "insurance": "fdic",
+      "subType": "brokered_cd",
+      "minInvestment": 1000,
+      "url": "https://www.fidelity.com/fixed-income-bonds/cds",
+      "requirements": [
+        "Brokerage account",
+        "$1,000 minimum and $1,000 increments",
+        "Issuing bank varies by offering — check your existing balance at that bank"
+      ],
+      "accessNotes": "Bought from the new-issue CD list inside a brokerage account, in $1,000 increments, with no fee on new issues. Interest is paid to the brokerage cash balance and does not compound inside the CD, which is why a brokered CD’s stated rate is a simple rate and a bank CD’s is an APY.",
+      "confidence": 0.55,
+      "notes": "Brokered CDs are issued by a bank and distributed through a broker: the FDIC insurance is the issuing bank’s and counts against your $250,000 limit at THAT bank, not at the brokerage. The issuing bank changes with every new-issue offering, which is why no bank is named here. Most are non-callable at these terms, but callable issues sit on the same list and pay a little more for the privilege — check the call schedule before buying."
     }
   ]
 }

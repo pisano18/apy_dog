@@ -16,6 +16,12 @@ const { scoreRisk } = require('../src/core/risk');
 const FIXTURES = path.join(__dirname, 'fixtures');
 const SEED_DIR = path.join(__dirname, '..', 'data', 'seed');
 const USER_RATES = path.join(FIXTURES, 'savings-user-rates.json');
+
+// Every "did we lose rows?" assertion counts against the bundled file rather
+// than a number typed here, so widening the dataset does not require editing a
+// dozen literals — while the floor below still fails if the breadth regresses.
+const SEED_ITEMS = JSON.parse(fs.readFileSync(path.join(SEED_DIR, 'savings.json'), 'utf8')).items;
+const SEED_COUNT = SEED_ITEMS.length;
 const fdic = JSON.parse(fs.readFileSync(path.join(FIXTURES, 'fdic-institutions.json'), 'utf8'));
 
 const ctx = { schema, C, http, seedDir: SEED_DIR, settings: {}, now: Date.parse('2026-08-27'), log() {} };
@@ -38,7 +44,8 @@ test('satisfies the adapter contract', () => {
 test('loadSeed returns the bundled snapshot, honestly labelled, and every row validates', () => {
   const out = adapter.loadSeed(ctx);
   assert.equal(out.status, 'offline');
-  assert.equal(out.opportunities.length, 45);
+  assert.equal(out.opportunities.length, SEED_COUNT, 'every bundled row must build');
+  assert.ok(SEED_COUNT >= 90, `the curated deposit list has thinned out: ${SEED_COUNT} rows`);
   for (const o of out.opportunities) {
     assert.deepEqual(schema.validate(o), [], `${o.id} failed validation`);
     assert.equal(o.source, 'savings');
@@ -85,7 +92,7 @@ test('covers the real CD term ladder with a penalty on every locked row', () => 
 
 test('money market funds are securities, not deposits, and are labelled as such', () => {
   const rows = adapter.loadSeed(ctx).opportunities.filter((o) => o.subType === 'money_market_fund');
-  assert.equal(rows.length, 10);
+  assert.ok(rows.length >= 16, `expected a broad money fund list, got ${rows.length}`);
   for (const o of rows) {
     assert.equal(o.assetClass, C.ASSET_CLASS.CASH);
     assert.equal(o.yieldKind, C.YIELD_KIND.MARKET, '7-day SEC yield is a market rate, not an administered one');
@@ -143,10 +150,28 @@ test('the rows that should trip trap flags do, and the plain ones do not', () =>
   assert.ok(flagsFor('dcu-primary-savings').includes(C.TRAP_FLAGS.CAPPED_BALANCE));
   assert.equal(byId(rows, 'dcu-primary-savings').maxInvestment, 1000);
 
+  // Reward checking is the whole category built on a balance cap, so every one
+  // of those rows must fire the flag — a 7.5% rate on $500 that reads as a plain
+  // 7.5% is the single most misleading row this source could publish.
+  const rewards = rows.filter((o) => o.subType === 'reward_checking');
+  assert.ok(rewards.length >= 5, 'reward checking accounts belong in a deposit screener');
+  for (const o of rewards) {
+    assert.ok(Number.isFinite(o.maxInvestment) && o.maxInvestment > 0, `${o.id} must state its balance cap`);
+    assert.ok(detectTraps(o).flags.includes(C.TRAP_FLAGS.CAPPED_BALANCE), `${o.id} must fire capped_balance`);
+    assert.ok(o.requirements.length >= 2, `${o.id} must list the monthly hoops`);
+  }
+
+  // The flags must track the data, not a hand-maintained count: exactly the rows
+  // that carry a small cap, and no others.
+  const capped = new Set(rows.filter((o) => detectTraps(o).flags.includes(C.TRAP_FLAGS.CAPPED_BALANCE)).map((o) => o.id));
+  const shouldCap = new Set(rows.filter((o) => Number.isFinite(o.maxInvestment) && o.maxInvestment > 0 && o.maxInvestment <= 25000).map((o) => o.id));
+  assert.deepEqual([...capped].sort(), [...shouldCap].sort());
+
+  // Promotional wording is deliberate on two rows; nothing else may trip it by
+  // accident, and "12 debit purchases a month" is a hoop, not a teaser.
   const teased = rows.filter((o) => detectTraps(o).flags.includes(C.TRAP_FLAGS.TEASER_RATE));
-  assert.equal(teased.length, 2, 'no row may trip the teaser regex by accident');
-  const capped = rows.filter((o) => detectTraps(o).flags.includes(C.TRAP_FLAGS.CAPPED_BALANCE));
-  assert.equal(capped.length, 2);
+  assert.deepEqual(teased.map((o) => o.id).sort(),
+    ['savings:openbank-high-yield-savings', 'savings:varo-savings']);
 
   const plain = detectTraps(byId(rows, 'ally-online-savings')).flags;
   assert.ok(!plain.includes(C.TRAP_FLAGS.TEASER_RATE));
@@ -154,6 +179,54 @@ test('the rows that should trip trap flags do, and the plain ones do not', () =>
 
   // Promotional rows must not claim curated-level confidence.
   assert.ok(byId(rows, 'openbank-high-yield-savings').confidence < byId(rows, 'ally-online-savings').confidence);
+});
+
+test('the list is broad enough to answer a real cash question, and every group is honest about itself', () => {
+  const rows = adapter.loadSeed(ctx).opportunities;
+  const sub = (t) => rows.filter((o) => o.subType === t);
+
+  // Breadth: enough of each shape that the table is a choice, not a sample.
+  assert.ok(sub('hysa').length >= 35, `only ${sub('hysa').length} savings accounts`);
+  assert.ok(sub('cd').length >= 25, `only ${sub('cd').length} CDs`);
+  assert.ok(sub('brokered_cd').length >= 5);
+  assert.ok(sub('reward_checking').length >= 5);
+
+  // A brokered CD is FDIC money with no early withdrawal at all. Saying so is
+  // the entire difference between it and the bank CD sitting next to it.
+  for (const o of sub('brokered_cd')) {
+    assert.equal(o.assetClass, C.ASSET_CLASS.CD);
+    assert.equal(o.risk.insurance, C.INSURANCE.FDIC);
+    assert.match(o.term.earlyExitPenalty, /secondary market/i);
+    assert.match(o.notes, /issuing bank/i);
+    assert.ok(o.requirements.some((r) => /brokerage account/i.test(r)));
+  }
+
+  // Every credit union row must say how a stranger actually joins, because
+  // "members only" is usually a $5 donation and never obvious from the name.
+  const cus = rows.filter((o) => o.risk.insurance === C.INSURANCE.NCUA);
+  assert.ok(cus.length >= 15, `only ${cus.length} credit union rows`);
+  for (const o of cus) {
+    assert.ok(o.requirements.some((r) => /membership|members|eligib|limited to/i.test(r)),
+      `${o.id} does not state its membership requirement`);
+  }
+
+  // The CD ladder has to reach every rung a person actually asks for.
+  const cdDays = new Set(rows.filter((o) => o.assetClass === C.ASSET_CLASS.CD).map((o) => o.term.days));
+  for (const d of [91, 182, 274, 365, 548, 730, 1095, 1461, 1826, 3653]) {
+    assert.ok(cdDays.has(d), `no CD at ${d} days`);
+  }
+  // and more than one issuer at the rungs people build ladders from
+  for (const d of [365, 730, 1095, 1826]) {
+    const issuers = new Set(rows.filter((o) => o.assetClass === C.ASSET_CLASS.CD && o.term.days === d).map((o) => o.provider));
+    assert.ok(issuers.size >= 2, `only one issuer at ${d} days — that is not a ladder`);
+  }
+
+  // Brokerage cash is not a bank account and must not read as one.
+  const sipc = rows.filter((o) => o.risk.insurance === C.INSURANCE.SIPC);
+  for (const o of sipc) {
+    assert.equal(o.risk.insuredLimit, null);
+    assert.equal(o.risk.principalAtRisk, true);
+  }
 });
 
 test('mergeUserRates replaces by id, appends new rows and keeps bundled order', () => {
@@ -216,9 +289,9 @@ test('the user rates file overrides the bundle end to end', async () => {
   const withUser = { ...ctx, settings: { userRatesPath: USER_RATES }, http: offlineHttp };
   const out = await adapter.fetch(withUser);
 
-  // 45 bundled, two of them replaced in place, one new credit union added, one
-  // fat-fingered row rejected.
-  assert.equal(out.opportunities.length, 46);
+  // The whole bundle, two rows replaced in place, one new credit union added,
+  // one fat-fingered row rejected.
+  assert.equal(out.opportunities.length, SEED_COUNT + 1);
   const ally = byId(out.opportunities, 'ally-online-savings');
   assert.equal(ally.apy.total, 4.05);
   assert.equal(ally.dataAsOf, '2026-08-26');
@@ -238,7 +311,7 @@ test('the user rates file overrides the bundle end to end', async () => {
   assert.ok(!byId(out.opportunities, 'typo-row'), '400% APY is a typo, not a savings account');
   assert.ok(out.notes.some((n) => /skipped/.test(n)));
   // The count must reflect rows that survived, not rows the user typed.
-  assert.ok(out.notes.some((n) => /3 from your own rates file, 43 bundled/.test(n)), out.notes[0]);
+  assert.ok(out.notes.some((n) => new RegExp(`3 from your own rates file, ${SEED_COUNT - 2} bundled`).test(n)), out.notes[0]);
 });
 
 test('buildRows rejects the unusable and never throws', () => {
@@ -335,7 +408,7 @@ test('every corrupted FDIC payload still returns the full rate table', async () 
   for (const key of Object.keys(fdic).filter((k) => !k.startsWith('_'))) {
     const out = await adapter.fetch({ ...ctx, http: { ...http, async getJSON() { return fdic[key]; } } });
     assert.ok(['ok', 'partial'].includes(out.status), `${key} -> ${out.status}`);
-    assert.equal(out.opportunities.length, 45, `${key} lost rows`);
+    assert.equal(out.opportunities.length, SEED_COUNT, `${key} lost rows`);
     for (const o of out.opportunities) assert.deepEqual(schema.validate(o), [], `${key}: ${o.id} failed validation`);
   }
   // And the same for a transport that misbehaves rather than a payload that does.
@@ -345,7 +418,7 @@ test('every corrupted FDIC payload still returns the full rate table', async () 
     async () => undefined,
   ]) {
     const out = await adapter.fetch({ ...ctx, http: { ...http, getJSON } });
-    assert.equal(out.opportunities.length, 45);
+    assert.equal(out.opportunities.length, SEED_COUNT);
   }
 });
 
@@ -435,13 +508,21 @@ test('fetch verifies each distinct institution once and reports it', async () =>
   });
 
   assert.equal(out.status, 'ok');
-  assert.equal(out.opportunities.length, 45);
+  assert.equal(out.opportunities.length, SEED_COUNT);
   assert.deepEqual(out.warnings, []);
   for (const o of out.opportunities) assert.deepEqual(schema.validate(o), [], `${o.id} failed validation`);
 
   // One request per bank, not one per product: Ally alone has five rows.
   assert.equal(new Set(asked).size, asked.length);
-  assert.ok(asked.length < 20);
+  // Only the rows that are actually bank deposits get looked up: money market
+  // funds are securities carrying SIPC, and an explicit null fdicName (a
+  // brokerage sweep) opts out because searching the register on a broker's name
+  // can only ever miss.
+  const fdicNamed = new Set(SEED_ITEMS
+    .filter((it) => it.kind !== 'money_market_fund' && (it.insurance || 'fdic') === 'fdic' && it.fdicName !== null)
+    .map((it) => it.fdicName || it.provider));
+  assert.equal(asked.length, fdicNamed.size, 'exactly one lookup per distinct institution');
+  assert.ok(asked.length < out.opportunities.length * 0.75, 'several products share one bank');
   for (const url of asked) assert.match(url, /^https:\/\/banks\.data\.fdic\.gov\/api\/institutions\?filters=NAME:%22/);
   assert.ok(out.notes.some((n) => /confirmed insured and active/.test(n)));
   assert.match(byId(out.opportunities, 'ally-online-savings').notes, /certificate #57803/);
@@ -458,7 +539,7 @@ test('fetch verifies each distinct institution once and reports it', async () =>
 test('an inactive institution downgrades the run and says which one', async () => {
   const out = await adapter.fetch({ ...ctx, http: { ...http, async getJSON() { return fdic.inactive; } } });
   assert.equal(out.status, 'partial');
-  assert.equal(out.opportunities.length, 45);
+  assert.equal(out.opportunities.length, SEED_COUNT);
   assert.ok(out.warnings.some((w) => /INACTIVE/.test(w)));
 });
 
@@ -472,7 +553,7 @@ test('a blocked FDIC API costs one request and still returns every rate', async 
     },
   });
   assert.equal(out.status, 'partial');
-  assert.equal(out.opportunities.length, 45);
+  assert.equal(out.opportunities.length, SEED_COUNT);
   assert.equal(calls, 1, 'one probe is enough to know the host is unreachable');
   assert.ok(out.warnings.some((w) => /403/.test(w) && /user-maintained/.test(w)));
   for (const o of out.opportunities) assert.deepEqual(schema.validate(o), [], `${o.id} failed validation`);

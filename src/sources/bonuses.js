@@ -55,6 +55,15 @@ const FALLBACK_AS_OF = '2026-08-01';
  */
 const CURATED_CONFIDENCE = 0.5;
 
+/**
+ * And a lower ceiling again for the bundled snapshot, because a promotional
+ * offer is not a rate: a savings rate from a month ago is probably still
+ * roughly right, whereas an offer from a month ago has a real chance of simply
+ * no longer existing. A row the user checked themselves is worth strictly more
+ * than one this app shipped, and the two must not flatten into the same number.
+ */
+const SEED_CONFIDENCE = 0.4;
+
 /** Per depositor, per institution, per ownership category. */
 const INSURED_LIMIT = 250000;
 
@@ -92,25 +101,21 @@ const KINDS = {
     subType: 'checking_bonus',
     insurance: baseC.INSURANCE.FDIC,
     custody: 'deposit',
-    what: 'checking account opening bonus',
   },
   bank_savings: {
     subType: 'savings_bonus',
     insurance: baseC.INSURANCE.FDIC,
     custody: 'deposit',
-    what: 'savings account opening bonus',
   },
   credit_union: {
     subType: 'credit_union_bonus',
     insurance: baseC.INSURANCE.NCUA,
     custody: 'deposit',
-    what: 'credit union membership offer',
   },
   brokerage: {
     subType: 'brokerage_bonus',
     insurance: baseC.INSURANCE.SIPC,
     custody: 'brokerage',
-    what: 'brokerage funding or transfer bonus',
   },
   ira_transfer: {
     subType: 'ira_transfer_bonus',
@@ -120,13 +125,11 @@ const KINDS = {
     // untaxed and is taxed on withdrawal, which is a materially better deal
     // than the 1099 that comes with every other row in this file.
     taxTreatment: baseC.TAX_TREATMENT.TAX_DEFERRED,
-    what: 'IRA transfer match',
   },
   cash_management: {
     subType: 'cash_management_bonus',
     insurance: baseC.INSURANCE.FDIC,
     custody: 'sweep',
-    what: 'cash management account bonus',
   },
 };
 
@@ -187,8 +190,8 @@ function isoDay(value, fallback) {
  *
  *     bonusApy = ((1 + bonus/requiredDeposit) ^ (365/holdDays) - 1) * 100
  *
- * The distinction is not pedantry. A 6% return over 90 days is 26.2% annualised,
- * not 24%; over 30 days a 6% return is 101%, not 73%. Simple multiplication
+ * The distinction is not pedantry. A 6% return over 90 days is 26.7% annualised,
+ * not 24%; over 30 days a 6% return is 103%, not 73%. Simple multiplication
  * understates short offers badly and would rank a 30-day $300 bonus below a
  * 180-day one that pays the same dollars, which is backwards. Getting this wrong
  * in either direction is the class of error this app exists to catch.
@@ -204,9 +207,12 @@ function effectiveApy({ bonus, requiredDeposit, holdDays, ongoingApy } = {}) {
   const b = toNum(bonus);
   const deposit = toNum(requiredDeposit);
   const days = toNum(holdDays);
-  const ongoing = toNum(ongoingApy) ?? 0;
+  // Absent means the account pays nothing. A value that is PRESENT and
+  // unreadable is a different thing entirely, and quietly reading it as zero
+  // would understate the row rather than admit we could not parse it.
+  const ongoing = ongoingApy === undefined || ongoingApy === null || ongoingApy === '' ? 0 : toNum(ongoingApy);
 
-  if (b === null || deposit === null || days === null) return null;
+  if (b === null || deposit === null || days === null || ongoing === null) return null;
   if (b < 0 || deposit <= 0 || days <= 0) return null;
 
   const bonusApy = (Math.pow(1 + b / deposit, 365 / days) - 1) * 100;
@@ -238,9 +244,9 @@ function effectiveApy({ bonus, requiredDeposit, holdDays, ongoingApy } = {}) {
 function firstYearReturn({ bonus, requiredDeposit, ongoingApy } = {}) {
   const b = toNum(bonus);
   const deposit = toNum(requiredDeposit);
-  const ongoing = toNum(ongoingApy) ?? 0;
+  const ongoing = ongoingApy === undefined || ongoingApy === null || ongoingApy === '' ? 0 : toNum(ongoingApy);
 
-  if (b === null || deposit === null) return null;
+  if (b === null || deposit === null || ongoing === null) return null;
   if (b < 0 || deposit <= 0) return null;
 
   const r = (b / deposit) * 100 + ongoing;
@@ -289,10 +295,15 @@ function custodyNotes(kind, item) {
       return 'The cash you transfer is not an insured deposit. SIPC covers the broker failing and your positions going missing; it never covers the market falling, so whatever you buy with this money carries its own risk.';
     case 'sweep':
       return 'Cash sits in a sweep to partner banks rather than at the broker itself. FDIC coverage is pass-through — real, but it depends on the program banks and on the records being right, and it stops applying the moment you invest the money.';
-    default:
-      return item?.aboveLimitNote
-        ? String(item.aboveLimitNote)
-        : `Insured to ${money(INSURED_LIMIT)} per depositor, per bank, per ownership category.`;
+    default: {
+      const base = `Insured to ${money(INSURED_LIMIT)} per depositor, per bank, per ownership category.`;
+      // Several of the large-deposit offers require MORE than the insured limit
+      // in one place, which quietly turns a guaranteed row into a partly
+      // uninsured one for the whole holding period. That has to be said on the
+      // row, not left to the reader to notice.
+      const extra = String(item?.aboveLimitNote || '').trim();
+      return extra ? `${base} ${extra}` : base;
+    }
   }
 }
 
@@ -366,12 +377,25 @@ function buildRow(item, { dataAsOf, schema, C }) {
     ? `Annualising a return this large is arithmetically correct and practically meaningless — the real figure is ${pct(rawApy)}, shown capped at ${pct(MAX_EFFECTIVE_APY)}, because the bonus pays once and caps at ${money(bonus)}. Read the ${pct(firstYear)} first-year number instead.`
     : '';
 
+  // What the marginal dollar earns once the bonus is maxed out. An account that
+  // pays literally nothing has to say so in words: "the ordinary 0.00% rate"
+  // reads like a rounding artefact rather than like the fact that this is a
+  // parking space with no yield at all.
+  const restRate = ongoingApy > 0
+    ? `the ordinary ${pct(ongoingApy)} rate`
+    : (kind.custody === 'deposit' ? 'nothing at all — this account pays no interest' : 'only whatever you choose to invest it in');
+  const revertSentence = ongoingApy > 0 ? ` Once the bonus lands the account pays ${pct(ongoingApy)}.` : '';
+
+  const capSentence = scales
+    ? `Not repeatable and not compoundable: it pays once, per customer. It is proportional rather than capped — ${money(bonus)} is what ${money(requiredDeposit)} earns, and moving twice as much earns twice the dollars at the same rate — but it still happens once.${revertSentence}`
+    : `Not repeatable and not compoundable: one bonus per customer, and money above ${money(requiredDeposit)} earns ${restRate}, not the bonus, so the effective return falls the more you deposit.${revertSentence}`;
+
   const notes = [
     `${money(bonus)} once, not a rate.`,
     basisSentence,
     `Do it once and stop and you earn ${pct(firstYear)} in year one. The ${pct(apyTotal)} headline is that same one-off annualised over ${holdDays} days, which is the fair way to compare it against a savings account for those ${holdDays} days and is NOT what a year looks like.`,
     clampSentence,
-    `Not repeatable and not compoundable: one bonus per customer, and money above ${money(requiredDeposit)} earns the ordinary ${pct(ongoingApy)} rate, not the bonus. Once the bonus lands the account pays ${pct(ongoingApy)}.`,
+    capSentence,
     taxSentence,
     custodyNotes(kind, item),
     String(item.notes || '').trim(),
@@ -379,7 +403,9 @@ function buildRow(item, { dataAsOf, schema, C }) {
 
   const accessNotes = [
     accessBase,
-    `One-time, one per customer, and worth ${money(bonus)} in total no matter how much you deposit — treat it as a ${money(bonus)} errand, not as somewhere to keep money.`,
+    scales
+      ? `One-time and one per customer: the match pays once on what you move, and there is no version of this where the money keeps earning it.`
+      : `One-time, one per customer, and worth ${money(bonus)} in total no matter how much you deposit — treat it as a ${money(bonus)} errand, not as somewhere to keep money.`,
   ].join(' ');
 
   const row = {
@@ -413,10 +439,12 @@ function buildRow(item, { dataAsOf, schema, C }) {
       earlyExitPenalty: `Leave early and you forfeit or repay the ${money(bonus)} bonus`,
     },
 
-    // The structural fact of the whole product: the required deposit is both the
-    // floor and the ceiling. More money does not earn more.
+    // The structural fact of the whole product: for a fixed-dollar bonus the
+    // required deposit is both the floor and the ceiling, because more money
+    // does not earn more. That is also what trips CAPPED_BALANCE in traps.js,
+    // which is exactly the warning this row should carry.
     minInvestment: requiredDeposit,
-    maxInvestment: requiredDeposit,
+    maxInvestment: scales ? null : requiredDeposit,
 
     // You can have the money back whenever you like; you just cannot have the
     // bonus too. That is a notice account, not a locked one.
@@ -445,10 +473,11 @@ function buildRow(item, { dataAsOf, schema, C }) {
   // Same ceiling logic as the rates file: a stated confidence may only lower the
   // cap, never raise it, and the age decay normalize() already applied still
   // wins if it is lower.
+  const ceiling = row.seed ? SEED_CONFIDENCE : CURATED_CONFIDENCE;
   const statedConfidence = toNum(item.confidence);
   const cap = statedConfidence === null
-    ? CURATED_CONFIDENCE
-    : Math.max(0, Math.min(statedConfidence, CURATED_CONFIDENCE));
+    ? ceiling
+    : Math.max(0, Math.min(statedConfidence, ceiling));
   out.confidence = Number(Math.min(out.confidence ?? cap, cap).toFixed(3));
   return out;
 }
@@ -491,6 +520,12 @@ function buildRows(items, ctx = {}) {
  */
 function readUserBonuses(filePath, readFile = fs.readFileSync) {
   if (!filePath) return { items: [], configured: false, warning: null };
+  // fs.readFileSync treats a NUMBER as a file descriptor, so a settings value
+  // that is not a path does not fail — it reads whatever fd happens to be open,
+  // and on a pipe it blocks the whole app forever. Only a string is a path.
+  if (typeof filePath !== 'string') {
+    return { items: [], configured: true, warning: `Your bonus offers file setting is not a path (${typeof filePath}), so nothing was loaded from it.` };
+  }
   let raw;
   try {
     raw = readFile(filePath, 'utf8');
@@ -622,6 +657,7 @@ module.exports = {
   KINDS,
   DEPOSIT_BASIS,
   CURATED_CONFIDENCE,
+  SEED_CONFIDENCE,
   MAX_EFFECTIVE_APY,
   MAX_BONUS_RATIO,
   MAX_HOLD_DAYS,

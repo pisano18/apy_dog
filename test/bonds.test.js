@@ -101,7 +101,10 @@ test('breakevenNotes turns curve pairs into a sentence, skipping unusable ones',
 test('loadSeed returns the whole bundled table and every row validates', () => {
   const res = seedResult();
   assert.equal(res.status, 'offline');
-  assert.equal(res.opportunities.length, 30);
+  // Every instrument in the table must have a seed rate: a row that only appears
+  // when the network is up is a row the offline app silently lacks.
+  assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length);
+  assert.ok(adapter.INSTRUMENTS.length >= 50, `the instrument table has thinned out: ${adapter.INSTRUMENTS.length}`);
   assert.equal(res.warnings.length, 0);
   for (const o of res.opportunities) {
     assert.deepEqual(schema.validate(o), [], `${o.id} failed validation`);
@@ -120,7 +123,8 @@ test('loadSeed covers all four groups', () => {
   assert.equal(count((o) => o.subType === 'savings_bond'), 2);
   assert.equal(count((o) => o.assetClass === C.ASSET_CLASS.CORP_BOND), 11);
   assert.equal(count((o) => o.assetClass === C.ASSET_CLASS.MUNI_BOND), 8);
-  assert.equal(count((o) => o.assetClass === C.ASSET_CLASS.RWA), 9);
+  assert.ok(count((o) => o.assetClass === C.ASSET_CLASS.RWA) >= 12);
+  assert.ok(count((o) => o.assetClass === C.ASSET_CLASS.GOVT_BOND) >= 20);
 });
 
 test('loadSeed never throws, whatever the seed directory holds', () => {
@@ -286,9 +290,76 @@ test('muniTreatment tolerates a missing or oddly-cased settings block', () => {
 // tokenized treasuries
 // ---------------------------------------------------------------------------
 
+test('the ladder rungs carry a real maturity, not a duration standing in for one', () => {
+  const rows = seedResult().opportunities.filter((o) => o.subType === 'ladder');
+  assert.ok(rows.length >= 5, 'a five-year ladder needs five rungs');
+
+  const years = rows.map((o) => Number(o.term.maturity.slice(0, 4))).sort();
+  // Consecutive years, so "I want a 5-year ladder" is actually answerable.
+  for (let i = 1; i < years.length; i += 1) assert.equal(years[i], years[i - 1] + 1, 'the ladder has a gap in it');
+
+  for (const o of rows) {
+    assert.equal(o.assetClass, C.ASSET_CLASS.GOVT_BOND);
+    assert.equal(o.taxTreatment, C.TAX_TREATMENT.TREASURY);
+    // term.kind is the whole point: a maturity is a date you get your money
+    // back on, a duration is a rate-sensitivity number wearing a date's clothes.
+    assert.equal(o.term.kind, 'maturity');
+    assert.match(o.term.maturity, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(Number.isFinite(o.term.days) && o.term.days > 0, `${o.symbol} has no days to maturity`);
+    // Derived from the date, not stored — so it counts down instead of drifting.
+    const expected = Math.round((Date.parse(o.term.maturity) - Date.now()) / 86400000);
+    assert.ok(Math.abs(o.term.days - expected) <= 1, `${o.symbol}: ${o.term.days} vs ${expected}`);
+    assert.match(o.notes, /liquidates and pays out/);
+    assert.doesNotMatch(o.notes, /effective duration expressed in days/);
+    assert.deepEqual(schema.validate(o), []);
+  }
+  // Longer rung, later date, more yield: the ladder must slope the right way.
+  const sorted = rows.slice().sort((a, b) => a.term.days - b.term.days);
+  assert.ok(sorted[sorted.length - 1].apy.total > sorted[0].apy.total, 'the ladder is inverted');
+});
+
+test('the Treasury, agency and TIPS funds are distinct instruments, not four names for one', () => {
+  const rows = seedResult().opportunities;
+  const group = (t) => rows.filter((o) => o.subType === t);
+
+  assert.ok(group('treasury_fund').length >= 6);
+  assert.ok(group('agency').length + group('agency_mbs').length >= 5);
+  assert.ok(group('tips_fund').length >= 5);
+
+  // The dedupe key for a government bond is subType plus rounded term days, so
+  // two rows that collide on both would silently merge and one fund would vanish
+  // from the table. Duration is a real published number and they genuinely
+  // differ, but the app depends on that, so it is asserted.
+  const keys = rows
+    .filter((o) => o.assetClass === C.ASSET_CLASS.GOVT_BOND && Number.isFinite(o.term.days))
+    .map((o) => `${o.subType}:${Math.round(o.term.days)}`);
+  assert.equal(new Set(keys).size, keys.length, 'two government rows share a dedupe key and would merge');
+
+  // Agency mortgage paper is not full faith and credit and must not read as if
+  // it were; Treasury and TIPS funds are, and get the state-tax exemption.
+  for (const o of group('agency_mbs')) {
+    assert.equal(o.taxTreatment, C.TAX_TREATMENT.ORDINARY);
+    assert.match(o.notes, /prepayment/i);
+  }
+  for (const o of [...group('treasury_fund'), ...group('tips_fund')]) {
+    assert.equal(o.taxTreatment, C.TAX_TREATMENT.TREASURY);
+  }
+  assert.match(group('agency')[0].notes, /implicit/i);
+
+  // A TIPS fund's headline is a real yield and the row has to say so, otherwise
+  // it reads as paying two points less than a nominal Treasury for no reason.
+  for (const o of group('tips_fund')) assert.match(o.notes, /real yield/i);
+
+  // The extreme-duration rows are the ones a reader is most likely to mistake
+  // for safe, because they have no credit risk at all.
+  const zroz = rows.find((o) => o.symbol === 'ZROZ');
+  assert.ok(zroz.term.days > 9000, 'ZROZ should carry the longest duration in the app');
+  assert.ok(scoreRisk(zroz).score > scoreRisk(rows.find((o) => o.symbol === 'VGSH')).score + 15);
+});
+
 test('tokenized Treasury rows are uninsured and say why', () => {
   const rows = seedResult().opportunities.filter((o) => o.assetClass === C.ASSET_CLASS.RWA);
-  assert.equal(rows.length, 9);
+  assert.ok(rows.length >= 12, `only ${rows.length} tokenized issuers`);
   for (const o of rows) {
     assert.equal(o.risk.insurance, C.INSURANCE.NONE);
     assert.equal(o.risk.principalAtRisk, true);
@@ -398,8 +469,8 @@ function stubHttp({ chartSymbols = ['IGSB'], pools = true, curves = true } = {})
 
 test('fetch overlays live quotes on the bundled table and keeps every row valid', async () => {
   const res = await adapter.fetch({ ...baseCtx(), http: stubHttp() });
-  assert.equal(res.status, 'partial');               // 18 fund proxies had no chart
-  assert.equal(res.opportunities.length, 30);
+  assert.equal(res.status, 'partial');               // every fund proxy but IGSB had no chart
+  assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length);
   for (const o of res.opportunities) assert.deepEqual(schema.validate(o), [], `${o.id} failed validation`);
 
   const live = res.opportunities.filter((o) => !o.seed);
@@ -434,7 +505,7 @@ test('fetch computes breakevens off the live Treasury curves', async () => {
 
 test('fetch falls back to snapshot breakevens when the curve is unreachable', async () => {
   const res = await adapter.fetch({ ...baseCtx(), http: stubHttp({ curves: false }) });
-  assert.equal(res.opportunities.length, 30);
+  assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length);
   assert.ok(res.notes.some((n) => /breakevens use the 2026-08-01 snapshot levels/.test(n)));
   assert.ok(res.notes.some((n) => /10-year inflation 2\.2[0-9]%/.test(n)));
 });
@@ -442,7 +513,7 @@ test('fetch falls back to snapshot breakevens when the curve is unreachable', as
 test('a blocked upstream degrades the source, it does not fail it', async () => {
   const res = await adapter.fetch({ ...baseCtx(), http: stubHttp({ pools: false, chartSymbols: [], curves: false }) });
   assert.equal(res.status, 'partial');
-  assert.equal(res.opportunities.length, 30);
+  assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length);
   assert.ok(res.opportunities.every((o) => o.seed));
   assert.ok(res.warnings.some((w) => /403/.test(w)));
   for (const o of res.opportunities) assert.deepEqual(schema.validate(o), []);
@@ -455,7 +526,7 @@ test('fetch never throws, even on transport that misbehaves', async () => {
     async getText() { return 'not,a,curve\n1,2,3'; },
   };
   const res = await adapter.fetch({ ...baseCtx(), http: hostile });
-  assert.equal(res.opportunities.length, 30);
+  assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length);
   assert.ok(['ok', 'partial', 'failed'].includes(res.status));
 
   const noSeed = await adapter.fetch({ ...baseCtx(), seedDir: '/nonexistent', http: hostile });
@@ -485,6 +556,7 @@ test('the instrument table stays consistent with itself', () => {
       assert.ok(adapter.CATEGORIES[e.category], `${e.key} has no category`);
       assert.ok(Number.isFinite(e.durationYears) && e.durationYears > 0, `${e.key} needs a duration`);
       assert.ok(e.creditRating, `${e.key} needs a stated credit quality`);
+      if (e.maturity) assert.match(e.maturity, /^\d{4}-\d{2}-\d{2}$/, `${e.key} has an unusable maturity`);
     }
   }
 });
@@ -512,7 +584,7 @@ test('a shape drift in the treasury curve parser costs the breakeven, not the ro
     for (const shape of drifted) {
       treasury.parseCurveCSV = () => shape;
       const res = await adapter.fetch({ ...baseCtx(), http: stubHttp() });
-      assert.equal(res.opportunities.length, 30, `shape ${JSON.stringify(shape)} lost rows`);
+      assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length, `shape ${JSON.stringify(shape)} lost rows`);
       assert.notEqual(res.status, 'failed');
       for (const o of res.opportunities) assert.deepEqual(schema.validate(o), []);
     }
@@ -524,7 +596,7 @@ test('a shape drift in the treasury curve parser costs the breakeven, not the ro
 test('an unusable ctx.now falls back to the wall clock instead of killing the source', async () => {
   for (const now of ['yesterday', NaN, {}, [], Infinity, -1, 0, null, undefined]) {
     const res = await adapter.fetch({ ...baseCtx(), now, http: stubHttp() });
-    assert.equal(res.opportunities.length, 30, `now=${String(now)} lost rows`);
+    assert.equal(res.opportunities.length, adapter.INSTRUMENTS.length, `now=${String(now)} lost rows`);
     assert.notEqual(res.status, 'failed');
     for (const o of res.opportunities) assert.deepEqual(schema.validate(o), []);
   }

@@ -1,0 +1,872 @@
+{
+  "meta": {
+    "source": "bonuses",
+    "dataAsOf": "2026-08-01",
+    "origin": "Hand-curated from the institutions' own promotional pages and offer terms. No public API publishes account opening bonuses: they live on landing pages, are frequently targeted to individual customers or ZIP codes, and change weekly.",
+    "note": "Offline snapshot of real, recurring promotion styles at plausible levels for the stated date. Not a quote and not an offer. Every one of these must be confirmed on the institution's own page before you move money — the amount, the qualifying deposit and the holding period all move independently.",
+    "fieldNotes": {
+      "bonus": "The one-off cash payment, in dollars. For a percentage match this is the dollar figure at the requiredDeposit shown, and the row is marked scales:true.",
+      "requiredDeposit": "The dollar amount the offer actually requires you to bring: a minimum balance you must maintain, the qualifying deposits that must land, or the new money the tier is defined by. This is the money the annualised figure is measured against.",
+      "holdDays": "How long the money is committed from funding until the bonus is safely yours — the qualifying window plus any holding period plus the time the institution takes to pay.",
+      "ongoingApy": "What the account itself pays once the promotion is over. This is what is left if you leave the money there.",
+      "depositBasis": "balance_held means the money has to sit there; deposits_received means it only has to arrive and can be spent again, which makes the annualised figure conservative.",
+      "scales": "true only for percentage matches, which are proportional rather than capped. Everything else is a fixed dollar amount and is capped at the required deposit."
+    },
+    "userFileShape": "Same shape as this file: {\"items\": [ ... ]}. An item whose id matches one here REPLACES it field by field; a new id is ADDED. Set dataAsOf on a row you refresh so the app trusts it more than the bundled snapshot."
+  },
+  "items": [
+    {
+      "id": "chase-total-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Chase Total Checking new customer bonus",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonus": 300,
+      "requiredDeposit": 1500,
+      "holdDays": 180,
+      "ongoingApy": 0.01,
+      "depositBasis": "balance_held",
+      "url": "https://www.chase.com/personal/checking/total-checking",
+      "accessNotes": "Open online with the current coupon code, or take it into a branch — Chase runs branch-only versions that are sometimes larger. Fund it, route one paycheck in, and leave it alone until the six months are up.",
+      "requirements": [
+        "New Chase checking customers only — not available if you already hold a Chase personal checking account",
+        "One qualifying electronic direct deposit (payroll, pension or government benefit) within 90 days of opening",
+        "Account must stay open at least six months or Chase claws the bonus back",
+        "$12 monthly service fee unless a qualifying direct deposit lands, you keep $1,500 in the account, or you hold $5,000 across linked Chase accounts",
+        "Coupon code from the offer page must be presented at opening"
+      ],
+      "notes": "The $1,500 is the balance that waives the monthly fee, which is the money genuinely tied up here; the bonus itself is triggered by the direct deposit rather than by a minimum balance. If your paycheck waives the fee you can hold far less, and the return on what you actually park is then higher than shown."
+    },
+    {
+      "id": "bofa-advantage-banking-bonus",
+      "kind": "bank_checking",
+      "name": "Bank of America Advantage Banking opening bonus",
+      "provider": "Bank of America, N.A.",
+      "bonus": 200,
+      "requiredDeposit": 1500,
+      "holdDays": 150,
+      "ongoingApy": 0.01,
+      "depositBasis": "balance_held",
+      "url": "https://www.bankofamerica.com/deposits/checking/advantage-banking/",
+      "accessNotes": "Open online using the offer code from Bank of America's checking page; the code cannot be added after the account exists.",
+      "requirements": [
+        "New Bank of America personal checking customers only",
+        "Qualifying direct deposits totalling $2,000 within 90 days of opening",
+        "Account open and in good standing when the bonus is paid",
+        "Monthly fee waived by a qualifying direct deposit or a $1,500 minimum daily balance",
+        "Offer code required at account opening"
+      ]
+    },
+    {
+      "id": "wells-fargo-everyday-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Wells Fargo Everyday Checking bonus",
+      "provider": "Wells Fargo Bank, N.A.",
+      "bonus": 300,
+      "requiredDeposit": 1000,
+      "holdDays": 120,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.wellsfargo.com/checking/everyday/",
+      "accessNotes": "Apply online from the offer page or take the offer code into a branch. The bonus is deposited into the same account, usually within 30 days of qualifying.",
+      "requirements": [
+        "New Wells Fargo checking customers only, and no Wells Fargo consumer checking account in the previous 12 months",
+        "Qualifying direct deposits totalling $1,000 within 90 days of opening",
+        "$10 monthly fee unless $500 in qualifying direct deposits arrives or you keep a $500 daily balance",
+        "Bonus paid within 30 days of meeting the requirement"
+      ]
+    },
+    {
+      "id": "citi-checking-bonus-10k",
+      "kind": "bank_checking",
+      "name": "Citi checking new money bonus, $10,000 tier",
+      "provider": "Citibank, N.A.",
+      "bonus": 200,
+      "requiredDeposit": 10000,
+      "holdDays": 90,
+      "ongoingApy": 0.03,
+      "depositBasis": "balance_held",
+      "url": "https://www.citi.com/banking/checking-account",
+      "accessNotes": "Open a Citi checking account online, enrol in the offer, then push new money in within the 20-day window and leave the balance untouched through the qualifying period.",
+      "requirements": [
+        "New-to-Citi money only — funds already sitting at Citi do not count",
+        "Deposit within 20 days of opening and maintain the balance for 60 days",
+        "No Citi consumer deposit account closed within the last 180 days",
+        "Bonus paid roughly 30 days after the balance period ends"
+      ],
+      "notes": "Citi's bonus is a ladder rather than one offer, and the tiers are not proportional — the middle tiers have historically paid a better rate on the money than the largest one."
+    },
+    {
+      "id": "citi-checking-bonus-75k",
+      "kind": "bank_checking",
+      "name": "Citi checking new money bonus, $75,000 tier",
+      "provider": "Citibank, N.A.",
+      "bonus": 1500,
+      "requiredDeposit": 75000,
+      "holdDays": 90,
+      "ongoingApy": 0.03,
+      "depositBasis": "balance_held",
+      "url": "https://www.citi.com/banking/checking-account",
+      "accessNotes": "Same enrolment as the smaller tier, but this level lands you in Citi's Priority relationship tier, which carries its own conditions once the promotion ends.",
+      "requirements": [
+        "New-to-Citi money only",
+        "Deposit within 20 days of opening and maintain the balance for 60 days",
+        "Citi Priority relationship tier applies at this deposit level",
+        "No Citi consumer deposit account closed within the last 180 days"
+      ]
+    },
+    {
+      "id": "citi-checking-bonus-300k",
+      "kind": "bank_checking",
+      "name": "Citi checking new money bonus, $300,000 tier",
+      "provider": "Citibank, N.A.",
+      "bonus": 2000,
+      "requiredDeposit": 300000,
+      "holdDays": 90,
+      "ongoingApy": 0.03,
+      "depositBasis": "balance_held",
+      "url": "https://www.citi.com/banking/checking-account",
+      "accessNotes": "The top tier of the same ladder, sitting inside Citigold. Worth checking against a 3-month T-bill before committing: the bill pays more and is backed by the Treasury rather than by one bank.",
+      "aboveLimitNote": "$300,000 in one bank is $50,000 above the FDIC limit for a single depositor in a single ownership category, and that excess is uninsured for the entire holding period. Splitting across ownership categories or banks fixes it; taking the risk for a $2,000 bonus does not.",
+      "requirements": [
+        "New-to-Citi money only",
+        "Deposit within 20 days of opening and maintain the balance for 60 days",
+        "Citigold relationship tier applies at this deposit level",
+        "No Citi consumer deposit account closed within the last 180 days"
+      ]
+    },
+    {
+      "id": "usbank-smartly-checking-bonus",
+      "kind": "bank_checking",
+      "name": "U.S. Bank Smartly Checking bonus",
+      "provider": "U.S. Bank National Association",
+      "bonus": 400,
+      "requiredDeposit": 5000,
+      "holdDays": 150,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.usbank.com/bank-accounts/checking-accounts/bank-smartly-checking.html",
+      "accessNotes": "Enter the promotional code on U.S. Bank's Smartly Checking page before you apply — the offer cannot be attached to an account that already exists.",
+      "requirements": [
+        "New U.S. Bank personal checking customers only",
+        "Two or more direct deposits totalling $5,000 or more within 90 days",
+        "Promotional code entered before the application is submitted",
+        "Account open and in good standing when the bonus is paid"
+      ]
+    },
+    {
+      "id": "pnc-virtual-wallet-bonus",
+      "kind": "bank_checking",
+      "name": "PNC Virtual Wallet opening bonus",
+      "provider": "PNC Bank, N.A.",
+      "bonus": 400,
+      "requiredDeposit": 5000,
+      "holdDays": 180,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.pnc.com/en/personal-banking/banking/checking/virtual-wallet.html",
+      "accessNotes": "Check the offer with your own ZIP code before planning around it. PNC prices this promotion by market, and the figure on a national comparison page is often not the one you will be shown.",
+      "requirements": [
+        "New PNC Virtual Wallet customers in an eligible market",
+        "Qualifying direct deposits totalling $5,000 within 60 days",
+        "Offer amount varies by ZIP code and is not available nationwide",
+        "Account must stay open six months"
+      ]
+    },
+    {
+      "id": "td-bank-checking-bonus",
+      "kind": "bank_checking",
+      "name": "TD Bank checking opening bonus",
+      "provider": "TD Bank, N.A.",
+      "bonus": 300,
+      "requiredDeposit": 500,
+      "holdDays": 140,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.td.com/us/en/personal-banking/checking-accounts",
+      "accessNotes": "Open online if you live in a TD state. The qualifying deposit is unusually small, which is exactly why the annualised figure looks absurd and why it is also only $300.",
+      "requirements": [
+        "New TD personal checking customers only",
+        "Qualifying direct deposits totalling $500 within 60 days",
+        "TD operates only along the East Coast — the account is not available nationwide",
+        "Bonus paid within about 140 days of opening",
+        "Monthly maintenance fee applies unless the balance or direct deposit conditions are met"
+      ]
+    },
+    {
+      "id": "huntington-perks-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Huntington Perks Checking bonus",
+      "provider": "The Huntington National Bank",
+      "bonus": 400,
+      "requiredDeposit": 1000,
+      "holdDays": 180,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.huntington.com/Personal/checking",
+      "accessNotes": "Open online or in branch in a Huntington state. Close or downgrade the account once the bonus clears — the monthly fee is real money set against a one-off payment.",
+      "requirements": [
+        "New Huntington checking customers in the bank's Midwest footprint",
+        "Qualifying direct deposits totalling $1,000 within 90 days",
+        "Account open 90 days after the deposit requirement is met",
+        "Monthly service fee on Perks Checking unless the waiver conditions are met"
+      ]
+    },
+    {
+      "id": "fifth-third-momentum-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Fifth Third Momentum Checking bonus",
+      "provider": "Fifth Third Bank, National Association",
+      "bonus": 325,
+      "requiredDeposit": 1000,
+      "holdDays": 150,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.53.com/content/fifth-third/en/personal-banking/bank/checking.html",
+      "accessNotes": "Apply online with the promotion code. Momentum Checking has no monthly fee, which makes this one of the cleaner offers to walk away from afterwards.",
+      "requirements": [
+        "New Fifth Third checking customers only",
+        "Qualifying direct deposits totalling $1,000 within 90 days",
+        "Promotion code required at opening",
+        "Available in Fifth Third's Midwest and Southeast markets only"
+      ]
+    },
+    {
+      "id": "truist-one-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Truist One Checking bonus",
+      "provider": "Truist Bank",
+      "bonus": 400,
+      "requiredDeposit": 1000,
+      "holdDays": 180,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.truist.com/checking",
+      "accessNotes": "Open online with the offer code if you are in Truist's footprint; the bonus is paid into the account within about 90 days of qualifying.",
+      "requirements": [
+        "New Truist personal checking customers only",
+        "Qualifying direct deposits totalling $1,000 within 90 days",
+        "Available in Truist's Southeast and Mid-Atlantic footprint",
+        "Monthly fee applies unless the direct deposit or balance waiver is met"
+      ]
+    },
+    {
+      "id": "citizens-one-deposit-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Citizens One Deposit Checking bonus",
+      "provider": "Citizens Bank, N.A.",
+      "bonus": 300,
+      "requiredDeposit": 1000,
+      "holdDays": 120,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.citizensbank.com/checking/one-deposit-checking.aspx",
+      "accessNotes": "Open online with the promotional code. One Deposit Checking waives its fee with any single deposit in a month, which makes it cheap to leave open.",
+      "requirements": [
+        "New Citizens checking customers only",
+        "Qualifying direct deposits totalling $1,000 within 60 days",
+        "Northeast and Mid-Atlantic markets only",
+        "Account open and in good standing when the bonus is paid"
+      ]
+    },
+    {
+      "id": "regions-lifegreen-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Regions LifeGreen Checking bonus",
+      "provider": "Regions Bank",
+      "bonus": 400,
+      "requiredDeposit": 1000,
+      "holdDays": 150,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.regions.com/personal-banking/checking-accounts",
+      "accessNotes": "Open online or in branch inside Regions' footprint with the promotional code from the offer page.",
+      "requirements": [
+        "New Regions checking customers only",
+        "Qualifying direct deposits totalling $1,000 within 90 days",
+        "Available across Regions' Southern footprint only",
+        "Promotional code required at opening"
+      ]
+    },
+    {
+      "id": "bmo-smart-advantage-checking-bonus",
+      "kind": "bank_checking",
+      "name": "BMO Smart Advantage Checking bonus",
+      "provider": "BMO Bank N.A.",
+      "bonus": 350,
+      "requiredDeposit": 1000,
+      "holdDays": 180,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.bmo.com/en-us/main/personal/checking-accounts/",
+      "accessNotes": "Apply online with the offer code. Smart Advantage Checking carries no monthly fee, so there is nothing to cancel afterwards.",
+      "requirements": [
+        "New BMO checking customers only, with no BMO personal checking account in the last 12 months",
+        "Qualifying direct deposits totalling $1,000 within 90 days",
+        "Bonus paid within 90 days of qualifying"
+      ]
+    },
+    {
+      "id": "discover-cashback-debit-bonus",
+      "kind": "bank_checking",
+      "name": "Discover Cashback Debit opening bonus",
+      "provider": "Discover Bank",
+      "bonus": 200,
+      "requiredDeposit": 500,
+      "holdDays": 120,
+      "ongoingApy": 0,
+      "depositBasis": "deposits_received",
+      "url": "https://www.discover.com/online-banking/checking/",
+      "accessNotes": "Open online with the promotional code. Discover has no branches, so everything happens by ACH.",
+      "requirements": [
+        "New Discover Bank checking customers only",
+        "Qualifying direct deposits totalling $500 within 60 days",
+        "Promotional code required at opening",
+        "One bonus per person across all Discover deposit accounts, ever — taking this rules out the Discover savings bonus"
+      ],
+      "notes": "The account pays no interest at all; it pays 1% cash back on a capped amount of monthly debit purchases, which is a spending rebate rather than a yield and is deliberately not counted in the figure here."
+    },
+    {
+      "id": "sofi-checking-savings-bonus",
+      "kind": "bank_checking",
+      "name": "SoFi Checking and Savings direct deposit bonus",
+      "provider": "SoFi Bank, N.A.",
+      "bonus": 300,
+      "requiredDeposit": 5000,
+      "holdDays": 60,
+      "ongoingApy": 3.8,
+      "depositBasis": "deposits_received",
+      "url": "https://www.sofi.com/banking/",
+      "accessNotes": "Open online in minutes and point your payroll at it. This is one of the few here where the underlying account is worth keeping — but only while the direct deposit continues.",
+      "requirements": [
+        "New SoFi Checking and Savings customers only",
+        "Direct deposits of $5,000 or more inside the evaluation window for the full bonus; $1,000-$4,999 pays a much smaller tier",
+        "Direct deposit is also what unlocks the headline savings APY — stop it and the rate falls sharply",
+        "Bonus paid within a few days of qualifying"
+      ],
+      "notes": "The ongoing rate shown is the direct-deposit rate, not the base rate, so the account and the bonus have the same condition attached. SoFi extends coverage beyond the standard limit through a partner bank network, which is a program arrangement rather than a larger guarantee from any one bank."
+    },
+    {
+      "id": "capital-one-360-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Capital One 360 Checking bonus",
+      "provider": "Capital One, N.A.",
+      "bonus": 250,
+      "requiredDeposit": 1000,
+      "holdDays": 135,
+      "ongoingApy": 0.1,
+      "depositBasis": "deposits_received",
+      "url": "https://www.capitalone.com/bank/checking-accounts/online-checking-account/",
+      "accessNotes": "Open online with the promo code; Capital One also runs in-branch cafe versions of this offer in some cities.",
+      "requirements": [
+        "New Capital One 360 Checking customers only, and none in the last 12 months",
+        "Two qualifying direct deposits of at least $500 each within 75 days",
+        "Promo code required at account opening",
+        "Bonus paid within 60 days of qualifying"
+      ]
+    },
+    {
+      "id": "axos-rewards-checking-bonus",
+      "kind": "bank_checking",
+      "name": "Axos Rewards Checking bonus",
+      "provider": "Axos Bank",
+      "bonus": 500,
+      "requiredDeposit": 5000,
+      "holdDays": 180,
+      "ongoingApy": 0.4,
+      "depositBasis": "deposits_received",
+      "url": "https://www.axosbank.com/personal/checking/rewards-checking",
+      "accessNotes": "Open online with the promotional code. Axos pays this one in monthly instalments rather than as a lump sum, so plan on keeping the direct deposit running for the whole period.",
+      "requirements": [
+        "New Axos personal checking customers only",
+        "Monthly qualifying direct deposits, with the bonus paid in instalments across several months",
+        "Promotional code required at opening",
+        "The headline Rewards Checking APY needs a stack of monthly conditions — direct deposit size, debit transactions and linked balances — that most people never meet in full"
+      ],
+      "notes": "Because the bonus arrives in instalments, the money is committed for longer than a lump-sum offer of the same size, which is already reflected in the holding period used here."
+    },
+    {
+      "id": "lendingclub-rewards-checking-bonus",
+      "kind": "bank_checking",
+      "name": "LendingClub Rewards Checking bonus",
+      "provider": "LendingClub Bank, N.A.",
+      "bonus": 250,
+      "requiredDeposit": 2000,
+      "holdDays": 90,
+      "ongoingApy": 0.1,
+      "depositBasis": "deposits_received",
+      "url": "https://www.lendingclub.com/banking/rewards-checking",
+      "accessNotes": "Open online with the promotional code; funding and the qualifying direct deposit both happen by ACH.",
+      "requirements": [
+        "New LendingClub Bank checking customers only",
+        "Qualifying direct deposits within 60 days of opening",
+        "Promotional code required at opening"
+      ]
+    },
+    {
+      "id": "chase-savings-bonus",
+      "kind": "bank_savings",
+      "name": "Chase Savings new money bonus",
+      "provider": "JPMorgan Chase Bank, N.A.",
+      "bonus": 200,
+      "requiredDeposit": 15000,
+      "holdDays": 90,
+      "ongoingApy": 0.01,
+      "depositBasis": "balance_held",
+      "url": "https://www.chase.com/personal/savings/chase-savings",
+      "accessNotes": "Open with the coupon code, fund it within the window and do not touch it. Move the money out the day it is safe to — Chase Savings pays essentially nothing.",
+      "requirements": [
+        "New Chase Savings customers only",
+        "Deposit $15,000 in new money within 20 days and keep the balance for 90 days",
+        "No Chase savings account closed within the last 90 days",
+        "$5 monthly service fee unless the balance stays above the waiver threshold",
+        "Chase runs a combined checking-and-savings version of this offer; taking one may block the other"
+      ]
+    },
+    {
+      "id": "capital-one-360-savings-bonus",
+      "kind": "bank_savings",
+      "name": "Capital One 360 Performance Savings bonus",
+      "provider": "Capital One, N.A.",
+      "bonus": 300,
+      "requiredDeposit": 50000,
+      "holdDays": 90,
+      "ongoingApy": 3.5,
+      "depositBasis": "balance_held",
+      "url": "https://www.capitalone.com/bank/savings-accounts/online-performance-savings-account/",
+      "accessNotes": "Enrol in the offer first, then fund from an outside bank inside the window. Existing Capital One money does not qualify however you move it around.",
+      "requirements": [
+        "New money from outside Capital One only",
+        "Deposit within 15 days of enrolling and hold the balance for 90 days",
+        "Bonus paid within 60 days of the holding period ending",
+        "One bonus per customer"
+      ],
+      "notes": "This is the shape of offer worth taking seriously: the underlying account is a competitive savings account, so the bonus is genuinely additive rather than compensation for parking money somewhere that pays nothing."
+    },
+    {
+      "id": "ally-savings-bonus",
+      "kind": "bank_savings",
+      "name": "Ally Bank Online Savings new money bonus",
+      "provider": "Ally Bank",
+      "bonus": 250,
+      "requiredDeposit": 50000,
+      "holdDays": 90,
+      "ongoingApy": 3.6,
+      "depositBasis": "balance_held",
+      "url": "https://www.ally.com/bank/online-savings-account/",
+      "accessNotes": "Enrol in the promotion before funding — Ally will not apply it retroactively — then pull the money in from an outside bank.",
+      "requirements": [
+        "New money from outside Ally only",
+        "Deposit inside the offer window and keep the balance through the qualifying period",
+        "Enrolment in the offer required before funding",
+        "One bonus per customer"
+      ]
+    },
+    {
+      "id": "synchrony-savings-bonus",
+      "kind": "bank_savings",
+      "name": "Synchrony High Yield Savings bonus",
+      "provider": "Synchrony Bank",
+      "bonus": 250,
+      "requiredDeposit": 25000,
+      "holdDays": 90,
+      "ongoingApy": 3.75,
+      "depositBasis": "balance_held",
+      "url": "https://www.synchronybank.com/banking/high-yield-savings/",
+      "accessNotes": "The offer code has to go in when the account is opened. Synchrony is ACH and wire only — there are no branches.",
+      "requirements": [
+        "Offer code entered at account opening",
+        "Deposit $25,000 within 15 days and hold it for 90 days",
+        "New Synchrony savings customers only",
+        "Bonus paid after the holding period ends"
+      ]
+    },
+    {
+      "id": "barclays-savings-bonus",
+      "kind": "bank_savings",
+      "name": "Barclays Online Savings bonus",
+      "provider": "Barclays Bank Delaware",
+      "bonus": 200,
+      "requiredDeposit": 25000,
+      "holdDays": 120,
+      "ongoingApy": 3.6,
+      "depositBasis": "balance_held",
+      "url": "https://www.banking.barclaysus.com/online-savings.html",
+      "accessNotes": "Open online and fund from an outside bank within the window. Barclays pays the bonus after the holding period rather than up front.",
+      "requirements": [
+        "New Barclays Online Savings customers only",
+        "Deposit within 30 days of opening and hold the balance for the full bonus period",
+        "Bonus paid after the holding period ends",
+        "One bonus per customer"
+      ]
+    },
+    {
+      "id": "discover-online-savings-bonus",
+      "kind": "bank_savings",
+      "name": "Discover Online Savings bonus",
+      "provider": "Discover Bank",
+      "bonus": 200,
+      "requiredDeposit": 25000,
+      "holdDays": 90,
+      "ongoingApy": 3.55,
+      "depositBasis": "balance_held",
+      "url": "https://www.discover.com/online-banking/savings/",
+      "accessNotes": "Enter the offer code at account opening and fund inside the window. Everything is ACH; Discover has no branches.",
+      "requirements": [
+        "New Discover savings customers only",
+        "Offer code entered at account opening",
+        "Deposit within 30 days and hold the balance through the qualifying period",
+        "One bonus per person ever across all Discover deposit accounts — taking this rules out the Discover checking bonus"
+      ]
+    },
+    {
+      "id": "alliant-checking-bonus",
+      "kind": "credit_union",
+      "name": "Alliant Credit Union High-Rate Checking bonus",
+      "provider": "Alliant Credit Union",
+      "bonus": 100,
+      "requiredDeposit": 1000,
+      "holdDays": 120,
+      "ongoingApy": 0.25,
+      "depositBasis": "deposits_received",
+      "url": "https://www.alliantcreditunion.org/bank/high-rate-checking",
+      "accessNotes": "Join online — Alliant opens membership to anyone in the country through a small one-time donation to Foster Care to Success, which is what makes it usable outside a normal field of membership.",
+      "requirements": [
+        "Credit union membership required; Alliant's charity route is open to anyone nationally",
+        "New Alliant checking members only",
+        "Recurring monthly direct deposit and eStatements required to earn the checking rate",
+        "Bonus paid after the qualifying deposits post"
+      ]
+    },
+    {
+      "id": "consumers-cu-checking-bonus",
+      "kind": "credit_union",
+      "name": "Consumers Credit Union Rewards Checking bonus",
+      "provider": "Consumers Credit Union",
+      "bonus": 200,
+      "requiredDeposit": 1000,
+      "holdDays": 150,
+      "ongoingApy": 0.01,
+      "depositBasis": "deposits_received",
+      "url": "https://www.myconsumers.org/banking/checking-accounts",
+      "accessNotes": "Join online through the association membership route, then open Rewards Checking. Read the rewards tiers before assuming you will hit them.",
+      "requirements": [
+        "Membership required — open nationally through a one-time association fee",
+        "New checking members only",
+        "Qualifying direct deposits plus a set number of debit card purchases each month",
+        "The headline rewards rate additionally requires credit card spend that most members never meet"
+      ]
+    },
+    {
+      "id": "penfed-checking-bonus",
+      "kind": "credit_union",
+      "name": "PenFed Access America Checking bonus",
+      "provider": "Pentagon Federal Credit Union",
+      "bonus": 100,
+      "requiredDeposit": 500,
+      "holdDays": 120,
+      "ongoingApy": 0.15,
+      "depositBasis": "deposits_received",
+      "url": "https://www.penfed.org/checking",
+      "accessNotes": "PenFed is open to anyone who opens a small share savings account, so the military connection is not a barrier. Join first, then open checking.",
+      "requirements": [
+        "Membership required — open to anyone who opens a share savings account",
+        "New PenFed checking members only",
+        "Qualifying direct deposit within 60 days",
+        "Monthly fee waived by direct deposit or a minimum balance"
+      ]
+    },
+    {
+      "id": "bethpage-checking-bonus",
+      "kind": "credit_union",
+      "name": "Bethpage Federal Credit Union checking bonus",
+      "provider": "Bethpage Federal Credit Union",
+      "bonus": 100,
+      "requiredDeposit": 500,
+      "holdDays": 150,
+      "ongoingApy": 0.1,
+      "depositBasis": "deposits_received",
+      "url": "https://www.bethpagefcu.com/bank/checking-accounts",
+      "accessNotes": "Membership is open nationally through a small share account — you do not need to live in New York. Join and open checking in the same online application.",
+      "requirements": [
+        "Membership required — open to anyone through a share account, no New York residency needed",
+        "New checking members only",
+        "Direct deposit within 60 days",
+        "Bonus paid within 90 days of qualifying"
+      ]
+    },
+    {
+      "id": "navy-federal-checking-bonus",
+      "kind": "credit_union",
+      "name": "Navy Federal Credit Union checking bonus",
+      "provider": "Navy Federal Credit Union",
+      "bonus": 100,
+      "requiredDeposit": 500,
+      "holdDays": 120,
+      "ongoingApy": 0.05,
+      "depositBasis": "deposits_received",
+      "url": "https://www.navyfederal.org/checking-savings/checking.html",
+      "accessNotes": "Check eligibility before anything else. Unlike most credit unions here, Navy Federal's field of membership is genuinely closed and there is no donation route in.",
+      "requirements": [
+        "Membership restricted to serving and former military, Department of Defense staff, and their family members — most people are not eligible",
+        "New Navy Federal checking members only",
+        "Qualifying direct deposit within 90 days",
+        "One bonus per member"
+      ]
+    },
+    {
+      "id": "connexus-checking-bonus",
+      "kind": "credit_union",
+      "name": "Connexus Credit Union checking bonus",
+      "provider": "Connexus Credit Union",
+      "bonus": 100,
+      "requiredDeposit": 1000,
+      "holdDays": 120,
+      "ongoingApy": 0.25,
+      "depositBasis": "deposits_received",
+      "url": "https://www.connexuscu.org/banking/checking/",
+      "accessNotes": "Join nationally through a one-time donation to the Connexus Association, then open checking online.",
+      "requirements": [
+        "Membership required — open nationally through a one-time association donation",
+        "New checking members only",
+        "Direct deposit and monthly debit card activity required",
+        "Bonus paid after the qualifying period"
+      ]
+    },
+    {
+      "id": "fidelity-new-account-bonus",
+      "kind": "brokerage",
+      "name": "Fidelity new account funding bonus",
+      "provider": "Fidelity Brokerage Services LLC",
+      "bonus": 100,
+      "requiredDeposit": 50,
+      "holdDays": 90,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.fidelity.com/open-account/overview",
+      "accessNotes": "Open a Fidelity brokerage, cash management or Roth IRA online with the current promotion code and move $50 in. The bonus posts as cash within about 25 days.",
+      "requirements": [
+        "New Fidelity retail customers only, one per person",
+        "Fund the account with at least $50 within 15 days of opening",
+        "Promotion code entered at account opening",
+        "Fidelity may reclaim the bonus if the account is closed shortly afterwards"
+      ],
+      "notes": "This is the clearest illustration in the app of why annualising a bonus can mislead. Doubling $50 is a genuine 200% return and it is also, in total, $100 that you can never earn again. Anyone reading the annualised figure as a rate has misunderstood the product."
+    },
+    {
+      "id": "jpmorgan-sdi-bonus-5k",
+      "kind": "brokerage",
+      "name": "J.P. Morgan Self-Directed Investing bonus, $5,000 tier",
+      "provider": "J.P. Morgan Securities LLC",
+      "bonus": 50,
+      "requiredDeposit": 5000,
+      "holdDays": 90,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.chase.com/personal/investments/online-investing",
+      "accessNotes": "Open through Chase online banking if you already bank there; funding is instant between Chase accounts. The money can sit in a money market fund while the clock runs.",
+      "requirements": [
+        "New J.P. Morgan Self-Directed Investing accounts only",
+        "Fund within 45 days of opening and keep the balance for 90 days",
+        "Tiered by deposit size, and the tiers are not proportional",
+        "Bonus paid within 15 days of the 90-day period ending"
+      ]
+    },
+    {
+      "id": "jpmorgan-sdi-bonus-100k",
+      "kind": "brokerage",
+      "name": "J.P. Morgan Self-Directed Investing bonus, $100,000 tier",
+      "provider": "J.P. Morgan Securities LLC",
+      "bonus": 325,
+      "requiredDeposit": 100000,
+      "holdDays": 90,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.chase.com/personal/investments/online-investing",
+      "accessNotes": "Same account and the same 90-day clock as the smaller tier, with the money parked wherever you like inside the account.",
+      "requirements": [
+        "New J.P. Morgan Self-Directed Investing accounts only",
+        "Fund within 45 days of opening and keep the balance for 90 days",
+        "Tiered by deposit size, and the tiers are not proportional",
+        "Bonus paid within 15 days of the 90-day period ending"
+      ],
+      "notes": "Worth comparing against what the same $100,000 would earn in a Treasury bill over the same 90 days before treating the bonus as free money — at this size the bonus is a fraction of the interest."
+    },
+    {
+      "id": "jpmorgan-sdi-bonus-250k",
+      "kind": "brokerage",
+      "name": "J.P. Morgan Self-Directed Investing bonus, $250,000 tier",
+      "provider": "J.P. Morgan Securities LLC",
+      "bonus": 700,
+      "requiredDeposit": 250000,
+      "holdDays": 90,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.chase.com/personal/investments/online-investing",
+      "accessNotes": "The top published tier. The cash can stay invested in the account's money market fund throughout, so the real cost is transfer friction rather than lost yield.",
+      "requirements": [
+        "New J.P. Morgan Self-Directed Investing accounts only",
+        "Fund within 45 days of opening and keep the balance for 90 days",
+        "Assets transferred in kind may take weeks to settle, which eats into the window",
+        "Bonus paid within 15 days of the 90-day period ending"
+      ]
+    },
+    {
+      "id": "merrill-edge-bonus-200k",
+      "kind": "brokerage",
+      "name": "Merrill Edge Self-Directed bonus, $200,000 tier",
+      "provider": "Merrill Lynch, Pierce, Fenner & Smith Incorporated",
+      "bonus": 600,
+      "requiredDeposit": 200000,
+      "holdDays": 90,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.merrilledge.com/investing/offers",
+      "accessNotes": "Enrol in the offer at or before opening. Money already at Bank of America or Merrill does not count as new, which catches a lot of people out.",
+      "requirements": [
+        "New Merrill Edge Self-Directed accounts, funded with money from outside Bank of America and Merrill",
+        "Balance must be maintained for 90 days from funding",
+        "Enrolment in the offer required before or at account opening",
+        "Bonus paid within about two weeks of the qualification period ending"
+      ]
+    },
+    {
+      "id": "schwab-transfer-bonus-25k",
+      "kind": "brokerage",
+      "name": "Charles Schwab referral transfer bonus, $25,000 tier",
+      "provider": "Charles Schwab & Co., Inc.",
+      "bonus": 100,
+      "requiredDeposit": 25000,
+      "holdDays": 365,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.schwab.com/client-referral",
+      "accessNotes": "You need a referral code from an existing Schwab client before you open — there is no public version of this offer.",
+      "requirements": [
+        "Referral code from an existing Schwab client required",
+        "Net new assets from outside Schwab only",
+        "Assets must stay at Schwab for at least one year or the bonus is reclaimed",
+        "Tiered by deposit size; the largest tiers require seven figures"
+      ],
+      "notes": "A full year of commitment for 0.4% is the weakest offer in this file on an annualised basis, and it is here precisely so the comparison is visible."
+    },
+    {
+      "id": "schwab-transfer-bonus-250k",
+      "kind": "brokerage",
+      "name": "Charles Schwab referral transfer bonus, $250,000 tier",
+      "provider": "Charles Schwab & Co., Inc.",
+      "bonus": 500,
+      "requiredDeposit": 250000,
+      "holdDays": 365,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://www.schwab.com/client-referral",
+      "accessNotes": "Same referral requirement as the smaller tier. Transfers in kind keep you invested, so the one-year hold costs nothing beyond being unable to leave.",
+      "requirements": [
+        "Referral code from an existing Schwab client required",
+        "Net new assets from outside Schwab only",
+        "Assets must stay at Schwab for at least one year or the bonus is reclaimed",
+        "Bonus is credited as cash and is reportable income"
+      ]
+    },
+    {
+      "id": "etrade-transfer-bonus-500k",
+      "kind": "brokerage",
+      "name": "E*TRADE new account bonus, $500,000 tier",
+      "provider": "E*TRADE from Morgan Stanley",
+      "bonus": 1000,
+      "requiredDeposit": 500000,
+      "holdDays": 180,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://us.etrade.com/what-we-offer/our-accounts",
+      "accessNotes": "Use the promotional code at account opening; E*TRADE's tiers run well past this one for larger transfers.",
+      "requirements": [
+        "New E*TRADE accounts funded with new money only",
+        "Deposit within 60 days of opening and hold the balance for at least 60 days",
+        "Promotional code required at account opening",
+        "Bonus credited within about eight weeks of qualifying"
+      ]
+    },
+    {
+      "id": "tastytrade-transfer-bonus-25k",
+      "kind": "brokerage",
+      "name": "tastytrade account transfer bonus, $25,000 tier",
+      "provider": "tastytrade, Inc.",
+      "bonus": 500,
+      "requiredDeposit": 25000,
+      "holdDays": 365,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "url": "https://tastytrade.com/promotions/",
+      "accessNotes": "Open with the promotion code and transfer in from another broker; tastytrade also reimburses outbound transfer fees on larger moves.",
+      "requirements": [
+        "New tastytrade accounts only",
+        "Funds must remain for 12 months or the bonus is reclaimed",
+        "Tiered by deposit size",
+        "Bonus credited as cash once the transferred funds settle"
+      ]
+    },
+    {
+      "id": "robinhood-gold-ira-match",
+      "kind": "ira_transfer",
+      "name": "Robinhood Gold IRA transfer match",
+      "provider": "Robinhood Financial LLC",
+      "bonus": 300,
+      "requiredDeposit": 10000,
+      "holdDays": 1826,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "scales": true,
+      "url": "https://robinhood.com/us/en/about/retirement/",
+      "accessNotes": "Transfer an existing IRA in, keep the Gold subscription active, and do not touch the matched money for five years.",
+      "requirements": [
+        "Robinhood Gold subscription required — on a $10,000 transfer the annual subscription fee eats a meaningful share of a one-off match",
+        "Matched funds must stay in the IRA for five years or the match is taken back",
+        "Applies to IRA transfers and rollovers; annual contributions are matched at a lower rate",
+        "Withdrawing matched funds early also triggers the usual IRA tax and penalty rules"
+      ],
+      "notes": "The match is a percentage of what you transfer, so the dollar figure shown is what a $10,000 transfer earns and it scales with the amount. The five-year clawback is what actually decides whether this is worth doing: the money is not locked in the legal sense, but leaving early costs you the match."
+    },
+    {
+      "id": "webull-ira-transfer-match",
+      "kind": "ira_transfer",
+      "name": "Webull IRA transfer match",
+      "provider": "Webull Financial LLC",
+      "bonus": 350,
+      "requiredDeposit": 10000,
+      "holdDays": 1826,
+      "ongoingApy": 0,
+      "depositBasis": "balance_held",
+      "scales": true,
+      "url": "https://www.webull.com/activity",
+      "accessNotes": "Open or transfer an IRA through the app during a promotion window; the match is credited after the transfer settles.",
+      "requirements": [
+        "Match applies to IRA transfers and rollovers; contribution matches are smaller",
+        "Matched funds must remain for five years or the match is reclaimed",
+        "Available on traditional, Roth and rollover IRAs",
+        "Promotion terms change frequently and the headline percentage has moved several times"
+      ]
+    },
+    {
+      "id": "wealthfront-cash-referral-boost",
+      "kind": "cash_management",
+      "name": "Wealthfront Cash Account referral rate boost",
+      "provider": "Wealthfront Brokerage LLC",
+      "bonus": 12.5,
+      "requiredDeposit": 10000,
+      "holdDays": 90,
+      "ongoingApy": 3.75,
+      "depositBasis": "balance_held",
+      "scales": true,
+      "url": "https://www.wealthfront.com/cash",
+      "accessNotes": "You need a referral link from an existing customer before opening — the boost cannot be added afterwards.",
+      "requirements": [
+        "Referral link from an existing Wealthfront customer required",
+        "The boost is a temporary uplift on the account rate for three months, not a cash payment",
+        "Both the referrer and the referred receive it",
+        "New Wealthfront Cash Account customers only"
+      ],
+      "notes": "The only row here that is a rate uplift rather than a payment. The dollar figure is what a three-month boost is worth on $10,000, converted so it can be compared with the cash offers; it scales with the balance, which is why it is not marked as capped. Cash sits at partner banks and coverage runs well past the single-bank limit across the program, but it is pass-through coverage that depends on those banks and on accurate records."
+    }
+  ]
+}
