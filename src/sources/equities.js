@@ -56,6 +56,16 @@ const DAY = 86400000;
 const MAX_TIME = 8.64e15;          // the widest instant Date can represent
 
 /**
+ * How many points of price history travel on a row.
+ *
+ * A year of daily closes is ~250 numbers, and a few hundred measured rows of
+ * that is a hundred thousand floats held in memory to draw sparklines a couple
+ * of hundred pixels wide. A chart needs the SHAPE, not every tick, so the series
+ * is thinned to this before it is stored.
+ */
+const MAX_SERIES_POINTS = 120;
+
+/**
  * The SEC blocks requests without a descriptive User-Agent naming a contact.
  * That is their published condition of use, not an obstacle to route around.
  */
@@ -977,6 +987,118 @@ function tidyYield(y) {
   return Math.round(y * 1000) / 1000;
 }
 
+/**
+ * Evenly-spaced thinning of a price series, oldest first, for the chart.
+ *
+ * The first and last points are kept exactly, because they are the two the eye
+ * actually reads: where this started and where it is now. Everything between is
+ * sampled at even spacing.
+ *
+ * Non-finite values are dropped BEFORE the spacing is computed. A feed that
+ * returns nulls for market holidays must produce the same shape as one that
+ * omits them — if the holes were left in and skipped later, every gap would
+ * shift the rest of the chart sideways against its own axis.
+ */
+function downsample(values, targetPoints = MAX_SERIES_POINTS) {
+  if (!Array.isArray(values)) return [];
+  const clean = values.filter((v) => Number.isFinite(v));
+  const target = Math.floor(Number(targetPoints));
+  if (!Number.isFinite(target) || target < 1) return [];
+  if (!clean.length) return [];
+  if (clean.length <= target) return clean;
+  // Both endpoints cannot survive a single-point budget; the latest price is
+  // the one worth keeping.
+  if (target === 1) return [clean[clean.length - 1]];
+
+  const step = (clean.length - 1) / (target - 1);
+  const out = [];
+  for (let i = 0; i < target; i += 1) out.push(clean[Math.round(i * step)]);
+  return out;
+}
+
+/**
+ * Dollars traded on an ordinary day: median share volume times the price.
+ *
+ * Median rather than mean because one earnings session can be ten times a normal
+ * one, and the questions this answers — can an order get filled, does anyone
+ * actually follow this — are about the ordinary day. Only the per-symbol chart
+ * endpoint carries volume, so the batch path leaves it null instead of guessing.
+ */
+function medianDollarVolume(volumes, price) {
+  if (!Array.isArray(volumes) || !Number.isFinite(price) || price <= 0) return null;
+  const src = volumes.filter((v) => Number.isFinite(v) && v > 0).slice(-90);
+  if (src.length < 20) return null;
+  const sorted = [...src].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  if (!Number.isFinite(median) || median <= 0) return null;
+  return Math.round(median * price);
+}
+
+// ---------------------------------------------------------------------------
+// Reach: how widely known the thing is
+// ---------------------------------------------------------------------------
+
+/** Ordered from most advertised to least. Mirrors REACH in core/opportunity-kinds. */
+const REACH_ORDER = ['everyone', 'common', 'niche', 'obscure'];
+const reachRank = (k) => {
+  const i = REACH_ORDER.indexOf(k);
+  return i < 0 ? 1 : i;                     // an unknown label is treated as ordinary
+};
+/** The more obscure of two reads. Nothing about a row makes it MORE famous. */
+const leastKnown = (a, b) => REACH_ORDER[Math.max(reachRank(a), reachRank(b))];
+
+/**
+ * Index membership, which is the structural fact this source actually has.
+ *
+ * A whole-market fund, the default option in most 401k menus, and the thirty
+ * largest companies in the country are things a person hears about without
+ * looking for them. One slice of the market, a factor tilt, a small-cap screen
+ * and a VIX futures product are not: they are the shelf you only reach for once
+ * you already follow this. Everything else is an ordinary listed name — findable
+ * if you look, advertised to nobody.
+ */
+const WIDELY_HELD_GROUPS = new Set(['core_index', 'target_date', 'megacap']);
+const SPECIALIST_GROUPS = new Set(['sector', 'factor', 'small_cap', 'volatility_adjacent']);
+
+/**
+ * What the tape says about how many people are watching. Dollars, not shares —
+ * a million shares of a $3 stock and a million shares of Apple are not the same
+ * amount of attention.
+ */
+function reachFromDollarVolume(dv) {
+  if (!Number.isFinite(dv) || dv <= 0) return null;
+  if (dv >= 2e9) return 'everyone';
+  if (dv >= 2e8) return 'common';
+  if (dv >= 1e7) return 'niche';
+  return 'obscure';
+}
+
+/**
+ * How widely known a row is, derived rather than listed.
+ *
+ * Two signals, and the more obscure one wins: sitting in a famous category does
+ * not make a thinly traded share class famous, and a heavy tape does not make a
+ * sector fund something the general public has heard of.
+ *
+ * Index-tier rows are the interesting case. They are ten thousand issuers we
+ * have not measured, and calling them all obscure would flood the one filter
+ * that exists to surface things few people follow. The exchange is the only fact
+ * we have about them and it is a real one: the main boards list the companies
+ * with an investor-relations department, and everything else — NYSE American,
+ * the OTC tiers, a blank field — is where the genuinely unfollowed live.
+ */
+function classifyReach({ group, measured = true, exchange = null, dollarVolume = null } = {}) {
+  if (measured === false) {
+    const ex = String(exchange || '').trim().toLowerCase();
+    return ex === 'nyse' || ex === 'nasdaq' || ex === 'nyse arca' ? 'common' : 'niche';
+  }
+  const base = WIDELY_HELD_GROUPS.has(group) ? 'everyone'
+    : SPECIALIST_GROUPS.has(group) ? 'niche'
+      : 'common';
+  const byTape = reachFromDollarVolume(dollarVolume);
+  return byTape ? leastKnown(base, byTape) : base;
+}
+
 // ---------------------------------------------------------------------------
 // Row builders
 // ---------------------------------------------------------------------------
@@ -1013,6 +1135,10 @@ function buildIndexRow(rec, opts = {}) {
     yieldKind: C.YIELD_KIND.TRAILING,
     liquidity: C.LIQUIDITY.DAILY,
     measured: false,
+    // And deliberately no `series`: no price history has been fetched for this
+    // row, so it gets no chart. A sparkline drawn from nothing is the one thing
+    // that would make an unmeasured row look measured.
+    reach: classifyReach({ measured: false, exchange: rec.exchange }),
 
     risk: { principalAtRisk: true, insurance: C.INSURANCE.SIPC },
     taxTreatment: C.TAX_TREATMENT.QUALIFIED_DIVIDEND,
@@ -1066,6 +1192,13 @@ function buildMeasured(entry, series, opts = {}) {
 
   const vol = num(stats?.vol);
   const maxDD = num(opts.maxDrawdown) ?? worstDrawdown(series?.closes);
+  // The chart. Live this is the closes we already fetched; offline the seed
+  // hands over a pre-thinned shape instead, because the bundled snapshot holds
+  // statistics rather than a price history.
+  const chart = downsample(Array.isArray(opts.series) ? opts.series : series?.closes, MAX_SERIES_POINTS);
+  // Volume only exists on the per-symbol chart path. Null everywhere else, so a
+  // batch-measured row says "unknown" rather than "thin".
+  const dollarVolume = num(opts.dollarVolume) ?? medianDollarVolume(series?.volumes, price);
 
   const detail = [group.note];
   if (yieldSource === 'remembered') {
@@ -1103,9 +1236,11 @@ function buildMeasured(entry, series, opts = {}) {
     price,
     // One share, unless the fund company imposes a real initial minimum.
     minInvestment: num(entry.min) ?? price,
-    volume: num(opts.dollarVolume),
+    volume: dollarVolume,
 
     movementStats: stats || null,
+    series: chart.length ? chart : null,
+    reach: classifyReach({ group: entry.group, measured: true, dollarVolume }),
 
     risk: {
       principalAtRisk: true,
@@ -1475,6 +1610,10 @@ function loadSeed(ctx) {
           C,
           now: ctx?.now || Date.now(),
           movementStats: stats,
+          // The bundled shape for the chart. It is not a price history — see the
+          // seed file's own note on the field — so it is handed over separately
+          // and nothing is measured from it.
+          series: Array.isArray(item?.series) ? item.series : null,
           yieldPct: num(item?.trailingYield),
           yieldSource: 'seed',
           maxDrawdown: num(item?.maxDrawdown),
@@ -1557,6 +1696,10 @@ module.exports = {
   trailingYield,
   worstDrawdown,
   tidyYield,
+  downsample,
+  medianDollarVolume,
+  classifyReach,
+  MAX_SERIES_POINTS,
   buildIndexRow,
   buildMeasured,
   measuredConfidence,

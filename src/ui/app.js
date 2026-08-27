@@ -315,7 +315,7 @@ async function renderRadar() {
     ? `${money(o.scores.incomeYear1, { dp: 0 })}<span class="u">to you</span>`
     : `${pct(o.apy?.total, 1)}<span class="u">annualised</span>`);
 
-  const classOf = (o) => S.boot.constants.ASSET_CLASS_LABELS[o.assetClass] || o.assetClass;
+  const classOf = (o) => window.R.kindLabel(o, S.boot.constants.ASSET_CLASS_LABELS);
   const effortOf = (o) => (S.boot.constants.EFFORT_INFO?.[o.effort]?.label || '');
   const sub = {
     plain: (o) => `${classOf(o)} · ${o.rating?.grade || ''}`,

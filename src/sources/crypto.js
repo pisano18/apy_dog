@@ -51,6 +51,15 @@ const MAX_BAND_VOL = 250;           // past this a lognormal band stops meaning 
 /** Hours in a year. Crypto trades every one of them — see annualisedVolHourly. */
 const HOURS_PER_YEAR = 24 * 365;
 
+/**
+ * How many points of price history travel on a row.
+ *
+ * The sparkline arrives as 168 hourly prices and a thousand rows of that is
+ * 168,000 floats held to draw charts a couple of hundred pixels wide. A chart
+ * needs the shape, so it is thinned to this before being stored.
+ */
+const MAX_SERIES_POINTS = 120;
+
 /** 90th-percentile z. The band runs p10..p90, i.e. eight years in ten land inside. */
 const Z90 = 1.2816;
 
@@ -160,6 +169,33 @@ function cleanSeries(prices) {
     const n = num(p);
     if (n !== null && n > 0) out.push(n);
   }
+  return out;
+}
+
+/**
+ * Evenly-spaced thinning of a price series, oldest first, for the chart.
+ *
+ * The first and last points survive exactly — they are the two the eye reads,
+ * where this started and where it is now — and everything between is sampled at
+ * even spacing.
+ *
+ * Non-finite values are dropped BEFORE the spacing is computed. CoinGecko
+ * sparklines do come back with holes in them, and a hole left in place and
+ * skipped later would shift every point after it sideways against its own axis.
+ */
+function downsample(values, targetPoints = MAX_SERIES_POINTS) {
+  if (!Array.isArray(values)) return [];
+  const clean = values.filter((v) => Number.isFinite(v));
+  const target = Math.floor(Number(targetPoints));
+  if (!Number.isFinite(target) || target < 1) return [];
+  if (!clean.length) return [];
+  if (clean.length <= target) return clean;
+  // One point cannot hold both ends; the latest price is the one worth keeping.
+  if (target === 1) return [clean[clean.length - 1]];
+
+  const step = (clean.length - 1) / (target - 1);
+  const out = [];
+  for (let i = 0; i < target; i += 1) out.push(clean[Math.round(i * step)]);
   return out;
 }
 
@@ -401,6 +437,49 @@ function liquidityFor(volume, C) {
   return C.LIQUIDITY.ILLIQUID;    // a real order moves this market against you
 }
 
+/** Ordered from most advertised to least. Mirrors REACH in core/opportunity-kinds. */
+const REACH_ORDER = ['everyone', 'common', 'niche', 'obscure'];
+const reachRank = (k) => {
+  const i = REACH_ORDER.indexOf(k);
+  return i < 0 ? 1 : i;
+};
+
+/**
+ * How widely known an asset is, from the cap ranking, the cap itself and the
+ * tape — the three things this endpoint already gives us on every record.
+ *
+ * The cap ranking is the honest primary signal here in a way it never is for
+ * equities: crypto attention really is ordered by market cap, and the tail is
+ * enormous. Bitcoin and ether are on the news; the top fifty are on every
+ * exchange's front page; past a few hundred you are into things that are known
+ * to the people who follow that chain and nobody else.
+ *
+ * The three reads are combined by taking the most obscure, because a high rank
+ * with no volume behind it is a stale cap, not an audience — and obscurity cuts
+ * both ways, which is why the interface shows it instead of scoring it.
+ */
+function classifyReach({ rank, marketCap, volume } = {}) {
+  const reads = [];
+
+  const r = num(rank);
+  if (r !== null && r > 0) {
+    reads.push(r <= 10 ? 'everyone' : r <= 50 ? 'common' : r <= 250 ? 'niche' : 'obscure');
+  }
+  const cap = num(marketCap);
+  if (cap !== null && cap > 0) {
+    reads.push(cap >= 5e10 ? 'everyone' : cap >= 3e9 ? 'common' : cap >= 3e8 ? 'niche' : 'obscure');
+  }
+  const v = num(volume);
+  if (v !== null && v > 0) {
+    reads.push(v >= 1e9 ? 'everyone' : v >= 1e8 ? 'common' : v >= 5e6 ? 'niche' : 'obscure');
+  }
+
+  // Nothing to place it by is itself an answer: an asset with no rank, no cap
+  // and no volume is not one anybody has heard of.
+  if (!reads.length) return 'obscure';
+  return REACH_ORDER[Math.max(...reads.map(reachRank))];
+}
+
 /**
  * How much we trust what this row says.
  *
@@ -507,6 +586,12 @@ function buildRow(rec, opts = {}) {
   const marketCap = num(rec.market_cap);
   const volume = num(rec.total_volume);
   const rank = num(rec.market_cap_rank);
+
+  const spark = rec.sparkline_in_7d?.price;
+  const chart = downsample(
+    Array.isArray(spark) && spark.length ? spark : rec.snapshotSeries,
+    MAX_SERIES_POINTS,
+  );
 
   const peg = classifyPeg(rec, stats.vol);
 
@@ -631,6 +716,12 @@ function buildRow(rec, opts = {}) {
     underlying: [SYM],
 
     movementStats: stats,
+    // The chart: the same seven days the volatility above was measured on,
+    // thinned for storage. Live that is the real hourly sparkline; offline the
+    // bundled snapshot supplies a shape instead, which the seed file labels as
+    // such and which nothing is measured from.
+    series: chart.length ? chart : null,
+    reach: classifyReach({ rank, marketCap, volume }),
     // This feed carries prices, not calendars. Token unlocks, upgrade dates and
     // halvings are dated events that genuinely belong on these rows, and they
     // come from a schedule feed this source does not have — so rather than
@@ -914,10 +1005,13 @@ const adapter = {
   parkinsonVol,
   outcomeBand,
   classifyPeg,
+  classifyReach,
   liquidityFor,
   assetConfidence,
   resolveOptions,
   marketsUrl,
+  downsample,
+  MAX_SERIES_POINTS,
 
   async fetch(ctx) {
     const cfg = ctx.settings?.sources?.crypto || ctx.settings?.crypto || {};

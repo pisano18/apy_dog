@@ -353,4 +353,39 @@ describe('every row is actionable and honest', () => {
     assert.ok(top.filter((o) => o.source === 'bonuses').length <= 8,
       `one-time bonuses have taken over the default income view (${top.filter((o) => o.source === 'bonuses').length}/20)`);
   });
+  test('every non-income row has a label a human would recognise', () => {
+    // The renderer falls back to asset class outside income, where it is
+    // useless — 193 unrelated deals all read "Savings / Cash" and 61 unrelated
+    // companies all read "Dividend Stocks". So the sub-type label is the one
+    // that shows, and a sub-type nobody has named leaks a raw key like
+    // "liquid_staking" into the interface. This catches that at the source,
+    // before anyone sees it.
+    const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'render.js'), 'utf8');
+    const start = src.indexOf('const SUBTYPE_LABELS');
+    const end = src.indexOf('function kindLabel');
+    assert.ok(start >= 0 && end > start, 'could not locate the sub-type label map');
+    const labelled = new Set([...src.slice(start, end).matchAll(/([a-z_0-9]+):\s*'/g)].map((m) => m[1]));
+
+    const unlabelled = new Map();
+    for (const o of rows) {
+      const section = o.section || (o.track === 'movement' ? 'movement' : 'income');
+      if (section === 'income' || !o.subType) continue;
+      if (!labelled.has(o.subType)) unlabelled.set(o.subType, o.name);
+    }
+    assert.deepStrictEqual([...unlabelled.keys()], [],
+      `sub-types with no display label, e.g. ${[...unlabelled.values()][0]}`);
+  });
+
+  test('the deals section does not describe everything as cash', () => {
+    // Asset class is genuinely 'cash' for all of these and genuinely unhelpful:
+    // a 401(k) match, a referral chain and an intro-APR carry have nothing in
+    // common beyond being denominated in dollars.
+    const deals = rows.filter((o) => o.section === 'deals');
+    assert.ok(deals.length > 100, 'expected a deals dataset');
+    const withSubType = deals.filter((o) => o.subType);
+    assert.strictEqual(withSubType.length, deals.length,
+      `${deals.length - withSubType.length} deals rows have no sub-type and would fall back to "cash"`);
+    assert.ok(new Set(deals.map((o) => o.subType)).size >= 10,
+      'the deals section collapsed to a handful of sub-types');
+  });
 });

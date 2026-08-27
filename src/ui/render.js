@@ -99,14 +99,47 @@ const SUBTYPE_LABELS = {
   reit: 'REIT', mortgage_reit: 'Mortgage REIT', bdc: 'BDC', preferred: 'Preferred',
   cef: 'Closed-end fund', ultrashort: 'Ultra-short', index_proxy: 'Index proxy',
   bill: 'Bill', note: 'Note', bond: 'Bond', tips: 'TIPS',
+
+  // Deals. A 401(k) match, a referral chain and a checking bonus are all
+  // "cash" by asset class, which is true and useless — it is the same three
+  // words on 193 rows that have nothing to do with each other. What actually
+  // separates them is the kind of deal.
+  signup_bonus: 'Sign-up bonus', checking_bonus: 'Checking bonus',
+  savings_bonus: 'Savings bonus', credit_union_bonus: 'Credit union bonus',
+  brokerage_bonus: 'Brokerage bonus', ira_transfer_bonus: 'IRA transfer bonus',
+  cash_management_bonus: 'Cash account bonus', transfer_bonus: 'Transfer bonus',
+  referral_bonus: 'Referral', category_bonus: 'Category bonus',
+  cashback_program: 'Cashback', promo_offer: 'Promotion',
+  intro_apr_carry: 'Intro-APR carry', unclaimed_funds: 'Unclaimed money',
+  employer_match: 'Employer match', tax_rule: 'Tax rule',
+  tax_deferral: 'Tax deferral', tax_free_growth: 'Tax-free growth',
+  savings_bond: 'Savings bond', issuer_policy: 'Issuer policy',
+
+  listed_issuer: 'Listed company', beaten_down_quality: 'Beaten-down quality',
+  stablecoin: 'Stablecoin', liquid_staking: 'Liquid staking',
+  wrapped: 'Wrapped asset', tokenized_commodity: 'Tokenized commodity',
 };
+
+/**
+ * What to call this thing in one short phrase.
+ *
+ * Asset class is the right answer for income — a reader scanning yields wants
+ * to know it is a CD and not a junk bond. It is the wrong answer everywhere
+ * else: every deal is "Savings / Cash" and every stock is "Dividend Stocks".
+ * Outside income, the sub-type is what distinguishes one row from the next.
+ */
+function kindLabel(o, classes = {}) {
+  const specific = SUBTYPE_LABELS[o.subType];
+  const section = o.section || (o.track === 'movement' ? 'movement' : 'income');
+  if (specific && section !== 'income') return specific;
+  return classes[o.assetClass] || o.assetClass || '';
+}
 
 function nameCell(o, classes) {
   // On a row about price movement, "Semiconductors" is a far more useful label
   // than "Dividend Stocks", which is technically true of almost any listed
   // company and tells the reader nothing about what they are looking at.
-  const primary = (o.track !== 'income' && SUBTYPE_LABELS[o.subType])
-    || classes[o.assetClass] || o.assetClass;
+  const primary = kindLabel(o, classes);
   const meta = [primary, o.provider || o.chain || o.sourceLabel]
     .filter(Boolean).map(esc).join(' · ');
   return `<div class="cell-name">
@@ -578,7 +611,7 @@ R.drawer = (detail, ctx) => {
     </div>
     <div class="sub">
       ${gradeChip(r, false)}
-      <span>${esc(ctx.classes[o.assetClass] || o.assetClass)}</span>
+      <span>${esc(kindLabel(o, ctx.classes))}</span>
       ${o.symbol ? `<span>· ${esc(o.symbol)}</span>` : ''}
       ${o.chain ? `<span>· ${esc(o.chain)}</span>` : ''}
       <span>· via ${esc(o.sourceLabel || o.source)}</span>
@@ -713,6 +746,8 @@ R.drawer = (detail, ctx) => {
     </div>
   </div>`;
 };
+
+R.kindLabel = kindLabel;
 
 window.R = R;
 }());
