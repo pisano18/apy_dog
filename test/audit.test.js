@@ -388,4 +388,22 @@ describe('every row is actionable and honest', () => {
     assert.ok(new Set(deals.map((o) => o.subType)).size >= 10,
       'the deals section collapsed to a handful of sub-types');
   });
+  test('no chart claims to be a recorded price history when it was drawn', () => {
+    // The single most misleading thing a finance app can do is present a drawn
+    // curve as a price history, because the two are pixel-identical. Every
+    // bundled row charts a shape derived from its own statistics, so every
+    // bundled row must say so.
+    const charted = rows.filter((o) => Array.isArray(o.series) && o.series.length);
+    assert.ok(charted.length > 50, 'expected charts in the bundled dataset');
+    for (const o of charted) {
+      assert.ok(o.seriesBasis === 'measured' || o.seriesBasis === 'illustrative',
+        `${o.name} ships a chart with no stated basis`);
+      if (o.seed || o.measured === false) {
+        assert.strictEqual(o.seriesBasis, 'illustrative',
+          `${o.name} is a bundled row but its chart claims to be recorded closes`);
+      }
+      assert.ok(o.series.every((n) => Number.isFinite(n) && n > 0),
+        `${o.name} has a non-positive or non-finite point in its chart`);
+    }
+  });
 });

@@ -223,7 +223,7 @@ function movementRow(o, ctx) {
     <td><span class="star ${ctx.watched ? 'on' : ''}" data-act="watch" data-id="${esc(o.id)}">${ctx.watched ? '★' : '☆'}</span></td>
     <td>${nameCell(o, ctx.classes)}</td>
     <td class="num">${heatBar(m)}</td>
-    <td>${o.series?.length ? R.sparkline(o.series) : '<span class="spark2"></span>'}</td>
+    <td>${o.series?.length ? R.sparkline(o.series, 74, 24, o.seriesBasis) : '<span class="spark2"></span>'}</td>
     <td>${setupChip(m)}</td>
     <td>${catalystCell(m)}</td>
     <td>${severityChip(m)}</td>
@@ -290,16 +290,36 @@ function chartPath(series, w, h, pad = 2) {
   return { line, area, min, max, first: vals[0], last: vals[vals.length - 1], up: vals[vals.length - 1] >= vals[0] };
 }
 
-R.sparkline = (series, w = 74, h = 24) => {
+/**
+ * Where a chart came from, in the words a reader needs.
+ *
+ * A drawn shape and a recorded price history are pixel-identical on screen, and
+ * only one of them is evidence. An offline row charts a curve built to agree
+ * with the volatility and drawdown printed beside it — genuinely useful for
+ * seeing the shape of a thing, and not something anyone should trade off.
+ */
+const SERIES_BASIS = {
+  measured: { short: '', long: 'Recorded closes from the price feed.' },
+  illustrative: {
+    short: 'drawn, not recorded',
+    long: 'This shape is drawn to match the volatility, drawdown and trend printed on this row — it is not a '
+      + 'recorded price history. Refresh to replace it with real closes.',
+  },
+};
+
+R.sparkline = (series, w = 74, h = 24, basis = null) => {
   const p = chartPath(series, w, h);
   if (!p) return '<span class="spark2"></span>';
   const c = p.up ? 'var(--pos)' : 'var(--neg)';
-  return `<svg class="spark2" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-    <path d="${p.line}" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+  const drawn = basis === 'illustrative';
+  const title = drawn ? SERIES_BASIS.illustrative.long : '';
+  return `<svg class="spark2${drawn ? ' drawn' : ''}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img">
+    ${title ? `<title>${esc(title)}</title>` : ''}
+    <path d="${p.line}" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"${drawn ? ' stroke-dasharray="3 2"' : ''}/>
   </svg>`;
 };
 
-R.chart = (series, { w = 380, h = 132, label = '' } = {}) => {
+R.chart = (series, { w = 380, h = 132, label = '', basis = null } = {}) => {
   const p = chartPath(series, w, h, 6);
   if (!p) return '<div class="infobox">No price history pulled for this one yet.</div>';
   const c = p.up ? 'var(--pos)' : 'var(--neg)';
@@ -319,6 +339,7 @@ R.chart = (series, { w = 380, h = 132, label = '' } = {}) => {
       <span style="color:${c}">${window.F.pctSigned(pct, 1)} ${esc(label)}</span>
       <span>${esc(window.F.money(p.max, { dp: 2 }))}</span>
     </div>
+    ${basis === 'illustrative' ? `<div class="chartwarn">${esc(SERIES_BASIS.illustrative.long)}</div>` : ''}
   </div>`;
 };
 
@@ -487,7 +508,7 @@ function countdownChip(o) {
 
 function radarItem(o, valueFn, subFn) {
   return `<li class="ritem" data-act="goto" data-id="${esc(o.id)}">
-    ${o.series?.length ? R.sparkline(o.series, 54, 20) : ''}
+    ${o.series?.length ? R.sparkline(o.series, 54, 20, o.seriesBasis) : ''}
     <span class="body">
       <span class="nm">${esc(o.name)}</span>
       <span class="sub">${esc(subFn(o))}</span>
@@ -653,7 +674,7 @@ R.drawer = (detail, ctx) => {
 
   ${o.series?.length ? `<div class="dsection">
     <h4>Price</h4>
-    ${R.chart(o.series, { label: 'over the window shown' })}
+    ${R.chart(o.series, { label: 'over the window shown', basis: o.seriesBasis })}
   </div>` : ''}
 
   ${Number.isFinite(o.daysLeft) || o.notYetOpen || o.effort !== 'passive' || o.reach !== 'common' ? `<div class="dsection">

@@ -592,3 +592,192 @@ test('a live run produces rows the aggregator will actually keep', async () => {
   // in rather than a RangeError escaping.
   assert.equal(bySym(r.opportunities, 'QNT').dataAsOf, '2026-08-27T12:00:00.000Z');
 });
+
+// ------------------------------------------------------------- chart data --
+
+const SNAPSHOT_ROWS = require('./fixtures/coingecko-snapshot-rows.json');
+const snapshotRows = () => parse(SNAPSHOT_ROWS, { seed: true, dataAsOf: '2026-08-01' }).opportunities;
+
+test('downsample keeps both ends and never exceeds its budget', () => {
+  const long = Array.from({ length: 168 }, (_, i) => 100 + i);
+  const out = adapter.downsample(long, 120);
+  assert.equal(out.length, 120);
+  assert.equal(out[0], 100, 'the first point is where the week started');
+  assert.equal(out[out.length - 1], 267, 'the last point is the price now');
+  const gaps = out.slice(1).map((v, i) => v - out[i]);
+  assert.ok(Math.max(...gaps) - Math.min(...gaps) <= 1, 'the spacing must be even');
+  for (const n of [2, 7, 60, 119, 168]) assert.equal(adapter.downsample(long, n).length, n);
+});
+
+test('a series already inside the budget comes back unchanged', () => {
+  const week = [1.1, 1.2, 1.15, 1.3];
+  assert.deepEqual(adapter.downsample(week, 120), week);
+  assert.deepEqual(adapter.downsample(week, 4), week);
+  assert.deepEqual(adapter.downsample([9], 120), [9]);
+});
+
+test('holes are dropped before the spacing is computed, not after', () => {
+  // Sparklines do come back with holes. If a hole were left in and skipped
+  // later, every point after it would land in the wrong place on the axis.
+  const clean = Array.from({ length: 168 }, (_, i) => 1 + i / 100);
+  const holed = [];
+  for (const v of clean) { holed.push(v); if (Math.round(v * 100) % 11 === 0) holed.push(null, NaN, -Infinity, '2'); }
+  assert.deepEqual(adapter.downsample(holed, 60), adapter.downsample(clean, 60));
+});
+
+test('downsample refuses to invent a chart out of junk', () => {
+  for (const junk of [null, undefined, 'sparkline', 42, {}, [], [null], [NaN, Infinity]]) {
+    assert.doesNotThrow(() => adapter.downsample(junk, 120));
+    assert.deepEqual(adapter.downsample(junk, 120), []);
+  }
+  assert.deepEqual(adapter.downsample([1, 2, 3], 0), []);
+  assert.deepEqual(adapter.downsample([1, 2, 3], -1), []);
+  assert.deepEqual(adapter.downsample([1, 2, 3], NaN), []);
+  assert.deepEqual(adapter.downsample([1, 2, 3], 1), [3], 'one point holds the latest price');
+});
+
+test('a live row charts the same seven days its volatility was measured on', () => {
+  const btc = bySym(parse(MARKETS).opportunities, 'BTC');
+  const raw = MARKETS.find((r) => r?.id === 'bitcoin').sparkline_in_7d.price;
+  assert.equal(raw.length, 168, 'the fixture must carry a full week of hourly prices');
+  assert.equal(btc.series.length, adapter.MAX_SERIES_POINTS);
+  assert.equal(btc.series[0], raw[0]);
+  assert.equal(btc.series[btc.series.length - 1], raw[raw.length - 1]);
+  assert.equal(btc.movementStats.volBasis, 'sparkline-7d-hourly');
+});
+
+test('a row measured from a 24h range gets no chart, because there is no series', () => {
+  const ar = bySym(parse(MARKETS).opportunities, 'AR');
+  assert.equal(ar.movementStats.volBasis, 'range-24h');
+  assert.equal(ar.series, null, 'one high and one low is not a price path');
+});
+
+test('the bundled shape draws the chart and is never measured from', () => {
+  const rows = snapshotRows();
+  const by = (s) => rows.find((o) => o.symbol === s);
+
+  // Inside the budget: kept exactly, ending on the row's price.
+  const link = by('LINK');
+  assert.equal(link.series.length, 60);
+  assert.equal(link.series[link.series.length - 1], link.price);
+  // Crucially: a drawn shape must not buy the row any measurement credit.
+  assert.equal(link.movementStats.volBasis, 'snapshot-estimate');
+  assert.equal(link.movementStats.bars, 0, 'a drawn chart is not days of history');
+  assert.equal(link.movementStats.windowHours, null);
+  assert.ok(/bundled approximation/.test(link.notes));
+
+  // Over the budget: thinned, both ends intact.
+  const hbar = by('HBAR');
+  assert.equal(hbar.series.length, adapter.MAX_SERIES_POINTS);
+  assert.equal(hbar.series[hbar.series.length - 1], hbar.price);
+
+  // A live series always wins over the bundled one — except when it carries no
+  // usable price at all, which must fall back rather than chart a row of zeroes.
+  const sol = by('SOL');
+  assert.equal(sol.series.length, adapter.MAX_SERIES_POINTS);
+  assert.equal(sol.movementStats.volBasis, 'sparkline-7d-hourly');
+  const xlm = by('XLM');
+  assert.equal(xlm.series.length, 40);
+  assert.ok(xlm.series.every((v) => v > 0));
+});
+
+test('a corrupt bundled shape costs the chart, not the row', () => {
+  const rows = snapshotRows();
+  const doge = rows.find((o) => o.symbol === 'DOGE');
+  // Nulls, booleans, objects, arrays, a zero and a negative are all removed. A
+  // numeric string survives as the number it obviously is, because upstream has
+  // shipped prices as strings before.
+  assert.deepEqual(doge.series, [0.209, 0.2104, 0.211, 0.2098, 0.2115, 0.2131, 0.2126, 0.2118, 0.212]);
+  const ltc = rows.find((o) => o.symbol === 'LTC');
+  assert.equal(ltc.series, null, 'a chart must be absent rather than empty or wrong');
+  assert.deepEqual(ltc.movementStats.volBasis, 'snapshot-estimate');
+  for (const o of rows) assert.deepEqual(schema.validate(o), []);
+});
+
+test('a poisoned bundled shape never throws and never charts nonsense', () => {
+  const poisons = [null, undefined, 0, -1, 'x', {}, true, [], [null, null], ['a', 'b'],
+    [0, 0, 0], [1e308, -1e308], new Array(500).fill(1.5)];
+  for (const p of poisons) {
+    const broken = clone(SNAPSHOT_ROWS).map((rec) => ({ ...rec, snapshotSeries: p }));
+    let r;
+    assert.doesNotThrow(() => { r = parse(broken, { seed: true }); }, `snapshotSeries ${String(p)} threw`);
+    for (const o of r.opportunities) {
+      assert.deepEqual(schema.validate(o), []);
+      if (o.series !== null) {
+        assert.ok(o.series.length <= adapter.MAX_SERIES_POINTS);
+        assert.ok(o.series.every((v) => Number.isFinite(v) && v > 0), `${o.symbol} charted a non-price`);
+      }
+    }
+  }
+});
+
+test('every seed row charts the seven days it says it moved', () => {
+  const raw = new Map(require('../data/seed/crypto.json').items.map((i) => [i.id, i]));
+  for (const o of seed().opportunities) {
+    const s = o.series;
+    assert.ok(Array.isArray(s) && s.length >= 40, `${o.symbol} has no chart`);
+    assert.ok(s.every((v) => Number.isFinite(v) && v > 0), `${o.symbol} charts a non-price`);
+    const item = raw.get(o.id.replace(/^crypto:/, ''));
+    assert.ok(item, `${o.id} is not in the seed file`);
+    assert.equal(s[s.length - 1], item.current_price, `${o.symbol} chart does not end at its price`);
+    // The row's notes state the seven-day move in words; the chart must show it.
+    const want = item.price_change_percentage_7d_in_currency || 0;
+    const got = (s[s.length - 1] / s[0] - 1) * 100;
+    assert.ok(Math.abs(got - want) < 0.5, `${o.symbol} says ${want}% over the week and charts ${got.toFixed(2)}%`);
+    // One day's high and low happened inside these seven days.
+    if (item.high_24h > item.low_24h) {
+      assert.ok(Math.max(...s) >= item.high_24h * 0.999, `${o.symbol} chart never reaches its own 24h high`);
+      assert.ok(Math.min(...s) <= item.low_24h * 1.001, `${o.symbol} chart never reaches its own 24h low`);
+    }
+  }
+});
+
+// ------------------------------------------------------------------ reach --
+
+test('reach follows the cap ranking, which is how crypto attention is actually ordered', () => {
+  const big = { marketCap: 1e12, volume: 1e10 };
+  assert.equal(adapter.classifyReach({ rank: 1, ...big }), 'everyone');
+  assert.equal(adapter.classifyReach({ rank: 10, ...big }), 'everyone');
+  assert.equal(adapter.classifyReach({ rank: 11, ...big }), 'common');
+  assert.equal(adapter.classifyReach({ rank: 50, ...big }), 'common');
+  assert.equal(adapter.classifyReach({ rank: 51, ...big }), 'niche');
+  assert.equal(adapter.classifyReach({ rank: 250, ...big }), 'niche');
+  assert.equal(adapter.classifyReach({ rank: 251, ...big }), 'obscure');
+  assert.equal(adapter.classifyReach({ rank: 900, ...big }), 'obscure');
+});
+
+test('a missing rank falls back to the cap and the tape rather than to a guess', () => {
+  assert.equal(adapter.classifyReach({ marketCap: 8e10, volume: 5e9 }), 'everyone');
+  assert.equal(adapter.classifyReach({ marketCap: 8e9, volume: 3e8 }), 'common');
+  assert.equal(adapter.classifyReach({ marketCap: 8e8, volume: 2e7 }), 'niche');
+  assert.equal(adapter.classifyReach({ marketCap: 2e7, volume: 4e5 }), 'obscure');
+  // Nothing to place it by is itself an answer.
+  assert.equal(adapter.classifyReach({}), 'obscure');
+  assert.equal(adapter.classifyReach(), 'obscure');
+  for (const junk of [{ rank: 0 }, { rank: -3 }, { rank: 'x' }, { marketCap: null, volume: null }]) {
+    assert.equal(adapter.classifyReach(junk), 'obscure');
+  }
+});
+
+test('a high rank with no volume behind it is a stale cap, not an audience', () => {
+  // The reads are combined by taking the most obscure: nothing about a row can
+  // make it MORE widely known than its thinnest signal says.
+  assert.equal(adapter.classifyReach({ rank: 5, marketCap: 6e10, volume: 3e6 }), 'obscure');
+  assert.equal(adapter.classifyReach({ rank: 5, marketCap: 5e8, volume: 5e9 }), 'niche');
+  assert.equal(adapter.classifyReach({ rank: 400, marketCap: 9e11, volume: 9e9 }), 'obscure');
+});
+
+test('the seed spans the whole reach scale and places the majors correctly', () => {
+  const rows = seed().opportunities;
+  const known = new Set(['everyone', 'common', 'niche', 'obscure']);
+  const seen = new Set();
+  for (const o of rows) {
+    assert.ok(known.has(o.reach), `${o.symbol} has reach "${o.reach}"`);
+    seen.add(o.reach);
+  }
+  assert.deepEqual([...known].filter((k) => !seen.has(k)), [], `the snapshot must span the scale: ${[...seen]}`);
+  assert.equal(bySym(rows, 'BTC').reach, 'everyone');
+  assert.equal(bySym(rows, 'ETH').reach, 'everyone');
+  // Far enough down the ranking that only the people on that chain follow it.
+  assert.ok(['niche', 'obscure'].includes(bySym(rows, 'INJ').reach));
+});

@@ -587,11 +587,11 @@ function buildRow(rec, opts = {}) {
   const volume = num(rec.total_volume);
   const rank = num(rec.market_cap_rank);
 
-  const spark = rec.sparkline_in_7d?.price;
-  const chart = downsample(
-    Array.isArray(spark) && spark.length ? spark : rec.snapshotSeries,
-    MAX_SERIES_POINTS,
-  );
+  // cleanSeries first: a zero or a negative in a price array is a data error,
+  // and a chart drawn through one would show a crash that never happened.
+  const spark = cleanSeries(rec.sparkline_in_7d?.price);
+  const liveSpark = spark.length > 0;
+  const chart = downsample(liveSpark ? spark : cleanSeries(rec.snapshotSeries), MAX_SERIES_POINTS);
 
   const peg = classifyPeg(rec, stats.vol);
 
@@ -721,6 +721,11 @@ function buildRow(rec, opts = {}) {
     // bundled snapshot supplies a shape instead, which the seed file labels as
     // such and which nothing is measured from.
     series: chart.length ? chart : null,
+    // Live rows chart the real 168-point hourly sparkline. Bundled rows chart a
+    // shape drawn to agree with the volatility beside it, which is a useful
+    // illustration and not a price history — the difference has to reach the
+    // screen, because on screen the two are indistinguishable.
+    seriesBasis: chart.length ? (liveSpark ? 'measured' : 'illustrative') : null,
     reach: classifyReach({ rank, marketCap, volume }),
     // This feed carries prices, not calendars. Token unlocks, upgrade dates and
     // halvings are dated events that genuinely belong on these rows, and they

@@ -999,6 +999,9 @@ function tidyYield(y) {
  * omits them — if the holes were left in and skipped later, every gap would
  * shift the rest of the chart sideways against its own axis.
  */
+/** Prices only. A zero or a negative close is a data error, not a low. */
+const priceSeries = (v) => (Array.isArray(v) ? v.filter((x) => Number.isFinite(x) && x > 0) : []);
+
 function downsample(values, targetPoints = MAX_SERIES_POINTS) {
   if (!Array.isArray(values)) return [];
   const clean = values.filter((v) => Number.isFinite(v));
@@ -1195,7 +1198,8 @@ function buildMeasured(entry, series, opts = {}) {
   // The chart. Live this is the closes we already fetched; offline the seed
   // hands over a pre-thinned shape instead, because the bundled snapshot holds
   // statistics rather than a price history.
-  const chart = downsample(Array.isArray(opts.series) ? opts.series : series?.closes, MAX_SERIES_POINTS);
+  const seedChart = Array.isArray(opts.series) && opts.series.length > 0;
+  const chart = downsample(priceSeries(seedChart ? opts.series : series?.closes), MAX_SERIES_POINTS);
   // Volume only exists on the per-symbol chart path. Null everywhere else, so a
   // batch-measured row says "unknown" rather than "thin".
   const dollarVolume = num(opts.dollarVolume) ?? medianDollarVolume(series?.volumes, price);
@@ -1240,6 +1244,9 @@ function buildMeasured(entry, series, opts = {}) {
 
     movementStats: stats || null,
     series: chart.length ? chart : null,
+    // Where the chart came from. A drawn shape and a recorded price history
+    // look identical on screen, and only one of them is evidence.
+    seriesBasis: chart.length ? (seedChart ? 'illustrative' : 'measured') : null,
     reach: classifyReach({ group: entry.group, measured: true, dollarVolume }),
 
     risk: {

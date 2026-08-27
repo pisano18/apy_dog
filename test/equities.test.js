@@ -551,3 +551,205 @@ test('measured seed rows survive the movement engine and produce usable reads', 
     assert.ok(classifySetup(o.movementStats).key, `${o.symbol} has no setup`);
   }
 });
+
+/* ------------------------------------------------------------- chart data -- */
+
+test('downsample keeps both ends and never exceeds its budget', () => {
+  const long = Array.from({ length: 253 }, (_, i) => 100 + i);
+  const out = adapter.downsample(long, 120);
+  assert.equal(out.length, 120);
+  assert.equal(out[0], long[0], 'the first point is where this started');
+  assert.equal(out[out.length - 1], long[long.length - 1], 'the last point is where it is now');
+  // Evenly spaced, so the chart is not stretched at one end.
+  const gaps = out.slice(1).map((v, i) => v - out[i]);
+  assert.ok(Math.max(...gaps) - Math.min(...gaps) <= 1, `uneven spacing: ${Math.min(...gaps)}..${Math.max(...gaps)}`);
+  for (const n of [2, 5, 60, 119, 252]) assert.equal(adapter.downsample(long, n).length, n);
+});
+
+test('a series already inside the budget comes back unchanged', () => {
+  const short = [10, 11, 12, 13];
+  assert.deepEqual(adapter.downsample(short, 120), short);
+  assert.deepEqual(adapter.downsample(short, 4), short);
+  assert.deepEqual(adapter.downsample([7], 120), [7]);
+});
+
+test('holes are dropped before the spacing is computed, not after', () => {
+  // A feed that returns nulls for holidays must draw the same chart as one that
+  // omits them. If the holes were kept and skipped later, every point after a
+  // gap would sit in the wrong place on the axis.
+  const clean = Array.from({ length: 200 }, (_, i) => 50 + i);
+  const holed = [];
+  for (const v of clean) { holed.push(v); if (v % 7 === 0) holed.push(null, NaN, Infinity, 'x'); }
+  assert.deepEqual(adapter.downsample(holed, 60), adapter.downsample(clean, 60));
+  assert.equal(adapter.downsample(holed, 60).length, 60);
+});
+
+test('downsample refuses to invent a chart out of junk', () => {
+  for (const junk of [null, undefined, 'series', 42, {}, [null, NaN], [], [Infinity]]) {
+    assert.doesNotThrow(() => adapter.downsample(junk, 120));
+    assert.deepEqual(adapter.downsample(junk, 120), []);
+  }
+  assert.deepEqual(adapter.downsample([1, 2, 3], 0), []);
+  assert.deepEqual(adapter.downsample([1, 2, 3], -5), []);
+  assert.deepEqual(adapter.downsample([1, 2, 3], 'lots'), []);
+  // One point cannot hold both ends, so it holds the one that matters.
+  assert.deepEqual(adapter.downsample([1, 2, 3], 1), [3]);
+});
+
+test('a measured row carries a thinned copy of the closes it was measured from', () => {
+  const series = adapter.parseSpark(SPARK).get('VOO');
+  const row = adapter.buildMeasured({ symbol: 'VOO', name: 'Vanguard S&P 500 ETF', group: 'core_index' },
+    series, { schema, C, now: NOW });
+  assert.ok(series.closes.length > adapter.MAX_SERIES_POINTS, 'the fixture must be long enough to need thinning');
+  assert.equal(row.series.length, adapter.MAX_SERIES_POINTS);
+  assert.equal(row.series[0], series.closes[0]);
+  assert.equal(row.series[row.series.length - 1], series.closes[series.closes.length - 1]);
+  // The chart's last point and the row's price are the same measurement.
+  assert.equal(row.series[row.series.length - 1], row.movementStats.lastClose);
+});
+
+test('a corrupt bundled series costs the chart, not the row', () => {
+  const entry = { symbol: 'VOO', name: 'Vanguard S&P 500 ETF', group: 'core_index' };
+  for (const junk of ['nope', 42, {}, [], [null, 'x', {}], [0, -3, NaN], null]) {
+    const row = adapter.buildMeasured(entry, { price: 640, closes: [], volumes: [] },
+      { schema, C, now: NOW, series: junk, movementStats: { vol: 14, lastClose: 640, bars: 250 } });
+    assert.ok(row, `series ${JSON.stringify(junk)} killed the row`);
+    assert.equal(row.series, null, 'a chart must be absent rather than empty or wrong');
+    assert.deepEqual(schema.validate(row), []);
+  }
+  // A zero or a negative close is a data error, and charting one would draw a
+  // crash that never happened.
+  const row = adapter.buildMeasured(entry, { price: 640, closes: [], volumes: [] },
+    { schema, C, now: NOW, series: [630, 0, 635, -1, 640], movementStats: { vol: 14, lastClose: 640, bars: 250 } });
+  assert.deepEqual(row.series, [630, 635, 640]);
+});
+
+test('every measured seed row charts what its own statistics say', () => {
+  const rows = seedResult().opportunities.filter((o) => o.measured !== false);
+  for (const o of rows) {
+    const s = o.series;
+    assert.ok(Array.isArray(s) && s.length >= 40, `${o.symbol} has no chart`);
+    assert.ok(s.every((v) => Number.isFinite(v) && v > 0), `${o.symbol} charts a non-price`);
+    assert.ok(Math.abs(s[s.length - 1] - o.price) < 0.02 * Math.max(1, o.price / 100),
+      `${o.symbol} chart ends at ${s[s.length - 1]} but the row is priced at ${o.price}`);
+
+    const hi = Math.max(...s);
+    const lo = Math.min(...s);
+    const st = o.movementStats;
+    // The drawdown printed next to the chart is the distance from the peak in
+    // the chart. If those disagree the chart is worse than no chart at all.
+    assert.ok(Math.abs((hi - s[s.length - 1]) / hi * 100 - st.drawdown) < 0.5,
+      `${o.symbol}: chart drawdown ${((hi - s[s.length - 1]) / hi * 100).toFixed(1)}% vs stated ${st.drawdown}%`);
+    // Range position: near its highs must LOOK near its highs.
+    const pos = hi > lo ? (s[s.length - 1] - lo) / (hi - lo) : 0.5;
+    if (st.rangePos >= 0.8) assert.ok(pos >= 0.6, `${o.symbol} says ${st.rangePos} up its range but charts at ${pos.toFixed(2)}`);
+    if (st.rangePos <= 0.2) assert.ok(pos <= 0.4, `${o.symbol} says ${st.rangePos} up its range but charts at ${pos.toFixed(2)}`);
+    assert.ok(Math.abs(pos - st.rangePos) < 0.2, `${o.symbol} range position ${pos.toFixed(2)} vs stated ${st.rangePos}`);
+
+    // Trend is percent per month over the last quarter, which is the last
+    // quarter of a series covering a year.
+    const tail = s.slice(Math.round(s.length * 0.75));
+    const monthly = ((tail[tail.length - 1] / tail[0]) ** (1 / 3) - 1) * 100;
+    if (Math.abs(st.trend) >= 1) {
+      assert.equal(Math.sign(monthly), Math.sign(st.trend),
+        `${o.symbol} trends ${st.trend}%/mo but the chart's last quarter moves ${monthly.toFixed(2)}%/mo`);
+    }
+    assert.ok(Math.abs(monthly - st.trend) < 4, `${o.symbol} trend ${st.trend} vs chart ${monthly.toFixed(2)}`);
+  }
+});
+
+test('index-tier rows have no chart, because nothing was measured to chart', () => {
+  const indexed = seedResult().opportunities.filter((o) => o.measured === false);
+  assert.ok(indexed.length >= 50);
+  for (const o of indexed) {
+    assert.equal(o.series, null, `${o.symbol} drew a chart out of nothing`);
+    assert.equal(o.price, null);
+    assert.equal(o.movementStats, null);
+  }
+  const [rec] = adapter.parseTickerIndex(SEC_EXCHANGE).records;
+  assert.equal(adapter.buildIndexRow(rec, { schema, C }).series, null);
+});
+
+/* ------------------------------------------------------------------ reach -- */
+
+test('reach is derived from index membership and the tape, not from a list', () => {
+  // A whole-market fund, a 401k default and the largest companies in the country
+  // are things people hear about without looking.
+  assert.equal(adapter.classifyReach({ group: 'core_index' }), 'everyone');
+  assert.equal(adapter.classifyReach({ group: 'target_date' }), 'everyone');
+  assert.equal(adapter.classifyReach({ group: 'megacap' }), 'everyone');
+  // One slice of the market, a factor tilt, a small-cap screen and a VIX product
+  // are known to the people who already follow this and nobody else.
+  for (const g of ['sector', 'factor', 'small_cap', 'volatility_adjacent']) {
+    assert.equal(adapter.classifyReach({ group: g }), 'niche', g);
+  }
+  for (const g of ['bond_core', 'dividend_growth', 'energy', 'semis', 'high_growth', 'user']) {
+    assert.equal(adapter.classifyReach({ group: g }), 'common', g);
+  }
+});
+
+test('the tape can only make something less well known, never more', () => {
+  // A famous category does not make a thinly traded share class famous...
+  assert.equal(adapter.classifyReach({ group: 'core_index', dollarVolume: 3e6 }), 'obscure');
+  assert.equal(adapter.classifyReach({ group: 'core_index', dollarVolume: 4e7 }), 'niche');
+  // ...and a heavy tape does not make a sector fund a household name.
+  assert.equal(adapter.classifyReach({ group: 'sector', dollarVolume: 5e9 }), 'niche');
+  assert.equal(adapter.classifyReach({ group: 'core_index', dollarVolume: 5e9 }), 'everyone');
+  // No volume is no evidence, so the category stands alone.
+  for (const v of [null, undefined, 0, -1, NaN, 'lots']) {
+    assert.equal(adapter.classifyReach({ group: 'megacap', dollarVolume: v }), 'everyone');
+  }
+});
+
+test('unmeasured index rows are placed by the only fact we have about them', () => {
+  // Ten thousand issuers cannot all be "obscure" without drowning the filter
+  // that exists to surface things few people follow. The main boards carry the
+  // companies with an investor-relations department; everything else is where
+  // the genuinely unfollowed live.
+  assert.equal(adapter.classifyReach({ measured: false, exchange: 'NYSE' }), 'common');
+  assert.equal(adapter.classifyReach({ measured: false, exchange: 'Nasdaq' }), 'common');
+  assert.equal(adapter.classifyReach({ measured: false, exchange: 'NYSE American' }), 'niche');
+  assert.equal(adapter.classifyReach({ measured: false, exchange: 'OTC' }), 'niche');
+  assert.equal(adapter.classifyReach({ measured: false, exchange: null }), 'niche');
+  assert.equal(adapter.classifyReach({ measured: false }), 'niche');
+
+  const rec = adapter.parseTickerIndex(SEC_EXCHANGE).records.find((x) => x.exchange === 'NYSE');
+  assert.equal(adapter.buildIndexRow(rec, { schema, C }).reach, 'common');
+});
+
+test('every seed row carries a reach the interface knows how to render', () => {
+  const known = new Set(['everyone', 'common', 'niche', 'obscure']);
+  const rows = seedResult().opportunities;
+  const seen = new Set();
+  for (const o of rows) {
+    assert.ok(known.has(o.reach), `${o.symbol} has reach "${o.reach}"`);
+    seen.add(o.reach);
+  }
+  assert.ok(seen.has('everyone') && seen.has('common') && seen.has('niche'),
+    `the snapshot must span the scale: ${[...seen]}`);
+  const bySymbol = new Map(rows.map((o) => [o.symbol, o]));
+  assert.equal(bySymbol.get('VTI').reach, 'everyone');
+  assert.equal(bySymbol.get('AAPL').reach, 'everyone');
+  assert.equal(bySymbol.get('XLE').reach, 'niche');
+  assert.equal(bySymbol.get('AVUV').reach, 'niche');
+  assert.equal(bySymbol.get('PFE').reach, 'common');
+});
+
+test('the chart endpoint yields a dollar volume, and the batch endpoint honestly does not', () => {
+  const median = adapter.medianDollarVolume([100, 200, 300, ...new Array(20).fill(250)], 10);
+  assert.equal(median, 2500);
+  // Median, not mean: one earnings session is ten times a normal one and says
+  // nothing about whether an ordinary order gets filled.
+  assert.equal(adapter.medianDollarVolume([...new Array(24).fill(100), 1e9], 10), 1000);
+  assert.equal(adapter.medianDollarVolume([1, 2, 3], 10), null, 'three sessions is not a normal day');
+  assert.equal(adapter.medianDollarVolume(null, 10), null);
+  assert.equal(adapter.medianDollarVolume([1, 2, 3], 0), null);
+  assert.equal(adapter.medianDollarVolume(new Array(30).fill(0), 10), null);
+
+  const fromChart = adapter.buildMeasured({ symbol: 'SCHD', name: 'Schwab US Dividend Equity ETF', group: 'dividend_growth' },
+    adapter.parseChart(CHART), { schema, C, now: NOW });
+  assert.ok(fromChart.volume > 0, 'the chart endpoint carries volume and it should reach the row');
+  const fromBatch = adapter.buildMeasured({ symbol: 'SCHD', name: 'Schwab US Dividend Equity ETF', group: 'dividend_growth' },
+    adapter.parseSpark(SPARK).get('SCHD'), { schema, C, now: NOW });
+  assert.equal(fromBatch.volume, null, 'the batch feed carries no volume and must not claim one');
+});

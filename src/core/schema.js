@@ -223,6 +223,13 @@ function normalize(raw, ctx = {}) {
     // on purpose: a chart needs shape, not every tick, and holding full history
     // for a thousand rows is how an Electron app starts feeling slow.
     series: Array.isArray(raw.series) ? raw.series.filter(Number.isFinite).slice(-180) : null,
+    // 'measured' = recorded closes. 'illustrative' = a shape drawn to agree
+    // with the statistics beside it. Default to illustrative when a source
+    // ships a chart without saying which, because the wrong default here is
+    // the one that presents a drawing as evidence.
+    seriesBasis: Array.isArray(raw.series) && raw.series.length
+      ? (raw.seriesBasis === 'measured' ? 'measured' : 'illustrative')
+      : null,
 
     // A return you can only collect once. An opening bonus annualises to a huge
     // number and is still a single fixed payment, so ranking it as a rate puts
