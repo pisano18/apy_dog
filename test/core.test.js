@@ -354,6 +354,25 @@ describe('filters', () => {
     assert.ok(names({ termPreset: 'liquid' }).includes('HYSA'));
   });
 
+  test('a bond fund duration is never treated as a lockup', () => {
+    // term.days on a perpetual bond fund is its effective duration, carried so
+    // the rate-sensitivity penalty applies. Matching it against "1-3 years"
+    // would tell the user their money is committed when it is sellable daily.
+    const fund = make({ name: 'HYG', symbol: 'HYG', assetClass: 'corp_bond', apy: { total: 6.8 }, term: { days: 1170 }, liquidity: 'daily' });
+    const note = make({ name: '3y Note', assetClass: 'govt_bond', subType: 'note', apy: { total: 3.9 }, term: { days: 1096 }, liquidity: 'daily' });
+    const cd = make({ name: '2y CD', assetClass: 'cd', apy: { total: 3.5 }, term: { days: 730 }, liquidity: 'locked' });
+    assert.strictEqual(fund.term.kind, 'duration');
+    assert.strictEqual(note.term.kind, 'maturity');
+    assert.strictEqual(cd.term.kind, 'lockup');
+
+    const scored = scoreAll([fund, note, cd], { riskFree: 4, appetite: 45 });
+    const inRange = applyQuery(scored, { termPreset: '1to3y' }).map((o) => o.name);
+    assert.ok(inRange.includes('2y CD') && inRange.includes('3y Note'));
+    assert.ok(!inRange.includes('HYG'), 'a daily-liquid fund is not a 1-3 year commitment');
+    // ...but the duration still drives the risk model.
+    assert.ok(scored.find((o) => o.name === 'HYG').risk.factors.some((f) => /duration/.test(f.label)));
+  });
+
   test('denomination separates dollar yield from crypto yield', () => {
     assert.ok(!names({ denominations: ['usd'], hideTraps: false }).includes('Degen farm'));
     assert.deepStrictEqual(names({ denominations: ['crypto'], hideTraps: false }), ['Degen farm']);

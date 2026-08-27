@@ -380,10 +380,16 @@ function buildSavingsBond(entry, quote, { schema, C, dataAsOf, seed, breakevens 
     const short = (Array.isArray(breakevens) ? breakevens : [])[0];
     const real = num(short?.real);
     if (real !== null && fixed !== null) {
+      // The fixed rate IS the I bond's real yield, so it is the like-for-like
+      // comparison against TIPS. Which way the gap runs decides the advice.
+      const gap = real - fixed;
+      const tenorLabel = short?.tenor ? `${short.tenor} ` : '';
       notes.push(`Its real return is the ${fixed.toFixed(2)}% fixed rate, and that is what to compare against the `
-        + `${real.toFixed(2)}% ${short.tenor || ''} TIPS real yield`.trim()
-        + ` — TIPS currently pay ${(real - fixed).toFixed(2)}pp more real yield, in exchange for price risk, no deflation `
-        + 'floor and no purchase cap.');
+        + `${real.toFixed(2)}% ${tenorLabel}TIPS real yield`
+        + (gap >= 0
+          ? `: TIPS pay ${gap.toFixed(2)}pp more real yield, in exchange for price risk, no deflation floor and no purchase cap.`
+          : `: the I bond pays ${Math.abs(gap).toFixed(2)}pp more real yield than TIPS, with no price risk and a deflation `
+            + 'floor, at the cost of the purchase cap and the lockup.'));
     }
   } else {
     notes.push(
@@ -451,7 +457,9 @@ function buildSavingsBond(entry, quote, { schema, C, dataAsOf, seed, breakevens 
     url: entry.url,
     notes: notes.filter(Boolean).join(' '),
     accessNotes: ACCESS.savings_bond,
-    requirements: ['TreasuryDirect account', '$10,000 per person per calendar year', 'Locked for the first 12 months'],
+    // Wording matters: traps.js reads requirements for promotional-rate language,
+    // and a phrase like "first 12 months" there would libel this as a teaser rate.
+    requirements: ['TreasuryDirect account', '$10,000 per person per calendar year', 'No redemption for 12 months after purchase'],
     dataAsOf,
     seed: !!seed,
   };

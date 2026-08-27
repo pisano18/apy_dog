@@ -100,7 +100,7 @@ const c = (code, s) => (useColor ? `${C_[code]}${s}${C_.reset}` : String(s));
       `${c('green', `${m.liveRows} live`)} / ${c('yellow', `${m.seedRows} snapshot`)} · ${describeQuery(query)}`);
   log(c('dim', '─'.repeat(120)));
 
-  const head = ['', 'OPPORTUNITY', 'APY', 'AFTER TAX', 'SCORE', 'RISK', 'FLAGS', 'TERM', 'ACCESS', 'MIN'];
+  const head = ['', 'OPPORTUNITY', 'APY', 'AFTER TAX', 'SCORE', 'RISK', 'FLAGS', 'LOCKED', 'ACCESS', 'MIN'];
   const widths = [3, 44, 9, 10, 6, 13, 6, 8, 9, 10];
   log(c('dim', head.map((h, i) => h.padEnd(widths[i])).join(' ')));
 
@@ -123,7 +123,7 @@ const c = (code, s) => (useColor ? `${C_[code]}${s}${C_.reset}` : String(s));
       String(Math.round(o.scores?.dogScore ?? 0)).padStart(5) + ' ',
       c(tierCol, tier.padEnd(12)) + ' ',
       c(flagCol, (nFlags ? `⚑${nFlags}` : '·').padEnd(5)) + ' ',
-      (o.term?.label || 'Open').padEnd(7) + ' ',
+      (['locked', 'notice', 'illiquid'].includes(o.liquidity) ? (o.term?.label || 'Notice') : 'Open').padEnd(7) + ' ',
       (o.liquidity || '').padEnd(8) + ' ',
       (Number.isFinite(o.minInvestment) ? `$${Math.round(o.minInvestment).toLocaleString()}` : '—').padStart(9),
     ].join(' '));

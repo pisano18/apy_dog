@@ -254,9 +254,12 @@ function lognormalBands(mu, sigma, days = HORIZON_DAYS) {
   const d = num(days);
   if (muPct === null || sigmaPct === null || d === null || d <= 0) return null;
 
+  // You cannot lose more than everything, and nothing compounds at 100x. A mu
+  // outside that is a caller bug, and silently clamping it would hide the bug
+  // behind a plausible-looking band.
+  if (muPct <= -99 || muPct > 10000) return null;
   const t = d / 365;
-  const growth = 1 + clamp(muPct, -99, 10000) / 100;
-  if (!(growth > 0)) return null;
+  const growth = 1 + muPct / 100;
 
   const s = Math.max(0, sigmaPct / 100) * Math.sqrt(t);
   const m = Math.log(growth) * t - (s * s) / 2;
@@ -899,7 +902,7 @@ module.exports = {
   assetClasses: [baseC.ASSET_CLASS.SPECULATIVE],
   requiresNetwork: true,
   requiresKey: false,
-  defaultEnabled: true,          // opt-in: this is not what most people came for
+  defaultEnabled: true,           // the user asked for this category by name
   ttlMs: 6 * 60 * 60 * 1000,      // a two-year price series barely moves in a day
 
   fetch,

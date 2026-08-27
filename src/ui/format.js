@@ -39,14 +39,45 @@ const F = {
     return String(Math.round(v));
   },
 
+  /**
+   * How long your money is actually committed.
+   *
+   * Deliberately not the same thing as term.days. A bond ETF carries term.days
+   * set to its effective duration so the rate-sensitivity penalty applies, but
+   * you can sell it any morning — printing "3.2yr" in a column about lockups
+   * would tell the user the opposite of the truth. Duration is rate risk and
+   * belongs with the risk factors, not here.
+   */
   term(o) {
     const d = o?.term?.days;
-    if (o?.term?.label) return o.term.label;
+    const kind = o?.term?.kind;
+    if (kind === 'duration' || !kind) return 'Open';
+    if (kind === 'maturity' && o?.liquidity !== 'locked' && Number.isFinite(d)) {
+      // Redeemable at a date, but sellable before it.
+      return `${F.termShort(d)}*`;
+    }
+    if (!Number.isFinite(d) || d <= 0) return o?.liquidity === 'notice' ? 'Notice' : 'Open';
+    if (d < 31) return `${Math.round(d)}d`;
+    if (d < 365) return `${Math.round(d / 30.44)}mo`;
+    const y = d / 365.25;
+    return y % 1 < 0.08 || y % 1 > 0.92 ? `${Math.round(y)}y` : `${y.toFixed(1)}y`;
+  },
+
+  termShort(d) {
     if (!Number.isFinite(d) || d <= 0) return 'Open';
     if (d < 31) return `${Math.round(d)}d`;
     if (d < 365) return `${Math.round(d / 30.44)}mo`;
     const y = d / 365.25;
     return y % 1 < 0.08 || y % 1 > 0.92 ? `${Math.round(y)}y` : `${y.toFixed(1)}y`;
+  },
+
+  /** Rate sensitivity, for the things where term.days means duration. */
+  duration(o) {
+    const d = o?.term?.days;
+    if (!Number.isFinite(d) || d <= 0) return null;
+    if (o?.term?.kind !== 'duration') return null;
+    const y = d / 365.25;
+    return y < 1 ? `${(y * 12).toFixed(0)} months` : `${y.toFixed(1)} years`;
   },
 
   liquidity(l) {

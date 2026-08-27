@@ -19,7 +19,7 @@ R.COLUMNS = [
   { key: 'dog', label: 'Score', sort: 'dogScore', num: true },
   { key: 'risk', label: 'Risk', sort: 'risk' },
   { key: 'traps', label: 'Flags', sort: 'trap' },
-  { key: 'term', label: 'Term', sort: 'term' },
+  { key: 'term', label: 'Committed', sort: 'term' },
   { key: 'liq', label: 'Access', sort: null },
   { key: 'entry', label: 'Min / Price', sort: 'minInvestment', num: true },
   { key: 'size', label: 'Size', sort: 'tvl', num: true },
@@ -89,7 +89,7 @@ R.row = (o, { watched, change, selected, classes }) => {
     <td><span class="flagcell ${trapVerdict}" title="${nFlags ? esc((o.trapFlags || []).join(', ')) : 'No warning flags'}">
       ${nFlags ? `⚑ ${nFlags}` : '—'}
     </span></td>
-    <td>${esc(window.F.term(o))}</td>
+    <td title="${Number.isFinite(o.term?.days) && o.liquidity !== 'locked' ? `Sellable any trading day. ${window.F.duration(o) ? `Rate sensitivity: ${window.F.duration(o)} of duration.` : ''}` : 'How long your money is committed'}">${esc(window.F.term(o))}</td>
     <td style="color:var(--text-dim)">${esc(window.F.liquidity(o.liquidity))}</td>
     <td class="num">${entry}</td>
     <td class="num" style="color:var(--text-dim)">${Number.isFinite(o.tvl) ? window.F.money(o.tvl) : '—'}</td>
@@ -383,8 +383,9 @@ R.drawer = (detail, ctx) => {
     <h4>Terms</h4>
     <dl class="kv">
       <dt>Rate type</dt><dd>${esc(window.F.yieldKind(o.yieldKind))}</dd>
-      <dt>Length</dt><dd>${esc(o.term?.label || 'Open-ended')}${o.term?.maturity ? ` · matures ${window.F.date(o.term.maturity)}` : ''}</dd>
+      <dt>Committed for</dt><dd>${esc(window.F.term(o))}${o.term?.maturity ? ` · matures ${window.F.date(o.term.maturity)}` : ''}</dd>
       <dt>Getting out</dt><dd>${esc(window.F.liquidity(o.liquidity))}${o.term?.earlyExitPenalty ? ` · ${esc(o.term.earlyExitPenalty)}` : ''}</dd>
+      ${window.F.duration(o) ? `<dt>Rate sensitivity</dt><dd>${esc(window.F.duration(o))} of duration — roughly what its price moves for a 1% shift in rates</dd>` : ''}
       <dt>Protection</dt><dd>${esc(window.F.insurance(o.risk?.insurance))}${o.risk?.insuredLimit ? ` up to ${window.F.money(o.risk.insuredLimit)}` : ''}</dd>
       ${Number.isFinite(o.minInvestment) ? `<dt>Minimum</dt><dd>${window.F.money(o.minInvestment, { dp: 2 })}</dd>` : ''}
       ${Number.isFinite(o.maxInvestment) ? `<dt>Cap</dt><dd>${window.F.money(o.maxInvestment)}</dd>` : ''}

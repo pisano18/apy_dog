@@ -102,6 +102,14 @@ function normalize(raw, ctx = {}) {
     callable: bool(termIn.callable),
     earlyExitPenalty: str(termIn.earlyExitPenalty),
     label: str(termIn.label) || termLabel(termDays),
+    // What term.days actually MEANS for this row, which is three different
+    // things depending on the instrument and must not be conflated:
+    //   lockup   — your money is committed and you cannot get it out
+    //   maturity — a real redemption date, though you may be able to sell earlier
+    //   duration — a synthetic figure for a perpetual fund, present only so the
+    //              rate-sensitivity penalty applies. You can sell any trading day.
+    // A "1-3 year" filter must match the first two and never the third.
+    kind: str(termIn.kind) || inferTermKind(raw, termDays, maturity),
   };
 
   // --- money ---------------------------------------------------------------
@@ -210,6 +218,15 @@ function normalize(raw, ctx = {}) {
 
   if (out.confidence === null) out.confidence = defaultConfidence(out);
   return out;
+}
+
+function inferTermKind(raw, days, maturity) {
+  if (!Number.isFinite(days) || days <= 0) return null;
+  const liq = raw.liquidity;
+  if (liq === 'locked' || liq === 'notice' || liq === 'illiquid') return 'lockup';
+  if (maturity) return 'maturity';
+  if (['bill', 'note', 'bond', 'tips', 'cd'].includes(raw.subType)) return 'maturity';
+  return 'duration';
 }
 
 /** USD unless the position is in a volatile crypto asset. */

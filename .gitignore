@@ -4,3 +4,6 @@ dist/
 *.log
 .DS_Store
 .apy-dog/
+
+# Smoke-test screenshots are regenerated on every run; the icon is a real asset.
+build/smoke*.png

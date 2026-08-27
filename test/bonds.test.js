@@ -164,7 +164,7 @@ test('the I bond encodes its composite rate, purchase cap and lockup', () => {
   assert.match(i.term.earlyExitPenalty, /3 months of interest/);
   assert.match(i.term.earlyExitPenalty, /12 months/);
   assert.match(i.notes, /1 May and 1 Nov/);
-  assert.match(i.notes, /never goes below 0\.00%/);
+  assert.match(i.notes, /can never print below 0\.00%/);
   assert.match(i.notes, /annual purchase limit per person, not a balance tier/);
   assert.match(i.accessNotes, /TreasuryDirect/);
 });
@@ -175,6 +175,14 @@ test('the I bond row carries the TIPS comparison the breakeven exists for', () =
   assert.match(i.notes, /real return is the 1\.20% fixed rate/);
   assert.match(i.notes, /1\.55% 5-year TIPS real yield/);
   assert.match(i.notes, /0\.35pp more real yield/);
+
+  // And the other way round: when the fixed rate beats the TIPS real yield, the
+  // note has to say so rather than printing a negative advantage for TIPS.
+  const entry = adapter.INSTRUMENTS.find((e) => e.key === 'series-i');
+  const rich = adapter.buildOpportunity(entry, { fixedRate: 2.10, semiannualInflation: 1.30 }, {
+    schema, C, dataAsOf: '2026-08-01', breakevens: [{ tenor: '5-year', nominal: 3.80, real: 1.55 }],
+  });
+  assert.match(rich.notes, /the I bond pays 0\.55pp more real yield than TIPS/);
 });
 
 test('the EE bond is priced off the doubling guarantee, not the stated coupon', () => {
@@ -200,6 +208,9 @@ test('savings bonds land in a low risk tier and are flagged for their purchase c
     // encoding the limit somewhere machine-readable, and the row's notes explain it.
     const traps = detectTraps(o);
     assert.ok(traps.flags.includes(C.TRAP_FLAGS.CAPPED_BALANCE));
+    // And nothing else: a government savings bond is not a promotional teaser,
+    // so the requirement strings must stay clear of traps.js's promo wording.
+    assert.deepEqual(traps.flags, [C.TRAP_FLAGS.CAPPED_BALANCE], `${id}: ${traps.flags.join()}`);
   }
 });
 

@@ -127,7 +127,11 @@ function matches(o, q, unknownPasses) {
   }
 
   // --- term ----------------------------------------------------------------
-  const days = o.term?.days;
+  // Only a real lockup or a real maturity counts as a term. A bond fund's
+  // duration lives in term.days so the risk model can use it, but the fund is
+  // sellable any trading day — matching it against "1-3 years" would be a lie.
+  const isRealTerm = o.term?.kind === 'lockup' || o.term?.kind === 'maturity';
+  const days = isRealTerm ? o.term.days : null;
   const openEnded = !Number.isFinite(days) || days <= 0;
   if (openEnded && !q.includeOpenEnded && (has(q.termMinDays) || has(q.termMaxDays))) return false;
   if (!openEnded) {
