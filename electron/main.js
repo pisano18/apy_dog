@@ -32,6 +32,16 @@ const isDev = process.argv.includes('--dev');
 // the whole app actually starts rather than only that the modules parse.
 const isSmoke = process.argv.includes('--smoke');
 
+// A smoke run gets its own throwaway user-data directory. Otherwise it both
+// reads and writes the real one, which makes it order-dependent (a star click
+// un-stars whatever the last run starred) and quietly stomps a user's settings.
+if (isSmoke) {
+  const tmp = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'apy-dog-smoke-'));
+  app.setPath('userData', tmp);
+  app.setPath('sessionData', tmp);
+  console.log(`[smoke] isolated userData: ${tmp}`);
+}
+
 let win = null;
 let store = null;
 let cache = null;

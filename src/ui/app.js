@@ -24,6 +24,7 @@ const S = {
   preset: 'best',
   refreshing: false,
   sourcesTotal: 0,
+  doneCount: 0,
 };
 
 /* ---------------------------------------------------------------- helpers -- */
@@ -210,36 +211,50 @@ function renderSources() {
   }).catch(() => {});
 }
 
-function renderWatchlist() {
-  const ids = S.watchlist;
-  const rows = S.rows.filter((r) => ids.includes(r.id));
+async function renderWatchlist() {
+  // Query the full dataset rather than reusing the Find view's filtered rows —
+  // otherwise a watched rate vanishes from your own watchlist the moment it
+  // falls outside whatever filters you happen to have set.
+  let rows = [];
+  let changes = S.changes;
+  try {
+    const res = await window.apy.query({ watchlistOnly: true, hideTraps: false, includeSpeculative: true, sortBy: S.query.sortBy });
+    rows = res.rows;
+    changes = res.changes || {};
+  } catch { /* fall back to an empty list rather than blanking the pane */ }
+
+  const entries = S.boot.watchlist || [];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+
   $('#view-watch').innerHTML = `<div class="wrap">
     <h2>Watchlist</h2>
     <p class="lead">Rates you are tracking. APY Dog records each one on every scan, so the longer you keep it here
-      the more you know about whether the rate actually holds.</p>
-    ${ids.length === 0
+      the more you actually know about whether the rate holds.</p>
+    ${entries.length === 0
     ? '<div class="infobox">Nothing here yet. Click the ☆ next to anything in the table to track it.</div>'
-    : `<section><div class="statgrid">${ids.map((id) => {
-      const o = S.rows.find((r) => r.id === id) || S.watchlist.find((w) => w.id === id);
-      const w = (S.boot.watchlist || []).find((x) => x.id === id);
-      const name = o?.name || w?.name || id;
-      const ch = S.changes[id];
-      return `<div class="stat" data-act="goto" data-id="${esc(id)}" style="cursor:pointer">
-          <div class="v">${o ? window.F.pct(o.apy?.total, 2) : '—'}
-            ${ch && ch.direction !== 'flat' ? `<span class="trend ${ch.direction}" style="font-size:11px">${ch.direction === 'up' ? '▲' : '▼'}${Math.abs(ch.delta).toFixed(2)}</span>` : ''}</div>
-          <div class="k">${esc(name)}</div>
+    : `<section><div class="statgrid">${entries.map((w) => {
+      const o = byId.get(w.id);
+      const ch = changes[w.id];
+      const gone = !o;
+      return `<div class="stat" data-act="goto" data-id="${esc(w.id)}" style="cursor:pointer">
+          <div class="v">${o ? window.F.pct(o.apy?.total ?? o.expected?.annualReturn, 2) : '—'}
+            ${ch && ch.direction !== 'flat' ? `<span class="trend ${ch.direction}" style="font-size:11px" title="${window.F.pctSigned(ch.delta)} over ${ch.days} days">${ch.direction === 'up' ? '▲' : '▼'}${Math.abs(ch.delta).toFixed(2)}</span>` : ''}</div>
+          <div class="k">${esc(o?.name || w.name || w.id)}</div>
+          ${gone ? '<div class="k" style="color:var(--warn)">not in the latest scan</div>' : ''}
         </div>`;
-    }).join('')}</div></section>
-      <section><h3>Alerts</h3>
-        ${(S.boot.alerts || []).length
+    }).join('')}</div></section>`}
+
+    <section><h3>Alerts</h3>
+      ${(S.boot.alerts || []).length
     ? (S.boot.alerts).map((a) => `<div class="srccard"><div class="info">
-            <div class="nm">${esc(a.label || `${a.kind.replace(/_/g, ' ')} ${a.threshold}%`)}</div>
-            <div class="meta">${a.lastFired ? `Last fired ${window.F.ago(a.lastFired)}` : 'Never fired'}</div>
-          </div><button class="btn ghost sm" data-act="rm-alert" data-id="${esc(a.id)}">Remove</button></div>`).join('')
+          <div class="nm">${esc(a.label || `${String(a.kind).replace(/_/g, ' ')} ${a.threshold}%`)}</div>
+          <div class="meta">${a.lastFired ? `Last fired ${window.F.ago(a.lastFired)}` : 'Never fired'}</div>
+        </div><button class="btn ghost sm" data-act="rm-alert" data-id="${esc(a.id)}">Remove</button></div>`).join('')
     : '<div class="infobox">No alerts set. Open any opportunity and choose “Alert me if it changes”.</div>'}
-      </section>`}
+    </section>
+
     ${rows.length ? `<section><h3>Details</h3><div class="tablewrap">${window.R.table(rows, {
-    watchlist: S.watchlist, changes: S.changes, selectedId: S.selectedId,
+    watchlist: S.watchlist, changes, selectedId: S.selectedId,
     classes: S.boot.constants.ASSET_CLASS_LABELS, sortBy: S.query.sortBy, sortDir: S.query.sortDir,
   })}</div></section>` : ''}
   </div>`;
@@ -354,7 +369,7 @@ function switchView(view) {
   for (const v of ['watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
   if (view === 'sources') renderSources();
   if (view === 'settings') renderSettings();
-  if (view === 'watch') renderWatchlist();
+  if (view === 'watch') renderWatchlist().catch(() => {});
 }
 
 /* ----------------------------------------------------------------- events - */
@@ -483,6 +498,7 @@ function wire() {
       $('#watch-count').textContent = S.watchlist.length;
       openDetail(id);
       renderResults();
+      if (S.view === 'watch') renderWatchlist().catch(() => {});
       return;
     }
     if (act === 'dismiss') {
@@ -514,7 +530,7 @@ function wire() {
     if (act === 'open-user-rates') { await window.apy.openUserRates(); return toast('Opened', 'Edit, save, then refresh.'); }
     if (act === 'clear-cache') { const n = await window.apy.clearCache(); toast('Cache cleared', `${n} files`); return renderSources(); }
     if (act === 'reset-settings') { S.boot.settings = await window.apy.resetSettings(); applyTheme(); renderSettings(); return toast('Settings reset'); }
-    if (act === 'rm-alert') { await window.apy.removeAlert(id); S.boot.alerts = await window.apy.alerts(); return renderWatchlist(); }
+    if (act === 'rm-alert') { await window.apy.removeAlert(id); S.boot.alerts = await window.apy.alerts(); return renderWatchlist().catch(() => {}); }
     if (act === 'goto') { switchView('find'); return openDetail(id); }
     if (act === 'source-toggle') {
       const all = S.boot.sources.map((s) => s.id);
