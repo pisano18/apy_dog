@@ -377,9 +377,32 @@ function registerIpc() {
     const countOf = (q) => applyQuery(rows, { ...DEFAULT_QUERY, ...q, watchlist: store.watchlistIds() }).length;
     const spec = (q) => ({ rows: take(q), count: countOf(q), query: q });
 
+    // What is scheduled, whether or not it belongs to a ticker. Most of a given
+    // week is macro — a CPI print, an FOMC decision, an auction — and none of
+    // that hangs off a row, so a card built only from row catalysts showed one
+    // earnings date and silently dropped the five events that move everything.
+    const bySymbol = new Map();
+    for (const o of rows) if (o.symbol && !bySymbol.has(o.symbol)) bySymbol.set(o.symbol, o.id);
+    const upcoming = (dataset.events || [])
+      .filter((e) => Number.isFinite(e.daysAway) && e.daysAway >= 0 && e.daysAway <= 7)
+      .sort((a, b) => a.dateMs - b.dateMs);
+    // Earnings season can put forty companies in one week. Cap any single kind
+    // so a card of six does not become six identical rows.
+    const perKind = new Map();
+    const weekEvents = [];
+    for (const e of upcoming) {
+      const n = perKind.get(e.kind) || 0;
+      if (n >= 3) continue;
+      perKind.set(e.kind, n + 1);
+      weekEvents.push({ ...e, linkId: e.symbol ? (bySymbol.get(e.symbol) || null) : null });
+      if (weekEvents.length >= 6) break;
+    }
+
     return {
       budget,
       meta: dataset.meta,
+      weekEvents,
+      weekEventCount: upcoming.length,
       groups: {
         // What a flat table can never show you: things with a deadline.
         closing: spec({ expiringWithinDays: 30, sortBy: 'closingSoon', hideTraps: false }),

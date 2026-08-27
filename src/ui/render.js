@@ -496,17 +496,49 @@ function radarItem(o, valueFn, subFn) {
   </li>`;
 }
 
-function radarCard({ icon, title, blurb, rows, count, query, valueFn, subFn, emptyText }) {
+/**
+ * A dated event on the Radar.
+ *
+ * Most of what is scheduled in any given week belongs to no ticker: a CPI
+ * print, an FOMC decision and a Treasury auction move the whole board and
+ * cannot be attached to a row. Showing only the catalysts that happen to hang
+ * off an equity meant the "what is about to happen" card listed one earnings
+ * date while five macro events that week went unmentioned.
+ */
+function radarEventItem(e) {
+  const when = window.CATALYST_WHEN ? window.CATALYST_WHEN(e.daysAway) : `in ${Math.round(e.daysAway)}d`;
+  const scope = e.scope === 'symbol' ? (e.symbol || '') : 'Whole market';
+  const sub = [scope, e.certainty === 'estimated' ? 'estimated date' : null].filter(Boolean).join(' · ');
+  const size = Number.isFinite(e.volMultiple) && e.volMultiple > 1
+    ? `<span class="evmag" title="This kind of event has historically moved things about ${e.volMultiple.toFixed(1)}x a normal day.">${e.volMultiple.toFixed(1)}x</span>`
+    : '';
+  // An event without a row of its own still has somewhere to go: the drawer if
+  // we could match it to a holding, the calendar otherwise.
+  const act = e.linkId ? `data-act="goto" data-id="${esc(e.linkId)}"` : 'data-act="goto-view" data-val="events"';
+  return `<li class="ritem" ${act} title="${esc(e.text || '')}">
+    <span class="body">
+      <span class="nm">${esc(e.title || e.label)}</span>
+      <span class="sub">${esc(sub)}</span>
+    </span>
+    <span class="val"><span class="evwhen">${esc(when)}</span>${size}</span>
+  </li>`;
+}
+
+function radarCard({ icon, title, blurb, rows, items, count, query, view, valueFn, subFn, emptyText }) {
+  const body = items != null ? items : (rows || []).map((o) => radarItem(o, valueFn, subFn));
+  const more = view
+    ? `<button class="more" data-act="goto-view" data-val="${esc(view)}">see all →</button>`
+    : `<button class="more" data-act="radar-more" data-query='${esc(JSON.stringify(query))}'>see all →</button>`;
   return `<section class="rcard">
     <header>
       <span class="ic">${icon}</span>
       <h3>${esc(title)}</h3>
       <span class="n">${count}</span>
-      <button class="more" data-act="radar-more" data-query='${esc(JSON.stringify(query))}'>see all →</button>
+      ${more}
     </header>
     ${blurb ? `<div class="blurb">${esc(blurb)}</div>` : ''}
-    <ul>${rows.length
-    ? rows.map((o) => radarItem(o, valueFn, subFn)).join('')
+    <ul>${body.length
+    ? body.join('')
     : `<li class="empty3">${esc(emptyText || 'Nothing here right now.')}</li>`}</ul>
   </section>`;
 }
@@ -748,6 +780,7 @@ R.drawer = (detail, ctx) => {
 };
 
 R.kindLabel = kindLabel;
+R.radarEventItem = radarEventItem;
 
 window.R = R;
 }());

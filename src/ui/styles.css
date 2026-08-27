@@ -626,6 +626,10 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 .ritem .val { font-family: var(--mono); font-size: 13px; font-weight: 650; white-space: nowrap; text-align: right; flex: 0 0 auto; padding-left: 6px; }
 .ritem .val .u { display: block; font-size: 9.5px; color: var(--text-faint); font-weight: 500; }
 .ritem .empty3 { color: var(--text-faint); font-size: 12px; padding: 10px 4px; }
+.ritem .evwhen { display: block; font-size: 11px; font-weight: 600; color: var(--text-dim); }
+.ritem .evmag {
+  display: block; font-size: 9.5px; font-weight: 600; color: var(--warn); margin-top: 1px;
+}
 
 .countdown {
   font-family: var(--mono); font-size: 10.5px; font-weight: 650; padding: 1px 6px;

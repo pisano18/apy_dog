@@ -339,8 +339,17 @@ async function renderRadar() {
   card('⏳', 'Closing soon', 'Windows that shut. The one thing a sorted table can never show you.',
     g.closing, (o) => window.R.countdownChip(o), sub.withCountdown,
     'Nothing with a published deadline right now.');
-  card('◈', 'Happening this week', 'Dated catalysts inside seven days.',
-    g.thisWeek, heatVal, sub.withCatalyst, 'Nothing scheduled in the next week.');
+  // Built from the calendar rather than from rows, because most of what is
+  // scheduled in a week belongs to no ticker.
+  cards.push(window.R.radarCard({
+    icon: '◈',
+    title: 'Happening this week',
+    blurb: 'Everything dated inside seven days, whether or not you hold it.',
+    items: (d.weekEvents || []).map((e) => window.R.radarEventItem(e)),
+    count: d.weekEventCount || 0,
+    view: 'events',
+    emptyText: 'Nothing scheduled in the next seven days.',
+  }));
   card('★', 'Best deals', 'Bounded money. Usually the highest return per dollar in the app, and always capped.',
     g.deals, dealVal, sub.withEffort, 'No deals loaded.');
   card('◆', 'Best income', hasBudget ? 'Ranked by what it pays you on your amount.' : 'Ranked risk-adjusted, after tax.',
