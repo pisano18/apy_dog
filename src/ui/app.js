@@ -911,8 +911,7 @@ function wire() {
     S.health = payload.health;
     S.events = payload.events || [];
     await runQuery();
-    $('#src-count').textContent = `${payload.meta.sourcesOk}/${payload.meta.sourcesTotal}`;
-    $('#ev-count').textContent = (payload.meta.upcomingEvents ?? 0).toLocaleString();
+    syncCounters();
     syncLive();
     if (S.view === 'radar') renderRadar().catch(() => {});
     if (S.view === 'sources') renderSources();
@@ -957,6 +956,28 @@ function applyTheme() {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 }
 
+/** Header badges that describe the loaded dataset rather than any one view. */
+function syncCounters() {
+  const m = S.meta || {};
+  const ev = $('#ev-count');
+  if (ev) ev.textContent = (m.upcomingEvents ?? S.events.filter((e) => !e.past).length ?? 0).toLocaleString();
+  const src = $('#src-count');
+  if (src && Number.isFinite(m.sourcesTotal)) {
+    // Before the first refresh every source reads "offline", which is true and
+    // reads as catastrophe: "0/13" says nothing is working when in fact all
+    // thirteen supplied their bundled snapshot. Live counts belong on the badge
+    // only once something has actually been fetched.
+    const failed = (S.health || []).filter((h) => h.status === 'failed').length;
+    if (m.sourcesOk > 0 || failed > 0) {
+      src.textContent = `${m.sourcesOk ?? 0}/${m.sourcesTotal}`;
+      src.title = `${m.sourcesOk ?? 0} of ${m.sourcesTotal} sources fetched live${failed ? `, ${failed} failed` : ''}.`;
+    } else {
+      src.textContent = 'seed';
+      src.title = `All ${m.sourcesTotal} sources are showing bundled data. Nothing has been fetched live yet — hit Refresh.`;
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ boot -- */
 
 async function main() {
@@ -984,6 +1005,9 @@ async function main() {
   if (S.boot.platform === 'darwin') document.body.classList.add('mac');
   $('#ver').textContent = `v${S.boot.version}`;
   $('#watch-count').textContent = S.watchlist.length;
+  // These were only ever written by the refresh handler, so on a cold start the
+  // Calendar tab read "0" next to 148 upcoming events and Sources read "–".
+  syncCounters();
   $('#search-hint').textContent = S.boot.platform === 'darwin' ? '⌘K' : 'Ctrl K';
   applyTheme();
   syncLive();
