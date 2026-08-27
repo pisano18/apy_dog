@@ -99,6 +99,14 @@ R.row = (o, { watched, change, selected, classes }) => {
 
 R.table = (rows, ctx) => {
   if (!rows.length) {
+    if ((ctx.query?.onlySpeculative || ctx.query?.includeSpeculative) && ctx.speculativeSourceOff) {
+      return `<div class="empty">
+        <h3>The high-upside source is switched off</h3>
+        <p>These are modelled estimates rather than yields, produced by a separate source you have
+        disabled in Settings. Turn it back on to see them.</p>
+        <button class="btn" data-act="enable-speculative">Turn it back on</button>
+      </div>`;
+    }
     return `<div class="empty">
       <h3>Nothing matches those filters</h3>
       <p>${ctx.facets?.trapsHidden ? `${ctx.facets.trapsHidden} result${ctx.facets.trapsHidden === 1 ? ' is' : 's are'} hidden as likely yield traps. ` : ''}

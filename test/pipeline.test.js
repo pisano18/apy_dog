@@ -126,12 +126,14 @@ describe('aggregate', () => {
     assert.ok(counted >= result.meta.total, 'health counts should cover the merged total');
   });
 
-  test('modelled estimates are opt-in at the source level', () => {
-    // Speculative rows are a different kind of claim, so the source that produces
-    // them must not be on by default.
+  test('modelled estimates are opt-in at the query level, not hidden behind a setting', () => {
+    // The safety property that matters is that a yield search never returns a
+    // modelled estimate. That is enforced by the query default, so the source
+    // itself can ship enabled and the "High upside" view works out of the box.
     const spec = adapters.find((a) => a.id === 'speculative');
     assert.ok(spec, 'the speculative source should exist');
-    assert.strictEqual(spec.defaultEnabled, false, 'modelled estimates must be opt-in');
+    assert.strictEqual(require('../src/core/filters').DEFAULT_QUERY.includeSpeculative, false);
+    assert.strictEqual(require('../src/core/filters').DEFAULT_QUERY.onlySpeculative, false);
   });
 });
 

@@ -101,7 +101,10 @@ function renderSidebar() {
 }
 
 function renderResults(res) {
+  const enabled = S.boot.settings.enabledSources;
   $('#tablewrap').innerHTML = window.R.table(S.rows, {
+    query: S.query,
+    speculativeSourceOff: Array.isArray(enabled) && !enabled.includes('speculative'),
     watchlist: S.watchlist,
     changes: S.changes,
     selectedId: S.selectedId,
@@ -473,6 +476,13 @@ function wire() {
       return;
     }
     if (e.target.closest('[data-act="reset"]')) return applyPreset('best');
+    if (e.target.closest('[data-act="enable-speculative"]')) {
+      const all = S.boot.sources.map((x) => x.id);
+      const cur = S.boot.settings.enabledSources ?? all;
+      S.boot.settings = await window.apy.updateSettings({ enabledSources: [...new Set([...cur, 'speculative'])] });
+      toast('Turned back on', 'Refreshing to pull those in.');
+      return refresh(true);
+    }
     const th = e.target.closest('th[data-sort]');
     if (th) {
       const key = th.dataset.sort;

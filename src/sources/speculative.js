@@ -63,8 +63,16 @@ const num = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const r1 = (v) => (Number.isFinite(v) ? Math.round(v * 10) / 10 : null);
-const r3 = (v) => (Number.isFinite(v) ? Math.round(v * 1000) / 1000 : null);
+// Negative zero is a real hazard here: a model output of -1e-18 renders as
+// "-0.0%", which reads as a deliberate statement about a tiny loss.
+const round = (v, dp) => {
+  if (!Number.isFinite(v)) return null;
+  const f = 10 ** dp;
+  const out = Math.round(v * f) / f;
+  return out === 0 ? 0 : out;
+};
+const r1 = (v) => round(v, 1);
+const r3 = (v) => round(v, 3);
 
 // ---------------------------------------------------------------------------
 // Price access — reuse funds.js where it is present
@@ -891,7 +899,7 @@ module.exports = {
   assetClasses: [baseC.ASSET_CLASS.SPECULATIVE],
   requiresNetwork: true,
   requiresKey: false,
-  defaultEnabled: false,          // opt-in: this is not what most people came for
+  defaultEnabled: true,          // opt-in: this is not what most people came for
   ttlMs: 6 * 60 * 60 * 1000,      // a two-year price series barely moves in a day
 
   fetch,
