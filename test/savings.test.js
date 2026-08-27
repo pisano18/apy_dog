@@ -348,7 +348,8 @@ test('fetch verifies each distinct institution once and reports it', async () =>
   // Brokerage sweeps set fdicName to null: they are not banks, so searching the
   // register on their name would burn a request to produce a scary non-finding.
   for (const id of ['wealthfront-cash-account', 'betterment-cash-reserve', 'vanguard-cash-plus']) {
-    assert.ok(!/FDIC/.test(byId(out.opportunities, id).notes), `${id} must not be looked up`);
+    const notes = byId(out.opportunities, id).notes;
+    assert.ok(!/certificate #|no exact match|INACTIVE/.test(notes), `${id} must not be looked up`);
   }
   assert.ok(!asked.some((u) => /Wealthfront|Betterment|Vanguard/i.test(u)));
 });

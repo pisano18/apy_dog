@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "source": "funds",
+    "dataAsOf": "2026-08-01",
+    "origin": "Yahoo Finance chart endpoint (v8/finance/chart) — price, dividend events and adjusted close",
+    "note": "Offline starting point, NOT a quote. Every ticker, fund name and issuer here is real, but prices, trailing/forward yields, volatility and drawdown are approximate round figures for 2026-08-01. Classification, expense ratios and structural leverage come from the UNIVERSE table in src/sources/funds.js, not from this file. Refresh to replace every row with measured values.",
+    "fields": {
+      "symbol": "ticker; must exist in the adapter UNIVERSE or the row is skipped",
+      "price": "share price in USD, also the minimum investment",
+      "trailingYield": "sum of the last 12 months of distributions over price, percent",
+      "forwardYield": "most recent distribution annualised by payout frequency, percent",
+      "volatility": "typical annualised stdev of daily returns, percent",
+      "maxDrawdown": "typical worst peak-to-trough over a two-year window, percent"
+    }
+  },
+  "items": [
+    { "symbol": "JEPI",  "price": 59.00,  "trailingYield": 7.8,  "forwardYield": 7.5,  "payoutFrequency": "monthly",   "volatility": 11,  "maxDrawdown": 14 },
+    { "symbol": "JEPQ",  "price": 57.00,  "trailingYield": 10.5, "forwardYield": 10.0, "payoutFrequency": "monthly",   "volatility": 16,  "maxDrawdown": 20 },
+    { "symbol": "QYLD",  "price": 17.50,  "trailingYield": 12.0, "forwardYield": 12.0, "payoutFrequency": "monthly",   "volatility": 14,  "maxDrawdown": 22 },
+    { "symbol": "XYLD",  "price": 42.00,  "trailingYield": 10.0, "forwardYield": 9.8,  "payoutFrequency": "monthly",   "volatility": 12,  "maxDrawdown": 18 },
+    { "symbol": "RYLD",  "price": 17.00,  "trailingYield": 12.5, "forwardYield": 12.0, "payoutFrequency": "monthly",   "volatility": 16,  "maxDrawdown": 26 },
+    { "symbol": "SPYI",  "price": 53.00,  "trailingYield": 12.0, "forwardYield": 11.8, "payoutFrequency": "monthly",   "volatility": 13,  "maxDrawdown": 17 },
+    { "symbol": "QQQI",  "price": 53.00,  "trailingYield": 13.5, "forwardYield": 13.2, "payoutFrequency": "monthly",   "volatility": 18,  "maxDrawdown": 21 },
+
+    { "symbol": "HYG",   "price": 81.00,  "trailingYield": 6.8,  "forwardYield": 6.8,  "payoutFrequency": "monthly",   "volatility": 6,   "maxDrawdown": 9 },
+    { "symbol": "JNK",   "price": 97.00,  "trailingYield": 6.9,  "forwardYield": 6.9,  "payoutFrequency": "monthly",   "volatility": 6,   "maxDrawdown": 9 },
+    { "symbol": "USHY",  "price": 38.00,  "trailingYield": 7.1,  "forwardYield": 7.1,  "payoutFrequency": "monthly",   "volatility": 6,   "maxDrawdown": 9 },
+    { "symbol": "LQD",   "price": 112.00, "trailingYield": 4.7,  "forwardYield": 4.7,  "payoutFrequency": "monthly",   "volatility": 8,   "maxDrawdown": 14 },
+    { "symbol": "BND",   "price": 75.00,  "trailingYield": 4.0,  "forwardYield": 4.0,  "payoutFrequency": "monthly",   "volatility": 6,   "maxDrawdown": 12 },
+    { "symbol": "TLT",   "price": 92.00,  "trailingYield": 4.4,  "forwardYield": 4.4,  "payoutFrequency": "monthly",   "volatility": 15,  "maxDrawdown": 28 },
+    { "symbol": "MUB",   "price": 108.00, "trailingYield": 3.2,  "forwardYield": 3.2,  "payoutFrequency": "monthly",   "volatility": 5,   "maxDrawdown": 9 },
+    { "symbol": "VTEB",  "price": 51.00,  "trailingYield": 3.3,  "forwardYield": 3.3,  "payoutFrequency": "monthly",   "volatility": 5,   "maxDrawdown": 9 },
+    { "symbol": "SRLN",  "price": 41.00,  "trailingYield": 7.5,  "forwardYield": 7.3,  "payoutFrequency": "monthly",   "volatility": 4,   "maxDrawdown": 8 },
+
+    { "symbol": "SCHD",  "price": 28.00,  "trailingYield": 3.7,  "forwardYield": 3.7,  "payoutFrequency": "quarterly", "volatility": 15,  "maxDrawdown": 16 },
+    { "symbol": "VYM",   "price": 140.00, "trailingYield": 2.7,  "forwardYield": 2.7,  "payoutFrequency": "quarterly", "volatility": 14,  "maxDrawdown": 15 },
+    { "symbol": "HDV",   "price": 118.00, "trailingYield": 3.5,  "forwardYield": 3.5,  "payoutFrequency": "quarterly", "volatility": 14,  "maxDrawdown": 15 },
+    { "symbol": "SPYD",  "price": 46.00,  "trailingYield": 4.3,  "forwardYield": 4.2,  "payoutFrequency": "quarterly", "volatility": 17,  "maxDrawdown": 19 },
+    { "symbol": "SPHD",  "price": 50.00,  "trailingYield": 3.6,  "forwardYield": 3.6,  "payoutFrequency": "monthly",   "volatility": 14,  "maxDrawdown": 16 },
+
+    { "symbol": "VNQ",   "price": 95.00,  "trailingYield": 3.9,  "forwardYield": 3.9,  "payoutFrequency": "quarterly", "volatility": 20,  "maxDrawdown": 24 },
+    { "symbol": "O",     "price": 58.00,  "trailingYield": 5.5,  "forwardYield": 5.5,  "payoutFrequency": "monthly",   "volatility": 19,  "maxDrawdown": 27 },
+    { "symbol": "WPC",   "price": 62.00,  "trailingYield": 5.8,  "forwardYield": 5.8,  "payoutFrequency": "quarterly", "volatility": 21,  "maxDrawdown": 30 },
+    { "symbol": "NNN",   "price": 43.00,  "trailingYield": 5.4,  "forwardYield": 5.4,  "payoutFrequency": "quarterly", "volatility": 20,  "maxDrawdown": 25 },
+    { "symbol": "EPR",   "price": 55.00,  "trailingYield": 6.5,  "forwardYield": 6.5,  "payoutFrequency": "monthly",   "volatility": 25,  "maxDrawdown": 32 },
+    { "symbol": "VICI",  "price": 34.00,  "trailingYield": 5.3,  "forwardYield": 5.3,  "payoutFrequency": "quarterly", "volatility": 19,  "maxDrawdown": 24 },
+    { "symbol": "MPW",   "price": 5.50,   "trailingYield": 6.0,  "forwardYield": 5.8,  "payoutFrequency": "quarterly", "volatility": 45,  "maxDrawdown": 60 },
+
+    { "symbol": "AGNC",  "price": 10.00,  "trailingYield": 14.0, "forwardYield": 14.0, "payoutFrequency": "monthly",   "volatility": 26,  "maxDrawdown": 35 },
+    { "symbol": "NLY",   "price": 20.00,  "trailingYield": 13.0, "forwardYield": 13.0, "payoutFrequency": "quarterly", "volatility": 25,  "maxDrawdown": 34 },
+    { "symbol": "STWD",  "price": 20.00,  "trailingYield": 9.6,  "forwardYield": 9.6,  "payoutFrequency": "quarterly", "volatility": 22,  "maxDrawdown": 30 },
+    { "symbol": "ABR",   "price": 12.00,  "trailingYield": 10.5, "forwardYield": 10.0, "payoutFrequency": "quarterly", "volatility": 33,  "maxDrawdown": 45 },
+    { "symbol": "RITM",  "price": 13.00,  "trailingYield": 8.5,  "forwardYield": 8.5,  "payoutFrequency": "quarterly", "volatility": 24,  "maxDrawdown": 30 },
+
+    { "symbol": "ARCC",  "price": 20.50,  "trailingYield": 9.5,  "forwardYield": 9.4,  "payoutFrequency": "quarterly", "volatility": 20,  "maxDrawdown": 25 },
+    { "symbol": "MAIN",  "price": 62.00,  "trailingYield": 7.0,  "forwardYield": 6.9,  "payoutFrequency": "monthly",   "volatility": 19,  "maxDrawdown": 22 },
+    { "symbol": "OBDC",  "price": 14.00,  "trailingYield": 11.5, "forwardYield": 11.0, "payoutFrequency": "quarterly", "volatility": 22,  "maxDrawdown": 28 },
+    { "symbol": "FSK",   "price": 19.00,  "trailingYield": 13.0, "forwardYield": 12.5, "payoutFrequency": "quarterly", "volatility": 24,  "maxDrawdown": 32 },
+    { "symbol": "HTGC",  "price": 18.00,  "trailingYield": 10.5, "forwardYield": 10.0, "payoutFrequency": "quarterly", "volatility": 27,  "maxDrawdown": 33 },
+    { "symbol": "PSEC",  "price": 3.20,   "trailingYield": 13.0, "forwardYield": 11.0, "payoutFrequency": "monthly",   "volatility": 33,  "maxDrawdown": 48 },
+    { "symbol": "BIZD",  "price": 16.00,  "trailingYield": 11.0, "forwardYield": 11.0, "payoutFrequency": "quarterly", "volatility": 18,  "maxDrawdown": 25 },
+
+    { "symbol": "PFF",   "price": 33.00,  "trailingYield": 6.5,  "forwardYield": 6.5,  "payoutFrequency": "monthly",   "volatility": 9,   "maxDrawdown": 16 },
+    { "symbol": "PGX",   "price": 12.00,  "trailingYield": 6.3,  "forwardYield": 6.3,  "payoutFrequency": "monthly",   "volatility": 9,   "maxDrawdown": 16 },
+    { "symbol": "PFFD",  "price": 20.00,  "trailingYield": 6.6,  "forwardYield": 6.6,  "payoutFrequency": "monthly",   "volatility": 9,   "maxDrawdown": 16 },
+    { "symbol": "FPE",   "price": 19.00,  "trailingYield": 6.4,  "forwardYield": 6.4,  "payoutFrequency": "monthly",   "volatility": 8,   "maxDrawdown": 15 },
+
+    { "symbol": "PDI",   "price": 19.00,  "trailingYield": 13.5, "forwardYield": 13.5, "payoutFrequency": "monthly",   "volatility": 15,  "maxDrawdown": 24 },
+    { "symbol": "PTY",   "price": 16.00,  "trailingYield": 10.0, "forwardYield": 10.0, "payoutFrequency": "monthly",   "volatility": 16,  "maxDrawdown": 26 },
+    { "symbol": "GOF",   "price": 18.00,  "trailingYield": 14.0, "forwardYield": 14.0, "payoutFrequency": "monthly",   "volatility": 16,  "maxDrawdown": 26 },
+    { "symbol": "UTG",   "price": 38.00,  "trailingYield": 7.5,  "forwardYield": 7.5,  "payoutFrequency": "monthly",   "volatility": 17,  "maxDrawdown": 24 },
+    { "symbol": "ECC",   "price": 8.00,   "trailingYield": 19.0, "forwardYield": 18.0, "payoutFrequency": "monthly",   "volatility": 26,  "maxDrawdown": 38 },
+
+    { "symbol": "SGOV",  "price": 100.40, "trailingYield": 3.9,  "forwardYield": 3.8,  "payoutFrequency": "monthly",   "volatility": 0.3, "maxDrawdown": 0.3 },
+    { "symbol": "BIL",   "price": 91.60,  "trailingYield": 3.8,  "forwardYield": 3.7,  "payoutFrequency": "monthly",   "volatility": 0.3, "maxDrawdown": 0.3 },
+    { "symbol": "USFR",  "price": 50.50,  "trailingYield": 3.9,  "forwardYield": 3.8,  "payoutFrequency": "monthly",   "volatility": 0.4, "maxDrawdown": 0.4 },
+    { "symbol": "JAAA",  "price": 50.60,  "trailingYield": 4.6,  "forwardYield": 4.5,  "payoutFrequency": "monthly",   "volatility": 1.0, "maxDrawdown": 1.5 },
+    { "symbol": "ICSH",  "price": 50.60,  "trailingYield": 4.3,  "forwardYield": 4.2,  "payoutFrequency": "monthly",   "volatility": 0.8, "maxDrawdown": 1.2 }
+  ]
+}
