@@ -509,14 +509,17 @@ function valueOf(item, kind) {
       });
       if (!rv || rv.total <= 0) return null;
       const form = String(item.payoutForm || 'cash');
+      const allOrNothing = item.allOrNothing === true && rv.referralsNeeded > 1;
       const basis = [
-        `${money(rv.perReferral)} per funded referral`,
-        rv.referralsNeeded > 1 ? `x ${plural(rv.referralsNeeded, 'referral')}` : null,
+        allOrNothing
+          ? `${money(rv.total)} once all ${plural(rv.referralsNeeded, 'referral')} complete, about ${money(rv.perReferral)} a head`
+          : `${money(rv.perReferral)} per funded referral`,
+        !allOrNothing && rv.referralsNeeded > 1 ? `x ${plural(rv.referralsNeeded, 'referral')}` : null,
         rv.cap !== null ? `capped at ${money(rv.cap)} a year` : null,
         form !== 'cash' ? `paid in ${form}` : null,
       ].filter(Boolean).join(', ');
       return {
-        math: { kind: 'referral', ...rv },
+        math: { kind: 'referral', ...rv, allOrNothing },
         payout: { amount: rv.total, currency, basis },
         apyTotal: null,
         // No capital, no denominator, no rate. See expectedFor().
@@ -830,8 +833,18 @@ function buildRow(item, { dataAsOf, schema, C }) {
 
   const m = valued.math;
   if (m.kind === 'referral') {
-    notes.push(`It takes ${plural(m.referralsNeeded, 'person')} other than you. `
-      + `${m.referralsNeeded > 1 ? `Two of five signing up pays ${money(m.perReferral * 2)}, not ${money(m.total)}` : 'If nobody signs up it pays nothing'} — `
+    // The partial outcome is the honest illustration, and it has two shapes. A
+    // per-friend programme pays pro rata; a threshold or ladder tier pays
+    // nothing at all until the last person lands, and conflating the two would
+    // overstate exactly the offers with the biggest headline numbers.
+    const partial = Math.max(1, Math.floor(m.referralsNeeded / 2));
+    const partialPay = Math.min(m.perReferral * partial, m.total);
+    const partialSentence = m.referralsNeeded === 1
+      ? 'If nobody signs up it pays nothing'
+      : m.allOrNothing
+        ? `The headline needs all ${m.referralsNeeded}: this is a threshold, not a per-friend rate, so ${m.referralsNeeded - 1} of them completing does not pay ${money(m.total * (m.referralsNeeded - 1) / m.referralsNeeded)} — it pays the programme's ordinary rate, which is a small fraction of this`
+        : `${partial} of ${m.referralsNeeded} signing up pays ${money(partialPay)}, not ${money(m.total)}`;
+    notes.push(`It takes ${plural(m.referralsNeeded, 'person')} other than you. ${partialSentence} — `
       + 'this is not a rate and it is not passive.');
     if (m.capped) {
       notes.push(`The program stops paying at ${money(m.cap)} a year, so ${money(m.gross)} of referrals only collects ${money(m.total)}.`);
@@ -895,6 +908,20 @@ function buildRow(item, { dataAsOf, schema, C }) {
     notes.push('Generally not taxable: rewards earned by spending are treated as a rebate on the purchase rather than as income, which is why card bonuses are worth more after tax than an equivalent bank bonus. Rewards paid without any spending requirement can be treated differently.');
   } else {
     notes.push('Usually taxable: cash promotional payments are reported on a 1099-MISC, and brokerage bonuses on a 1099-MISC or 1099-INT depending on the firm. Set aside roughly a third depending on your bracket.');
+  }
+
+  const seriesPoints = Array.isArray(item.series) ? item.series.filter((n) => Number.isFinite(n)) : [];
+  if (seriesPoints.length > 2) {
+    // The sparkline on a deals row is not a price, and a chart that looks like a
+    // price chart will be read as one unless the row says otherwise.
+    const lo = Math.min(...seriesPoints);
+    const hi = Math.max(...seriesPoints);
+    const now = seriesPoints[seriesPoints.length - 1];
+    notes.push(`The chart is not a price: it is roughly what this offer has been worth at its public level over recent years, between ${money(lo)} and ${money(hi)}, with today's at ${money(now)}. `
+      + (now >= hi ? 'That is the top of its own recorded range.'
+        : now <= lo ? 'That is the bottom of its own recorded range, and these offers have come back higher before.'
+          : 'Elevated versions of these offers appear several times a year.')
+      + ' Hand-assembled and approximate — it shows shape, not history.');
   }
 
   if (String(item.notes || '').trim()) notes.push(String(item.notes).trim());
@@ -1102,7 +1129,7 @@ function readUserDeals(filePath, readFile = fs.readFileSync) {
 // Adapter entry points
 // ---------------------------------------------------------------------------
 
-const VERIFY_WARNING = 'Every figure here is approximately right for the stated date and nothing more. Referral tiers, card sign-up bonuses and portal rates change weekly, run at several levels at once, and are frequently targeted to individual customers — the offer on your screen is the only one that counts. Open the link and read the current terms before you spend, transfer or invite anybody.';
+const VERIFY_WARNING = 'Every figure here is approximately right for the stated date and nothing more, and every one of them must be verified before you act on it. Referral tiers, card sign-up bonuses and portal rates change weekly, run at several levels at once, and are frequently targeted to individual customers — the offer on your own screen is the only one that counts. Open the link and confirm the current terms before you spend, transfer or invite anybody.';
 
 const CARD_WARNING = 'The credit card rows only make money on spend you were already going to make, paid in full every statement. Carrying the balance at a typical 25% APR wipes out any of these bonuses within months, and applying adds a hard inquiry and a new account to your file.';
 

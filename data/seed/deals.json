@@ -28,6 +28,7 @@
       "perReferral": 300,
       "referralsNeeded": 5,
       "cap": 1500,
+      "allOrNothing": true,
       "qualifyingDays": 45,
       "payoutForm": "cash into your Acorns account",
       "reach": "common",
@@ -39,7 +40,7 @@
         "The bonus is credited inside your Acorns account, not sent to your bank",
         "Acorns runs this as a promotional ladder and moves the rungs — outside a promotion the everyday rate has been closer to $5 to $20 a friend"
       ],
-      "notes": "This is the offer people mean when they say Acorns pays $1,500 for five friends. It is the top rung of a promotional ladder and it pays nothing until the fifth friend funds: two friends is $600, not $1,500. Your own subscription runs about $36 a year while you wait."
+      "notes": "This is the offer people mean when they say Acorns pays $1,500 for five friends. It is the top rung of a promotional ladder and the whole amount depends on the fifth friend funding: two friends is not two fifths of $1,500, it is whatever the lower rungs pay, which is a small fraction of it. Your own subscription runs about $36 a year while you wait."
     },
     {
       "id": "acorns-referral-standard",
@@ -501,6 +502,7 @@
       "perReferral": 25,
       "referralsNeeded": 3,
       "cap": 75,
+      "allOrNothing": true,
       "qualifyingDays": 90,
       "payoutForm": "cash into your Wise balance",
       "reach": "niche",
