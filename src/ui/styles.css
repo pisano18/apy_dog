@@ -358,6 +358,11 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
    so it gets the room and lays out in columns once there is room to use. */
 .pane .wrap { max-width: 780px; }
 #view-events .wrap { max-width: 1400px; }
+/* Sources and Watchlist are prose about a grid of numbers. The prose stays at a
+   readable measure; the grid gets the width, so six stats do not wrap to leave
+   one stranded on its own row. */
+#view-sources .wrap, #view-watch .wrap { max-width: 1060px; }
+#view-sources .lead, #view-sources .srccard, #view-watch .lead { max-width: 820px; }
 #view-events .evrow { break-inside: avoid; }
 @media (min-width: 1180px) {
   #view-events section { columns: 2; column-gap: 18px; }
