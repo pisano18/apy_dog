@@ -13,6 +13,7 @@ const { Cache } = require('../src/core/cache');
 const { History } = require('../src/core/history');
 const C = require('../src/core/constants');
 const tax = require('../src/core/tax');
+const { toCSV, toJSON } = require('../src/core/export');
 
 /**
  * Electron main process.
@@ -308,7 +309,7 @@ function registerIpc() {
       filters: [{ name: 'CSV', extensions: ['csv'] }],
     });
     if (canceled || !filePath) return { saved: false };
-    fs.writeFileSync(filePath, toCSV(rows));
+    fs.writeFileSync(filePath, toCSV(rows, { meta: dataset.meta }));
     return { saved: true, path: filePath, rows: rows.length };
   });
 
@@ -320,7 +321,7 @@ function registerIpc() {
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });
     if (canceled || !filePath) return { saved: false };
-    fs.writeFileSync(filePath, JSON.stringify({ meta: dataset.meta, rows }, null, 2));
+    fs.writeFileSync(filePath, toJSON(rows, { meta: dataset.meta }));
     return { saved: true, path: filePath, rows: rows.length };
   });
 
@@ -336,49 +337,6 @@ function registerIpc() {
     shell.openPath(p);
     return true;
   });
-}
-
-function toCSV(rows) {
-  const cols = [
-    ['Name', (o) => o.name],
-    ['Symbol', (o) => o.symbol ?? ''],
-    ['Category', (o) => C.ASSET_CLASS_LABELS[o.assetClass] || o.assetClass],
-    ['Source', (o) => o.sourceLabel || o.source],
-    ['APY %', (o) => o.apy?.total ?? ''],
-    ['Base APY %', (o) => o.apy?.base ?? ''],
-    ['Reward APY %', (o) => o.apy?.reward ?? ''],
-    ['Expected return %', (o) => o.expected?.annualReturn ?? ''],
-    ['After-tax %', (o) => o.tax?.afterTaxApy ?? ''],
-    ['Tax-equivalent %', (o) => o.tax?.taxEquivalentYield ?? ''],
-    ['After-tax real %', (o) => o.tax?.afterTaxRealApy ?? ''],
-    ['Dog score', (o) => o.scores?.dogScore ?? ''],
-    ['Certainty equiv %', (o) => o.scores?.certaintyEquivalent ?? ''],
-    ['Risk', (o) => o.risk?.score ?? ''],
-    ['Risk tier', (o) => o.risk?.tierLabel ?? ''],
-    ['Trap score', (o) => o.trapScore ?? ''],
-    ['Trap flags', (o) => (o.trapFlags || []).join(' ')],
-    ['Term', (o) => o.term?.label ?? ''],
-    ['Term days', (o) => o.term?.days ?? ''],
-    ['Liquidity', (o) => o.liquidity],
-    ['Price', (o) => o.price ?? ''],
-    ['Min investment', (o) => o.minInvestment ?? ''],
-    ['Max investment', (o) => o.maxInvestment ?? ''],
-    ['TVL/AUM', (o) => o.tvl ?? ''],
-    ['Insurance', (o) => o.risk?.insurance ?? ''],
-    ['Tax treatment', (o) => o.taxTreatment],
-    ['Confidence', (o) => o.confidence ?? ''],
-    ['Income yr1 on budget', (o) => o.scores?.incomeYear1 ?? ''],
-    ['Data as of', (o) => o.dataAsOf ?? ''],
-    ['Snapshot?', (o) => (o.seed ? 'bundled snapshot' : 'live')],
-    ['How to buy', (o) => o.accessNotes ?? ''],
-    ['URL', (o) => o.url ?? ''],
-  ];
-  const esc = (v) => {
-    const s = v === null || v === undefined ? '' : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return [cols.map((c) => esc(c[0])).join(','),
-    ...rows.map((o) => cols.map((c) => esc(c[1](o))).join(','))].join('\n');
 }
 
 // ---------------------------------------------------------------------------

@@ -306,6 +306,26 @@ test('the Stooq fallback still models, with momentum honestly missing', () => {
   assert.ok(m.confidence < adapter.modelConfidence({ vol: m.vol, momentum: 5, drawdown: m.drawdown }));
 });
 
+test('the local fallback parsers agree with the funds.js ones', () => {
+  // These only run when funds.js is unloadable, which is exactly when nobody is
+  // watching, so they are checked against the parsers they stand in for.
+  const viaFunds = adapter.parseChart(chartPayload);
+  const viaLocal = adapter.parseChartLocal(chartPayload);
+  assert.deepEqual(viaLocal.adj, viaFunds.adj);
+  assert.equal(viaLocal.price, viaFunds.price);
+  assert.equal(viaLocal.lastTsMs, viaFunds.lastTsMs);
+  assert.equal(viaLocal.symbol, 'NKE');
+
+  const csvFunds = adapter.parseStooq(stooqCsv, http.parseCSV);
+  const csvLocal = adapter.parseStooqLocal(stooqCsv, http.parseCSV);
+  assert.deepEqual(csvLocal.adj, csvFunds.adj);
+  assert.equal(csvLocal.lastTsMs, csvFunds.lastTsMs);
+
+  assert.equal(adapter.parseChartLocal(null), null);
+  assert.equal(adapter.parseStooqLocal('', http.parseCSV), null);
+  assert.ok(adapter.parseChartLocal({ chart: { error: { code: 'Not Found' } } }).error.includes('Not Found'));
+});
+
 test('a renamed or broken upstream degrades, never throws', () => {
   const bad = [
     null, undefined, {}, 42, 'nope', [],

@@ -189,6 +189,58 @@ test('never throws on hostile or drifted upstream shapes', () => {
   assert.deepEqual(schema.validate(r.opportunities[0]), []);
 });
 
+test('an absurd reward leg is caught even when upstream leaves apy null', () => {
+  // schema.normalize composes total = base + reward when `apy` is null, so the
+  // sanity gate must test that composed figure. Gating on `apy ?? apyBase` let a
+  // blown-up reward leg through and emitted a row that failed schema.validate().
+  const row = (over) => ({ pool: 'p', chain: 'Ethereum', project: 'aave-v3', symbol: 'USDC', tvlUsd: 5e7, ...over });
+  const cases = [
+    { apy: null, apyBase: 5, apyReward: 500000 },
+    { apy: null, apyBase: 5, apyReward: 99999 },
+    { apy: null, apyBase: 5, apyReward: -500 },
+    { apy: '1e400', apyBase: 4.81, apyReward: 99999 },
+  ];
+  for (const c of cases) {
+    const r = parse({ status: 'success', data: [row(c)] });
+    assert.deepEqual(r.opportunities, [], `should have dropped ${JSON.stringify(c)}`);
+    assert.equal(r.dropped.absurdApy, 1);
+  }
+  // A sane reward leg still composes and survives.
+  const ok = parse({ status: 'success', data: [row({ apy: null, apyBase: 6, apyReward: 70 })] });
+  assert.equal(ok.opportunities.length, 1);
+  assert.equal(ok.opportunities[0].apy.total, 76);
+  assert.deepEqual(schema.validate(ok.opportunities[0]), []);
+});
+
+test('no corruption of the fixture produces a row that fails validation', () => {
+  const KEYS = ['pool', 'chain', 'project', 'symbol', 'tvlUsd', 'apyBase', 'apyReward', 'apy',
+    'apyMean30d', 'apyBase7d', 'stablecoin', 'ilRisk', 'exposure', 'poolMeta',
+    'underlyingTokens', 'count', 'outlier', 'predictions', 'volumeUsd1d', 'volumeUsd7d'];
+  const WEIRD = [null, 0, -1, '', 'abc', true, false, [], {}, [[]], { a: 1 }, '1,234',
+    1e309, -1e309, 500000, -500, 99999, 0.045];
+  const rows = POOLS.data.filter((p) => p && typeof p === 'object');
+  const payloads = [];
+  for (const k of KEYS) {
+    for (const v of WEIRD) payloads.push({ status: 'success', data: rows.map((r) => ({ ...r, [k]: v })) });
+    payloads.push({ status: 'success', data: rows.map((r) => { const c = { ...r }; delete c[k]; return c; }) });
+  }
+  payloads.push({ status: 'success', data: [] });
+  payloads.push({ status: 'success', data: [null, undefined, 0, '', false, [], {}] });
+  payloads.push({ status: 'success', data: {} });
+  payloads.push({ status: 'success', data: 'not-an-array' });
+  for (const protocols of [PROTOCOLS, null, [], 'x', {}, [null, 5, {}, { slug: null }]]) {
+    for (const payload of payloads) {
+      const r = parse(payload, { protocols });
+      assert.equal(Array.isArray(r.opportunities), true);
+      for (const o of r.opportunities) {
+        assert.deepEqual(schema.validate(o), [], `${o.id} must validate`);
+        assert.ok(Number.isFinite(o.apy.total), 'headline must be a real number');
+        assert.ok(o.name && o.url && o.accessNotes, 'row must stay actionable');
+      }
+    }
+  }
+});
+
 test('a renamed rate field degrades the source instead of crashing it', () => {
   const drifted = { status: 'success', data: POOLS.data.filter((p) => p && typeof p === 'object').map((p) => ({ ...p, apy: undefined, apyBase: undefined })) };
   const r = parse(drifted);

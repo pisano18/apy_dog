@@ -81,9 +81,22 @@ function parseCurveDate(s) {
 }
 
 const toNum = (v) => {
-  const n = Number(String(v ?? '').replace(/[%\s,]/g, ''));
+  // Trim first and bail on empty. Number('') is 0, so without this guard a blank
+  // cell — or a data row shorter than the header, which is exactly what upstream
+  // serves the day a new tenor is added — silently becomes a 0.00% Treasury.
+  const s = String(v ?? '').replace(/[%\s,]/g, '');
+  if (s === '') return null;
+  const n = Number(s);
   return Number.isFinite(n) ? n : null;
 };
+
+/**
+ * Par yields live in single digits. Anything outside this band is not a rate:
+ * it is a price, a basis-point figure or a column that moved under us. Applied
+ * on both the live and the seed path so a bad number can never reach the table.
+ */
+const MAX_PLAUSIBLE_RATE = 25;
+const implausible = (rate) => !Number.isFinite(rate) || Math.abs(rate) > MAX_PLAUSIBLE_RATE;
 
 /**
  * Raw CSV -> { dateISO, tenors[] } for the most recent row that actually has data.
@@ -119,7 +132,7 @@ function parseCurveCSV(csvText, parseCSV = baseHttp.parseCSV) {
       const rate = toNum(row?.[col.header]);
       // "N/A" and blanks are normal for tenors not published that day. A value
       // outside this band means a column moved and we are reading a price.
-      if (rate === null || Math.abs(rate) > 25) continue;
+      if (implausible(rate)) continue;
       tenors.push({ days: col.days, label: col.label, short: col.short, slug: col.slug, rate });
     }
     if (tenors.length) dated.push({ ts, tenors });
@@ -215,7 +228,11 @@ function makeRow(tenor, { curve, dataAsOf, seed, schema, C }) {
  * PURE ENTRY POINT: raw upstream CSV text -> opportunities.
  * `ctx` only supplies the schema/constants modules and (optionally) a CSV parser.
  */
-function parseCurves({ nominalCsv = null, realCsv = null } = {}, ctx = {}) {
+function parseCurves(input, context) {
+  // Defaults only cover `undefined`; an explicit null from a caller must not
+  // take the source down, so normalise both arguments before destructuring.
+  const { nominalCsv = null, realCsv = null } = (input && typeof input === 'object') ? input : {};
+  const ctx = (context && typeof context === 'object') ? context : {};
   const schema = ctx.schema || baseSchema;
   const C = ctx.C || baseC;
   const parseCSV = ctx.http?.parseCSV || baseHttp.parseCSV;
@@ -338,7 +355,9 @@ function loadSeed(ctx) {
       try {
         const tenor = parseTenor(item?.tenor);
         const rate = toNum(item?.rate);
-        if (!tenor || rate === null) { skipped += 1; continue; }
+        // Same plausibility band as the live path: a corrupted seed entry must
+        // be skipped, not emitted as a Treasury paying 9812% or -999%.
+        if (!tenor || implausible(rate)) { skipped += 1; continue; }
         const curve = item?.curve === 'real' ? 'real' : 'nominal';
         const row = makeRow({ ...tenor, rate }, { curve, dataAsOf, seed: true, schema, C });
         if (row) opportunities.push(row); else skipped += 1;

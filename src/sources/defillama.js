@@ -146,12 +146,29 @@ function poolUrl(key, project) {
 }
 
 /**
+ * The headline rate this row will ACTUALLY carry once schema.normalize() has
+ * run. When upstream leaves `apy` null, normalize composes total = base +
+ * reward, so anything that gates or ranks on the headline has to compose it the
+ * same way. Gating on `apy ?? apyBase` alone lets a blown-up reward leg — a
+ * real upstream failure mode on freshly-listed farms — walk past the sanity
+ * check and emit a row that then fails schema.validate() downstream.
+ */
+function headlineApy(p) {
+  const total = num(p?.apy);
+  if (total !== null) return total;
+  const base = num(p?.apyBase);
+  const reward = num(p?.apyReward);
+  if (base === null && reward === null) return null;
+  return (base ?? 0) + (reward ?? 0);
+}
+
+/**
  * Ranking blend used for the cap. Pure APY sorting returns 1200 dust farms and
  * buries Aave; pure TVL sorting returns 1200 blue chips and defeats the point of
  * the app. Log of each, weighted toward yield, keeps both ends of the range.
  */
 function rankScore(p) {
-  const apy = Math.max(0, num(p?.apy) ?? num(p?.apyBase) ?? 0);
+  const apy = Math.max(0, headlineApy(p) ?? 0);
   const tvl = Math.max(1, num(p?.tvlUsd) ?? 1);
   return Math.log10(1 + apy) * 4 + Math.log10(tvl);
 }
@@ -211,7 +228,7 @@ function parsePools(payload, opts = {}) {
       const tvl = num(p.tvlUsd);
       if (tvl !== null && tvl < minTvl) { dropped.lowTvl += 1; continue; }
 
-      const headline = apyTotal ?? apyBase;
+      const headline = headlineApy(p);
       if (headline > maxApy || headline < -100) { dropped.absurdApy += 1; continue; }
 
       kept.push(p);

@@ -933,6 +933,10 @@ module.exports = {
   buildAll,
   parseChart,
   parseStooq,
+  // The fallbacks used when funds.js is not loadable. Exported so they are
+  // covered by tests rather than sitting there unexercised.
+  parseChartLocal,
+  parseStooqLocal,
   chartUrl,
   stooqUrl,
 };

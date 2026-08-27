@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const adapter = require('../src/sources/treasury');
@@ -140,6 +141,8 @@ test('upstream drift degrades the source instead of throwing', () => {
     'Date,"3 Mo"\nnot-a-date,3.81\n',                      // unparseable date
     'Date,"3 Mo"\n08/26/2026,N/A\n',                       // no values
     'Date,"3 Mo"\n08/26/2026,9812.50\n',                   // a price where a rate should be
+    'Date,"3 Mo"\n08/26/2026,\n',                           // blank cell, NOT a rate of zero
+    'Date,"1 Mo","3 Mo"\n08/26/2026\n',                     // row shorter than the header
   ];
   for (const csv of cases) {
     const out = adapter.parseCurves({ nominalCsv: csv }, ctx);
@@ -149,6 +152,60 @@ test('upstream drift degrades the source instead of throwing', () => {
   const partial = adapter.parseCurves({ nominalCsv: 'Date,"3 Mo","Mystery Col","10 Yr"\n08/26/2026,3.81,junk,4.16\n' }, ctx);
   assert.equal(partial.opportunities.length, 2);
   assert.equal(partial.warnings.length, 0);
+});
+
+test('a blank cell is missing data, never a 0.00% Treasury', () => {
+  // Number('') is 0. A blank cell, or a data row shorter than the header (which
+  // is what upstream serves the day a tenor is added), must skip the tenor —
+  // inventing a 0% bill would also drag getRiskFreeRate to 0 and re-anchor every
+  // score in the app.
+  const blank = adapter.parseCurves({ nominalCsv: 'Date,"3 Mo","10 Yr"\n08/26/2026,,4.16\n' }, ctx);
+  assert.equal(blank.opportunities.length, 1);
+  assert.equal(blank.opportunities[0].term.days, 3653);
+  assert.equal(adapter.getRiskFreeRate(blank), null);
+
+  const short = adapter.parseCurves({ nominalCsv: 'Date,"1 Mo","2 Mo","3 Mo"\n08/26/2026,3.86\n' }, ctx);
+  assert.deepEqual(short.opportunities.map((o) => o.term.days), [30]);
+
+  // A genuinely published 0.00 is still a real rate and must survive.
+  const zero = adapter.parseCurves({ nominalCsv: 'Date,"3 Mo"\n08/26/2026,0.00\n' }, ctx);
+  assert.equal(zero.opportunities.length, 1);
+  assert.equal(zero.opportunities[0].apy.total, 0);
+});
+
+test('the pure entry point tolerates null arguments', () => {
+  for (const call of [() => adapter.parseCurves(null), () => adapter.parseCurves(), () => adapter.parseCurves({ nominalCsv }, null)]) {
+    assert.doesNotThrow(call);
+  }
+});
+
+test('a corrupted seed rate is skipped, not published as a Treasury', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'apydog-seed-'));
+  const write = (items) => fs.writeFileSync(path.join(dir, 'treasury.json'), JSON.stringify({ meta: { dataAsOf: '2026-08-01' }, items }));
+  const good = { curve: 'nominal', tenor: '3 Mo', rate: 3.8 };
+
+  for (const bad of [
+    { curve: 'nominal', tenor: '1 Mo', rate: null },
+    { curve: 'nominal', tenor: '1 Mo' },
+    { curve: 'nominal', tenor: '1 Mo', rate: '' },
+    { curve: 'nominal', tenor: '1 Mo', rate: 9812.5 },   // a price
+    { curve: 'nominal', tenor: '1 Mo', rate: -999 },     // would fail schema.validate
+    { curve: 'nominal', tenor: '1 Mo', rate: [] },
+  ]) {
+    write([bad, good]);
+    const out = adapter.loadSeed({ schema, C, seedDir: dir });
+    assert.equal(out.opportunities.length, 1, `${JSON.stringify(bad)} should have been skipped`);
+    assert.equal(out.opportunities[0].apy.total, 3.8);
+    for (const o of out.opportunities) assert.deepEqual(schema.validate(o), []);
+  }
+
+  // Junk that is not a list of rows at all fails cleanly rather than throwing.
+  for (const junk of ['null', '{"items":{"a":1}}', '{not json', '[]']) {
+    fs.writeFileSync(path.join(dir, 'treasury.json'), junk);
+    const out = adapter.loadSeed({ schema, C, seedDir: dir });
+    assert.equal(out.status, 'failed');
+    assert.deepEqual(out.opportunities, []);
+  }
 });
 
 test('loadSeed returns an honest offline snapshot and never throws', () => {
