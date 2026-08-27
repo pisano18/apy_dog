@@ -61,6 +61,14 @@ npm run dist:linux  # .AppImage / .deb
 
 The result lands in `release/`.
 
+**If something looks wrong, probe the endpoints first:**
+
+```bash
+npm run probe
+```
+
+That hits every upstream API directly and checks the response still has the shape the adapters expect — so "DefiLlama is down" and "DefiLlama renamed a field" and "your firewall blocks it" are three different, clearly-labelled answers rather than one silent fallback to bundled data. `--verbose` prints a sample record; `--json` is paste-able into a bug report.
+
 There's also a headless mode, same pipeline, no window:
 
 ```bash
@@ -127,13 +135,16 @@ src/sources/       one adapter per data source, auto-discovered, contract in _co
 src/ui/            renderer: index.html · styles.css · format.js · render.js · app.js
 data/seed/         bundled offline snapshots
 scripts/scan.js    headless scanner
+scripts/probe.js   upstream endpoint diagnostic
+scripts/make-icon.js
 test/              node --test
 ```
 
 Adding a data source is one file in `src/sources/` that satisfies `_contract.js`. The registry picks it up automatically.
 
 ```bash
-npm test
+npm test          # 141 unit tests over the analytical core and every adapter
+npm run smoke     # boots the real app headlessly, exercises every view, screenshots each
 ```
 
 MIT.
