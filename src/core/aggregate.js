@@ -6,6 +6,9 @@ const schema = require('./schema');
 const http = require('./http');
 const { scoreAll } = require('./score');
 const { peerMedians } = require('./traps');
+const { rate } = require('./rating');
+const { readMovement } = require('./movement');
+const T = require('./tracks');
 
 /**
  * The orchestrator.
@@ -176,6 +179,12 @@ async function aggregate(adapters, opts = {}) {
     } catch { /* keep the fallback */ }
   }
 
+  // --- events ---------------------------------------------------------------
+  // Some sources (the calendar, the filings feed) produce dated events rather
+  // than opportunities. They are collected here and attached to matching rows
+  // below, which is what turns a static table into "what is about to happen".
+  const events = results.flatMap((r) => (Array.isArray(r.events) ? r.events : [])).filter(Boolean);
+
   // --- merge ---------------------------------------------------------------
   const raw = results.flatMap((r) => r.opportunities || []);
   const dismissed = new Set(opts.dismissed || []);
@@ -200,6 +209,43 @@ async function aggregate(adapters, opts = {}) {
     amount: settings.budget ?? 10000,
   });
 
+  // --- attach events, rate, and read movement -------------------------------
+  const bySymbol = new Map();
+  for (const e of events) {
+    if (!e.symbol) continue;
+    const k = String(e.symbol).toUpperCase();
+    if (!bySymbol.has(k)) bySymbol.set(k, []);
+    bySymbol.get(k).push(e);
+  }
+  const rateSensitive = new Set(['govt_bond', 'muni_bond', 'corp_bond', 'cash', 'cd', 'rwa', 'preferred', 'annuity']);
+  const broadEvents = events.filter((e) => e.scope === 'rates');
+  const marketEvents = events.filter((e) => e.scope === 'market');
+
+  const enriched = scored.map((o) => {
+    const own = [
+      ...(o.symbol ? bySymbol.get(String(o.symbol).toUpperCase()) || [] : []),
+      ...(rateSensitive.has(o.assetClass) || o.subType === 'index_proxy' ? broadEvents : []),
+      ...(o.track !== T.TRACK.INCOME ? marketEvents : []),
+      ...(o.events || []),
+    ];
+    // Deduplicate: an event can arrive by more than one route.
+    const seen = new Set();
+    const own2 = own.filter((e) => {
+      const k = `${e.kind}:${e.dateMs}:${e.symbol || ''}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    const withEvents = { ...o, events: own2 };
+    const rating = rate(withEvents);
+    const movement = withEvents.track === T.TRACK.INCOME
+      ? null
+      : readMovement(withEvents, { events: own2, now, horizonDays: settings.movementHorizonDays ?? 30 });
+
+    return { ...withEvents, rating, movement };
+  });
+
   const health = results.map((r) => ({
     id: r.id,
     label: r.label,
@@ -215,23 +261,32 @@ async function aggregate(adapters, opts = {}) {
     count: 0, ms: 0, notes: ['Disabled in settings.'], warnings: [], live: false,
   })));
 
-  const seedCount = scored.filter((o) => o.seed).length;
-  onProgress({ type: 'done', count: scored.length });
+  const seedCount = enriched.filter((o) => o.seed).length;
+  onProgress({ type: 'done', count: enriched.length });
 
   return {
-    opportunities: scored,
+    opportunities: enriched,
+    events,
     health,
     meta: {
       generatedAt: new Date().toISOString(),
       riskFree,
       riskFreeSource,
-      total: scored.length,
-      liveRows: scored.length - seedCount,
+      total: enriched.length,
+      byTrack: {
+        income: enriched.filter((o) => o.track === T.TRACK.INCOME).length,
+        movement: enriched.filter((o) => o.track === T.TRACK.MOVEMENT).length,
+        both: enriched.filter((o) => o.track === T.TRACK.BOTH).length,
+      },
+      eventCount: events.length,
+      upcomingEvents: events.filter((e) => !e.past).length,
+      measured: enriched.filter((o) => o.measured !== false).length,
+      liveRows: enriched.length - seedCount,
       seedRows: seedCount,
       duplicatesMerged: merged,
       invalidDropped: invalid.length,
       invalidSample: invalid.slice(0, 8),
-      peerMedians: peerMedians(scored),
+      peerMedians: peerMedians(enriched),
       offline,
       sourcesOk: health.filter((h) => h.status === C.SOURCE_STATUS.OK).length,
       sourcesTotal: active.length,

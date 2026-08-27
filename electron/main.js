@@ -12,6 +12,8 @@ const { Store } = require('../src/core/store');
 const { Cache } = require('../src/core/cache');
 const { History } = require('../src/core/history');
 const C = require('../src/core/constants');
+const T = require('../src/core/tracks');
+const { EVENT_INFO } = require('../src/core/catalyst');
 const tax = require('../src/core/tax');
 const { toCSV, toJSON } = require('../src/core/export');
 
@@ -157,6 +159,7 @@ async function doRefresh({ offline = false } = {}) {
     send('data:updated', {
       meta: result.meta,
       health: result.health,
+      events: result.events || [],
       alerts: fired.map((f) => ({ message: f.message, id: f.opportunity?.id })),
       elapsedMs: Date.now() - startedAt,
     });
@@ -180,9 +183,16 @@ function rescheduleAuto() {
   }, Math.max(5, mins) * 60000);
 }
 
-/** Re-score in place without refetching — used when tax/appetite settings change. */
+/**
+ * Re-score in place without refetching, used when tax or appetite settings
+ * change. Ratings and movement reads derive from the scores, so they are rebuilt
+ * here too; leaving them stale would show a grade that no longer matches its own
+ * risk number.
+ */
 function rescore() {
   if (!dataset.opportunities.length) return;
+  const { rate } = require('../src/core/rating');
+  const { readMovement } = require('../src/core/movement');
   dataset.opportunities = scoreAll(dataset.opportunities, {
     riskFree: dataset.meta?.riskFree ?? 4.0,
     appetite: store.settings.riskAppetite ?? 45,
@@ -190,7 +200,13 @@ function rescore() {
     basis: store.settings.rankingBasis || 'afterTax',
     horizonDays: store.settings.horizonDays ?? null,
     amount: store.settings.budget ?? 10000,
-  });
+  }).map((o) => ({
+    ...o,
+    rating: rate(o),
+    movement: o.track === T.TRACK.INCOME
+      ? null
+      : readMovement(o, { events: o.events || [], horizonDays: store.settings.movementHorizonDays ?? 30 }),
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +239,15 @@ function registerIpc() {
       TRAP_FLAG_TEXT: C.TRAP_FLAG_TEXT,
       YIELD_KIND: C.YIELD_KIND,
       TERM_PRESETS: C.TERM.presets,
+      // The movement-track vocabulary the renderer needs to label things.
+      TRACK: T.TRACK,
+      TRACK_LABELS: T.TRACK_LABELS,
+      RATING_AXES: T.AXES,
+      GRADES: T.GRADE.map((g) => ({ key: g.key, color: g.color, headline: g.headline, detail: g.detail })),
+      SETUP_INFO: T.SETUP_INFO,
+      SEVERITY: T.SEVERITY,
+      CLARITY: T.CLARITY,
+      EVENT_INFO,
       STATE_TOP_RATES: tax.STATE_TOP_RATES,
       FEDERAL_ORDINARY_BRACKETS: tax.FEDERAL_ORDINARY_BRACKETS,
       FEDERAL_LTCG_BRACKETS: tax.FEDERAL_LTCG_BRACKETS,
@@ -231,6 +256,7 @@ function registerIpc() {
     hasData: dataset.opportunities.length > 0,
     meta: dataset.meta,
     health: dataset.health,
+    events: dataset.events || [],
     version: app.getVersion(),
     platform: process.platform,
     paths: { userData: userDataDir(), history: history.file, userRates: store.settings.userRatesPath },
@@ -266,6 +292,37 @@ function registerIpc() {
     return false;
   });
   handle('data:health', () => ({ health: dataset.health, meta: dataset.meta, problems: adapterProblems }));
+
+  /**
+   * Measure a single row on demand.
+   *
+   * The equities source indexes the whole US market cheaply but only analyses a
+   * priority subset, because ten thousand price fetches per refresh is not a
+   * reasonable thing to do to anyone's machine or to Yahoo. Opening an unmeasured
+   * row promotes just that one.
+   */
+  handle('data:measure', async (id) => {
+    const o = dataset.opportunities.find((x) => x.id === id);
+    if (!o) throw new Error('Not found in the current scan.');
+    const adapter = adapters.find((a) => a.id === o.source);
+    if (typeof adapter?.fetchOne !== 'function') throw new Error(`${o.sourceLabel || o.source} cannot measure a single row.`);
+    const ctx = {
+      http: require('../src/core/http'),
+      cache,
+      schema: require('../src/core/schema'),
+      C,
+      settings: store.settings,
+      seedDir: path.join(__dirname, '..', 'data', 'seed'),
+      now: Date.now(),
+      log: () => {},
+    };
+    const fresh = await adapter.fetchOne(o.symbol || o.id, ctx);
+    if (!fresh) throw new Error('No data came back for that one.');
+    const i = dataset.opportunities.findIndex((x) => x.id === id);
+    if (i >= 0) dataset.opportunities[i] = { ...dataset.opportunities[i], ...fresh, measured: true };
+    rescore();
+    return true;
+  });
 
   handle('settings:get', () => store.settings);
   handle('settings:update', (patch) => {
@@ -381,11 +438,12 @@ async function runSmokeTest() {
     report = await win.webContents.executeJavaScript(`(() => ({
       rows: document.querySelectorAll('#tablewrap tbody tr').length,
       headers: document.querySelectorAll('#tablewrap thead th').length,
-      sidebarGroups: document.querySelectorAll('#sidebar .fgroup').length,
-      presets: document.querySelectorAll('#sidebar .preset').length,
+      filterBarItems: document.querySelectorAll('#filterbar > *').length,
+      trackButtons: document.querySelectorAll('#trackswitch button').length,
+      trackCounts: document.querySelector('#n-all').textContent,
       desc: (document.querySelector('#res-desc') || {}).textContent || '',
       title: document.title,
-      bodyText: document.body.innerText.slice(0, 200),
+      bodyText: document.body.innerText.slice(0, 180),
     }))()`);
   } catch (err) {
     errors.push(`executeJavaScript failed: ${err.message}`);
@@ -395,89 +453,118 @@ async function runSmokeTest() {
   const outDir = path.join(__dirname, '..', 'build');
   try {
     fs.mkdirSync(outDir, { recursive: true });
-    const img = await win.webContents.capturePage();
-    fs.writeFileSync(path.join(outDir, 'smoke.png'), img.toPNG());
+    fs.writeFileSync(path.join(outDir, 'smoke.png'), (await win.webContents.capturePage()).toPNG());
   } catch (err) {
     errors.push(`screenshot failed: ${err.message}`);
   }
 
-  // Exercise the drawer too: a table that renders but cannot open a row is broken.
+  const js = (code) => win.webContents.executeJavaScript(code);
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const shot = async (name) => {
+    try { fs.writeFileSync(path.join(outDir, `smoke-${name}.png`), (await win.webContents.capturePage()).toPNG()); } catch { /* best effort */ }
+  };
+
+  // A table that renders but cannot open a row is broken.
   try {
-    await win.webContents.executeJavaScript(
-      "document.querySelector('#tablewrap tbody tr')?.click(); true",
-    );
-    await new Promise((r) => setTimeout(r, 700));
-    report.drawerSections = await win.webContents.executeJavaScript(
-      "document.querySelectorAll('#drawer .dsection').length",
-    );
-    const img2 = await win.webContents.capturePage();
-    fs.writeFileSync(path.join(outDir, 'smoke-detail.png'), img2.toPNG());
+    await js("document.querySelector('#tablewrap tbody tr')?.click(); true");
+    await wait(700);
+    report.drawerSections = await js("document.querySelectorAll('#drawer .dsection').length");
+    await shot('detail');
+    if (!report.drawerSections) failuresLate.push('detail drawer did not open');
   } catch (err) {
-    errors.push(`drawer check failed: ${err.message}`);
+    failuresLate.push(`drawer check failed: ${err.message}`);
   }
 
-  // Watch something first, so the watchlist pane is exercised with real content
-  // rather than its (correct, but uninformative) empty state.
+  // The movement track must render a genuinely different set of columns; that
+  // separation is the whole point of the rework.
   try {
-    await win.webContents.executeJavaScript(
-      "document.querySelector('#tablewrap tbody tr .star[data-act=\"watch\"]').click(); true",
-    );
-    await new Promise((r) => setTimeout(r, 600));
-    report.watchCount = await win.webContents.executeJavaScript(
-      "document.querySelector('#watch-count').textContent",
-    );
-    if (report.watchCount !== '1') failuresLate.push(`starring a row did not update the watchlist (count = ${report.watchCount})`);
+    await js("document.querySelector('#trackswitch button[data-track=\"movement\"]').click(); true");
+    await wait(800);
+    report.movementRows = await js("document.querySelectorAll('#tablewrap tbody tr').length");
+    report.movementHeaders = await js("Array.from(document.querySelectorAll('#tablewrap thead th')).map(t=>t.textContent.trim().replace(/[▲▼]/g,'')).join('|')");
+    await shot('movement');
+    if (!report.movementRows) failuresLate.push('movement track rendered no rows');
+    if (!/Heat/.test(report.movementHeaders || '')) failuresLate.push('movement track is not showing movement columns');
+    if (!/Catalyst|catalyst/.test(report.movementHeaders || '')) failuresLate.push('movement track has no catalyst column');
+  } catch (err) {
+    failuresLate.push(`track switch failed: ${err.message}`);
+  }
+
+  // Filters: open the picker, add one, confirm it becomes a pill and narrows the
+  // list, then confirm Clear all provably resets it.
+  try {
+    await js("document.querySelector('#trackswitch button[data-track=\"income\"]').click(); true");
+    await wait(600);
+    const before = await js("document.querySelectorAll('#tablewrap tbody tr').length");
+
+    await js("document.querySelector('#filterbar [data-act=\"open-filter-menu\"]').click(); true");
+    await wait(350);
+    report.filterMenuOptions = await js("document.querySelectorAll('#fmenu .opt').length");
+    await shot('filtermenu');
+    if (!report.filterMenuOptions) failuresLate.push('filter picker listed no filters');
+
+    await js("document.querySelector('#fmenu .opt[data-key=\"insuredOnly\"]').click(); true");
+    await wait(800);
+    const after = await js("document.querySelectorAll('#tablewrap tbody tr').length");
+    report.pillCount = await js("document.querySelectorAll('#filterbar .fpill').length");
+    report.rowsBeforeFilter = before;
+    report.rowsAfterFilter = after;
+    if (!report.pillCount) failuresLate.push('adding a filter did not produce a pill');
+    if (!(after > 0 && after < before)) failuresLate.push(`the insured-only filter did not narrow the list (${before} -> ${after})`);
+
+    await js("document.querySelector('#filterbar [data-act=\"clear-filters\"]').click(); true");
+    await wait(600);
+    const cleared = await js("document.querySelectorAll('#tablewrap tbody tr').length");
+    report.rowsAfterClear = cleared;
+    if (cleared !== before) failuresLate.push(`Clear all did not restore the list (${before} -> ${cleared})`);
+  } catch (err) {
+    failuresLate.push(`filter round trip failed: ${err.message}`);
+  }
+
+  // Presets set a whole query at once.
+  try {
+    await js("document.querySelector('#filterbar [data-act=\"open-presets\"]').click(); true");
+    await wait(300);
+    report.presetCount = await js("document.querySelectorAll('#fmenu .opt').length");
+    if (!report.presetCount) failuresLate.push('no presets offered');
+    await js("document.querySelector('#fmenu .opt')?.click(); true");
+    await wait(700);
+    report.rowsAfterPreset = await js("document.querySelectorAll('#tablewrap tbody tr').length");
+    await shot('preset');
+    await js("document.querySelector('#filterbar [data-act=\"clear-filters\"]')?.click(); true");
+    await wait(400);
+  } catch (err) {
+    failuresLate.push(`preset check failed: ${err.message}`);
+  }
+
+  // Watch something so the watchlist pane has real content.
+  try {
+    await js("document.querySelector('#tablewrap tbody tr .star[data-act=\"watch\"]').click(); true");
+    await wait(600);
+    report.watchCount = await js("document.querySelector('#watch-count').textContent");
+    if (report.watchCount !== '1') failuresLate.push(`starring did not update the watchlist (${report.watchCount})`);
   } catch (err) {
     failuresLate.push(`watch toggle failed: ${err.message}`);
   }
 
-  // Every other view, and a filter round trip. A pane that throws on render is
-  // invisible from the Find view alone, which is exactly how it ships broken.
-  for (const view of ['sources', 'settings', 'watch']) {
+  // Every other view. A pane that throws on render is invisible from Find alone.
+  for (const view of ['events', 'sources', 'settings', 'watch']) {
     try {
-      await win.webContents.executeJavaScript(
-        `document.querySelector('.tab[data-view="${view}"]').click(); true`,
-      );
-      await new Promise((r) => setTimeout(r, 500));
-      const n = await win.webContents.executeJavaScript(
-        `document.querySelector('#view-${view}').innerHTML.length`,
-      );
+      await js(`document.querySelector('.tab[data-view="${view}"]').click(); true`);
+      await wait(500);
+      const n = await js(`document.querySelector('#view-${view}').innerHTML.length`);
       report[`${view}Html`] = n;
       if (n < 400) failuresLate.push(`${view} pane rendered almost nothing (${n} chars)`);
-      const img = await win.webContents.capturePage();
-      fs.writeFileSync(path.join(outDir, `smoke-${view}.png`), img.toPNG());
+      await shot(view);
     } catch (err) {
       failuresLate.push(`${view} pane failed: ${err.message}`);
     }
   }
 
-  // Filters must actually filter, and a preset must actually change the count.
   try {
-    await win.webContents.executeJavaScript(
-      "document.querySelector('.tab[data-view=\"find\"]').click(); true",
-    );
-    await new Promise((r) => setTimeout(r, 400));
-    const before = await win.webContents.executeJavaScript("document.querySelectorAll('#tablewrap tbody tr').length");
-    await win.webContents.executeJavaScript(
-      "document.querySelector('.preset[data-val=\"safe\"]').click(); true",
-    );
-    await new Promise((r) => setTimeout(r, 700));
-    const after = await win.webContents.executeJavaScript("document.querySelectorAll('#tablewrap tbody tr').length");
-    report.rowsBeforeFilter = before;
-    report.rowsAfterSafePreset = after;
-    if (!(after > 0 && after < before)) {
-      failuresLate.push(`the "Safe & liquid" preset did not narrow the list (${before} -> ${after})`);
-    }
-  } catch (err) {
-    failuresLate.push(`filter round trip failed: ${err.message}`);
-  }
-
-  // Dark theme has to render too; it is the default look for most people.
-  try {
-    await win.webContents.executeJavaScript("document.documentElement.dataset.theme='dark'; true");
-    await new Promise((r) => setTimeout(r, 350));
-    const img = await win.webContents.capturePage();
-    fs.writeFileSync(path.join(outDir, 'smoke-dark.png'), img.toPNG());
+    await js("document.querySelector('.tab[data-view=\"find\"]').click(); document.documentElement.dataset.theme='dark'; true");
+    await wait(400);
+    await shot('dark');
   } catch (err) {
     failuresLate.push(`dark theme render failed: ${err.message}`);
   }
@@ -485,8 +572,8 @@ async function runSmokeTest() {
   const failures = [...failuresLate];
   if (!report.rows) failures.push('no table rows rendered');
   if (!report.headers) failures.push('no table headers rendered');
-  if (!report.sidebarGroups) failures.push('no filter groups rendered');
-  if (!report.drawerSections) failures.push('detail drawer did not open');
+  if (!report.trackButtons) failures.push('track switch did not render');
+  if (!report.filterBarItems) failures.push('filter bar rendered nothing');
   failures.push(...errors);
 
   console.log('\n[smoke] ' + JSON.stringify(report, null, 2));

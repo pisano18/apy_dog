@@ -29,13 +29,14 @@ const DEFAULT_SETTINGS = {
   rankingBasis: 'afterTax',     // gross | afterTax | afterTaxReal
   horizonDays: null,            // when they want the money back
   budget: 10000,                // deployed amount, for dollar figures
+  movementHorizonDays: 30,      // window the expected-move bands are computed over
 
   // --- sources -------------------------------------------------------------
   enabledSources: null,         // null = all enabled; else array of source ids
   autoRefreshMinutes: 60,
   refreshOnLaunch: true,
   offlineMode: false,
-  maxDefiPools: 1200,
+  maxDefiPools: 4000,
   extraSymbols: [],             // user-added tickers for the fund/speculative scans
   userRatesPath: null,          // filled in at runtime: userData/user-rates.json
 

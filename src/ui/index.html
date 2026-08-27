@@ -12,22 +12,32 @@
     <header class="titlebar">
       <div class="brand"><span class="mark">🐕</span><span class="name">APY Dog</span><span class="ver" id="ver"></span></div>
 
+      <div class="trackswitch" id="trackswitch">
+        <button data-track="income" title="Things that pay a yield you can actually compute">
+          <span class="dot" style="background:var(--pos)"></span>Income <span class="n" id="n-income"></span>
+        </button>
+        <button data-track="movement" title="Things whose return comes from price — what is about to move, and how hard">
+          <span class="dot" style="background:var(--brand)"></span>Movement <span class="n" id="n-movement"></span>
+        </button>
+        <button data-track="all" class="on">Everything <span class="n" id="n-all"></span></button>
+      </div>
+
       <div class="search">
         <span style="color:var(--text-faint)">⌕</span>
-        <input id="q-text" type="text" placeholder="Search name, ticker, protocol, chain…" spellcheck="false" />
+        <input id="q-text" type="text" placeholder="Search name, ticker, protocol…" spellcheck="false" autocomplete="off" />
         <span class="hint" id="search-hint">⌘K</span>
       </div>
 
+      <span class="spacer"></span>
+
       <nav class="tabs" id="tabs">
         <button class="tab active" data-view="find">Find</button>
+        <button class="tab" data-view="events">Calendar <span class="count" id="ev-count">0</span></button>
         <button class="tab" data-view="watch">Watchlist <span class="count" id="watch-count">0</span></button>
         <button class="tab" data-view="sources">Sources <span class="count" id="src-count">–</span></button>
         <button class="tab" data-view="settings">Settings</button>
       </nav>
 
-      <span class="spacer"></span>
-
-      <button class="btn ghost icon" id="btn-sidebar" title="Toggle filters">◧</button>
       <button class="btn ghost icon" id="btn-theme" title="Toggle theme">◐</button>
       <button class="btn ghost" id="btn-export" title="Export current results">Export</button>
       <button class="btn primary" id="btn-refresh"><span id="refresh-label">Refresh</span></button>
@@ -41,19 +51,18 @@
     </div>
 
     <div class="main">
-      <aside class="sidebar" id="sidebar"></aside>
-
       <div class="content" id="view-find">
+        <div class="filterbar" id="filterbar"></div>
         <div class="resbar">
           <span class="desc" id="res-desc"></span>
           <span class="spacer"></span>
-          <label style="color:var(--text-faint);font-size:11px">Rank by</label>
+          <label style="color:var(--text-faint);font-size:11px">Sort by</label>
           <select id="q-sort"></select>
-          <button class="btn ghost sm" id="btn-reset">Reset filters</button>
         </div>
         <div class="tablewrap" id="tablewrap"></div>
       </div>
 
+      <div class="pane" id="view-events" hidden></div>
       <div class="pane" id="view-watch" hidden></div>
       <div class="pane" id="view-sources" hidden></div>
       <div class="pane" id="view-settings" hidden></div>
@@ -61,6 +70,9 @@
       <aside class="drawer hidden" id="drawer"></aside>
     </div>
   </div>
+
+  <div class="fmenu hidden" id="fmenu"></div>
+  <div class="fedit hidden" id="fedit"></div>
 
   <div class="progress hidden" id="progress">
     <span class="spin"></span>
@@ -72,6 +84,7 @@
   <div class="toasts" id="toasts"></div>
 
   <script src="format.js"></script>
+  <script src="filters-def.js"></script>
   <script src="render.js"></script>
   <script src="app.js"></script>
 </body>

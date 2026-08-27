@@ -125,7 +125,12 @@ function analyse(closes, volumes) {
  * more useful observation.
  */
 function classifySetup(stats, catalystNear = false) {
-  if (!stats) return { key: T.SETUP.RANGE_BOUND, confidence: 0.1 };
+  // No price history means no read. Reporting "range-bound" here would be a
+  // fabrication dressed as an observation — the honest answer is that we have
+  // not looked, and the UI says exactly that.
+  if (!stats || !Number.isFinite(stats.vol)) {
+    return { key: null, confidence: 0, unmeasured: true };
+  }
 
   const { regime, rangePos, drawdown, trend, volumeRatio } = stats;
   const ratio = regime?.ratio ?? null;
@@ -277,11 +282,12 @@ function readMovement(o, { events = [], horizonDays = 30, now = Date.now() } = {
 
   const catalystNear = !!(upcoming && upcoming.daysAway <= 10 && upcoming.volMultiple >= 1.5);
   const setup = classifySetup(stats, catalystNear);
+  const unmeasured = !!setup.unmeasured;
   const lean = directionalLean(stats, own);
   const { heat, parts, move } = heatScore({ stats, catalyst, setup, horizonDays });
 
   const sev = move ? T.severity(move.typical) : null;
-  const setupInfo = T.SETUP_INFO[setup.key];
+  const setupInfo = setup.key ? T.SETUP_INFO[setup.key] : null;
 
   // How clearly we can see the situation: a legible setup, enough history, and a
   // confirmed rather than guessed date. This says nothing about direction.
@@ -289,8 +295,11 @@ function readMovement(o, { events = [], horizonDays = 30, now = Date.now() } = {
   const clarityScore = clamp(setup.confidence * 0.6 + dataQuality * 0.25 + (upcoming?.certainty === 'confirmed' ? 0.15 : 0), 0, 0.85);
 
   return {
-    heat,
-    heatParts: parts,
+    // An unmeasured row has no heat, not zero heat. Zero is a claim that nothing
+    // is happening; null is the truth, which is that we have not looked.
+    unmeasured,
+    heat: unmeasured ? null : heat,
+    heatParts: unmeasured ? [] : parts,
     setup: setup.key,
     setupLabel: setupInfo?.label,
     setupColor: setupInfo?.color,

@@ -18,6 +18,11 @@ const C = require('./constants');
  */
 
 const DEFAULT_QUERY = {
+  // The primary question being asked. 'all' shows everything; 'income' and
+  // 'movement' each also include rows tagged 'both', because a REIT genuinely
+  // belongs in either view and hiding it from one would be wrong.
+  track: 'all',                 // 'all' | 'income' | 'movement'
+
   text: '',                     // free text over name/symbol/provider/chain/notes
   assetClasses: [],             // [] = all
   sources: [],                  // [] = all
@@ -40,6 +45,9 @@ const DEFAULT_QUERY = {
 
   maxRisk: null,                // 0..100
   riskTiers: [],                // [] = all
+  grades: [],                   // A+ .. F safety grades
+  minPrincipalAxis: null,       // 0..5 on the principal-safety axis
+  minIncomeYear1: null,         // dollars of income in year one
   insuredOnly: false,
   principalGuaranteedOnly: false,
 
@@ -53,6 +61,16 @@ const DEFAULT_QUERY = {
   hideTraps: true,              // hide verdict === 'likely_trap'
   maxTrapScore: null,
   excludeFlags: [],             // specific trap flags to exclude
+
+  // --- movement track -------------------------------------------------------
+  minHeat: null,                // 0..100, how much is likely to happen soon
+  setups: [],                   // coiled, expanding, breaking_out, ...
+  severities: [],               // quiet .. extreme
+  leans: [],                    // up | down | none
+  catalystWithinDays: null,     // only rows with a dated event inside this window
+  eventKinds: [],               // earnings, fomc, cpi, token_unlock, ...
+  minClarity: null,             // faint | clear | sharp
+  measuredOnly: false,          // hide index-only rows we have not analysed
 
   includeSpeculative: false,    // the modelled-expectation rows are opt-in
   onlySpeculative: false,
@@ -90,8 +108,15 @@ function lockupDays(o) {
   return f === null ? (o.term?.days ?? null) : f;
 }
 
+const CLARITY_ORDER = { murky: 0, faint: 1, clear: 2, sharp: 3 };
+
 function matches(o, q, unknownPasses) {
-  // --- speculative gating comes first: these are a different kind of thing ---
+  // --- track gating comes first: it is the primary question ------------------
+  if (q.track && q.track !== 'all') {
+    if (o.track !== q.track && o.track !== 'both') return false;
+  }
+
+  // --- speculative gating: these are a different kind of thing ---
   const isSpec = o.yieldKind === C.YIELD_KIND.EXPECTED;
   if (q.onlySpeculative && !isSpec) return false;
   if (!q.onlySpeculative && isSpec && !q.includeSpeculative) return false;
@@ -115,6 +140,10 @@ function matches(o, q, unknownPasses) {
   if (!inSet(q.liquidity, o.liquidity)) return false;
   if (!inSet(q.denominations, o.denomination)) return false;
   if (q.riskTiers?.length && !q.riskTiers.includes(o.risk?.tier)) return false;
+  if (q.grades?.length && !q.grades.includes(o.rating?.grade)) return false;
+  if (q.setups?.length && !q.setups.includes(o.movement?.setup)) return false;
+  if (q.severities?.length && !q.severities.includes(o.movement?.severity)) return false;
+  if (q.leans?.length && !q.leans.includes(o.movement?.lean)) return false;
 
   // --- rate ----------------------------------------------------------------
   const rate = basisValue(o, q.apyBasis);
@@ -172,6 +201,31 @@ function matches(o, q, unknownPasses) {
   }
   if (q.principalGuaranteedOnly && o.risk?.principalAtRisk !== false) return false;
   if (has(q.minConfidence) && (o.confidence ?? 0) < q.minConfidence) return false;
+  if (has(q.minPrincipalAxis)) {
+    const v = o.rating?.axes?.principal?.value;
+    if (!Number.isFinite(v) || v < q.minPrincipalAxis) return false;
+  }
+  if (has(q.minIncomeYear1)) {
+    const v = o.scores?.incomeYear1;
+    if (!Number.isFinite(v) || v < q.minIncomeYear1) return false;
+  }
+
+  // --- movement -------------------------------------------------------------
+  if (has(q.minHeat) && (o.movement?.heat ?? -1) < q.minHeat) return false;
+  if (has(q.minClarity)) {
+    const want = CLARITY_ORDER[q.minClarity] ?? 0;
+    const got = CLARITY_ORDER[o.movement?.clarityTier] ?? -1;
+    if (got < want) return false;
+  }
+  if (has(q.catalystWithinDays)) {
+    const d = o.movement?.catalyst?.event?.daysAway;
+    if (!Number.isFinite(d) || d < 0 || d > q.catalystWithinDays) return false;
+  }
+  if (q.eventKinds?.length) {
+    const kinds = new Set((o.events || []).filter((e) => !e.past).map((e) => e.kind));
+    if (!q.eventKinds.some((k) => kinds.has(k))) return false;
+  }
+  if (q.measuredOnly && o.measured === false) return false;
 
   // --- traps ---------------------------------------------------------------
   if (q.hideTraps && o.scores?.traps?.verdict === 'likely_trap') return false;
@@ -214,7 +268,17 @@ function applyQuery(list, query = {}) {
   let out = list.filter((o) => matches(o, q, unknownPasses));
 
   const { SORTERS } = require('./score');
-  const sorter = SORTERS[q.sortBy] || SORTERS.dogScore;
+  // Unmeasured rows sort last in every movement order. They are not "cold", they
+  // are unknown, and letting them tie at zero buries the measured ones.
+  const rank = (o, v) => (o.movement?.unmeasured ? -1e9 : (v ?? -1e8));
+  const MOVEMENT_SORTERS = {
+    heat: (a, b) => rank(b, b.movement?.heat) - rank(a, a.movement?.heat),
+    soonest: (a, b) => (a.movement?.catalyst?.event?.daysAway ?? 1e9) - (b.movement?.catalyst?.event?.daysAway ?? 1e9),
+    biggestMove: (a, b) => rank(b, b.movement?.move?.typical) - rank(a, a.movement?.move?.typical),
+    clarity: (a, b) => rank(b, b.movement?.clarity) - rank(a, a.movement?.clarity),
+    grade: (a, b) => (a.risk?.score ?? 1e9) - (b.risk?.score ?? 1e9),
+  };
+  const sorter = MOVEMENT_SORTERS[q.sortBy] || SORTERS[q.sortBy] || SORTERS.dogScore;
   out.sort(sorter);
   if (q.sortDir === 'asc') out.reverse();
 
@@ -238,6 +302,22 @@ function facets(list, query = {}) {
   for (const key of Object.values(C.ASSET_CLASS)) {
     byAssetClass[key] = count({ assetClasses: [key] });
   }
+  const byGrade = {};
+  for (const g of ['A+', 'A', 'B', 'C', 'D', 'E', 'F']) byGrade[g] = count({ grades: [g] });
+  const bySetup = {};
+  for (const k of new Set(list.map((o) => o.movement?.setup).filter(Boolean))) bySetup[k] = count({ setups: [k] });
+  const byTrack = {
+    all: list.length,
+    income: count({ track: 'income' }),
+    movement: count({ track: 'movement' }),
+  };
+  const byEventKind = {};
+  for (const o of list) {
+    for (const e of o.events || []) {
+      if (e.past) continue;
+      byEventKind[e.kind] = (byEventKind[e.kind] || 0) + 1;
+    }
+  }
   const byDenomination = {};
   for (const d of ['usd', 'stable', 'crypto']) byDenomination[d] = count({ denominations: [d] });
   const bySource = {};
@@ -248,7 +328,7 @@ function facets(list, query = {}) {
   for (const ch of new Set(list.map((o) => o.chain).filter(Boolean))) byChain[ch] = count({ chains: [ch] });
 
   return {
-    byAssetClass, bySource, byTier, byChain, byDenomination,
+    byAssetClass, bySource, byTier, byChain, byDenomination, byGrade, bySetup, byTrack, byEventKind,
     total: list.length,
     matching: applyQuery(list, query).length,
     trapsHidden: q.hideTraps ? list.filter((o) => o.scores?.traps?.verdict === 'likely_trap').length : 0,
@@ -274,6 +354,10 @@ function describeQuery(q = {}) {
   if (q.denominations?.length) {
     bits.push(q.denominations.map((d) => ({ usd: 'paid in dollars', stable: 'paid in stablecoins', crypto: 'paid in crypto' }[d] || d)).join(' or '));
   }
+  if (has(q.minHeat)) bits.push(`heat ${q.minHeat}+`);
+  if (q.setups?.length) bits.push(q.setups.join(' or '));
+  if (has(q.catalystWithinDays)) bits.push(`catalyst within ${q.catalystWithinDays} days`);
+  if (q.grades?.length) bits.push(`grade ${q.grades.join('/')}`);
   if (q.onlySpeculative) bits.push('high-upside only');
   else if (q.includeSpeculative) bits.push('including high-upside');
   if (has(q.text)) bits.push(`matching "${q.text}"`);

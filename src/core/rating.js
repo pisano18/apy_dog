@@ -165,7 +165,10 @@ function knownAxis(o) {
   let v = 5 * clamp(o.confidence ?? 0.5, 0, 1);
   const reasons = [];
 
-  if (o.seed) { v -= 1.5; reasons.push('bundled snapshot, not a live quote'); }
+  // Seed rows are already discounted once inside `confidence` (defaultConfidence
+  // multiplies by 0.8), so the visible penalty here is deliberately smaller than
+  // it looks — charging the full amount again would double-count the same fact.
+  if (o.seed) { v -= 0.75; reasons.push('bundled snapshot, not a live quote'); }
   if (o.risk?.volatilityAssumed) { v -= 0.5; reasons.push('volatility estimated'); }
   if ((o.corroboratedBy || []).length) { v += 0.5; reasons.push(`confirmed by ${o.corroboratedBy.length} other source`); }
   if (o.trapFlags?.includes(C.TRAP_FLAGS.STALE_DATA)) { v -= 1; reasons.push('data is stale'); }

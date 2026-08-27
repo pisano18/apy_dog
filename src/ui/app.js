@@ -2,8 +2,8 @@
 'use strict';
 
 /* App controller. Owns state, wires events, calls into the main process.
-   Filtering is done in main (it holds the dataset) but is cheap and synchronous
-   there, so every control can re-query on change without feeling laggy. */
+   Filtering happens in main (which holds the dataset) but is synchronous and
+   cheap there, so every control can re-query on change without feeling laggy. */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -17,14 +17,16 @@ const S = {
   changes: {},
   meta: null,
   health: [],
+  events: [],
   watchlist: [],
   selectedId: null,
   detail: null,
   view: 'find',
-  preset: 'best',
   refreshing: false,
   sourcesTotal: 0,
   doneCount: 0,
+  editingFilter: null,
+  filterSearch: '',
 };
 
 /* ---------------------------------------------------------------- helpers -- */
@@ -58,18 +60,64 @@ function toggleIn(list, val) {
   return list;
 }
 
+/** Options each multi/select filter draws from, rebuilt as facets change. */
+function filterOptions() {
+  const f = S.facets || {};
+  const c = S.boot.constants;
+  const ent = (obj, label) => Object.entries(obj || {})
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => [k, label ? label(k) : k, n]);
+
+  return {
+    assetClasses: ent(f.byAssetClass, (k) => c.ASSET_CLASS_LABELS[k] || k),
+    sources: ent(f.bySource, (k) => (S.boot.sources.find((s) => s.id === k) || {}).label || k),
+    chains: ent(f.byChain),
+    setups: ent(f.bySetup, (k) => (c.SETUP_INFO[k] || {}).label || k),
+    eventKinds: ent(f.byEventKind, (k) => (c.EVENT_INFO[k] || {}).label || k),
+    severities: (c.SEVERITY || []).map((s) => [s.key, s.label]),
+    liquidity: Object.values(c.LIQUIDITY).map((v) => [v, window.F.liquidity(v)]),
+    termPresets: (c.TERM_PRESETS || []).map((p) => [p.key, p.label]),
+    taxTreatments: Object.values(c.TAX_TREATMENT).map((v) => [v, window.F.taxTreatment(v)]),
+    trapFlags: Object.keys(c.TRAP_FLAG_TEXT || {}).map((k) => [k, k.replace(/_/g, ' ')]),
+  };
+}
+
+function renderCtx() {
+  return {
+    track: S.query.track || 'all',
+    classes: S.boot.constants.ASSET_CLASS_LABELS,
+    setupInfo: S.boot.constants.SETUP_INFO,
+    sourceLabels: Object.fromEntries(S.boot.sources.map((s) => [s.id, s.label])),
+    termPresets: S.boot.constants.TERM_PRESETS,
+    options: filterOptions(),
+    budget: S.boot.settings.budget ?? 10000,
+    watchlist: S.watchlist,
+    changes: S.changes,
+    selectedId: S.selectedId,
+    sortBy: S.query.sortBy,
+    sortDir: S.query.sortDir,
+    facets: S.facets,
+  };
+}
+
 /* ------------------------------------------------------------------ data -- */
 
-async function runQuery({ rerenderSidebar = true } = {}) {
+async function runQuery() {
   try {
     const res = await window.apy.query(S.query);
     S.rows = res.rows;
     S.facets = res.facets;
     S.changes = res.changes || {};
     S.meta = res.meta;
-    renderResults(res);
-    if (rerenderSidebar) renderSidebar();
-    $('#res-desc').innerHTML = `<b>${res.total.toLocaleString()}</b> of ${(res.facets?.total ?? 0).toLocaleString()} — ${esc(res.description)}`;
+    const ctx = renderCtx();
+    $('#tablewrap').innerHTML = window.R.table(S.rows, ctx);
+    $('#filterbar').innerHTML = window.R.filterBar(S.query, ctx);
+    $('#res-desc').innerHTML = `<b>${res.total.toLocaleString()}</b> of ${(res.facets?.total ?? 0).toLocaleString()}`;
+    const bt = res.facets?.byTrack || {};
+    $('#n-income').textContent = (bt.income ?? 0).toLocaleString();
+    $('#n-movement').textContent = (bt.movement ?? 0).toLocaleString();
+    $('#n-all').textContent = (bt.all ?? 0).toLocaleString();
   } catch (err) {
     toast('Query failed', err.message, 'err');
   }
@@ -94,40 +142,15 @@ async function refresh(offline = false) {
   }
 }
 
-/* --------------------------------------------------------------- render --- */
-
-function renderSidebar() {
-  $('#sidebar').innerHTML = window.R.sidebar(S.query, S.facets, S.boot, S.preset);
-}
-
-function renderResults(res) {
-  const enabled = S.boot.settings.enabledSources;
-  $('#tablewrap').innerHTML = window.R.table(S.rows, {
-    query: S.query,
-    speculativeSourceOff: Array.isArray(enabled) && !enabled.includes('speculative'),
-    watchlist: S.watchlist,
-    changes: S.changes,
-    selectedId: S.selectedId,
-    classes: S.boot.constants.ASSET_CLASS_LABELS,
-    sortBy: S.query.sortBy,
-    sortDir: S.query.sortDir,
-    facets: res?.facets || S.facets,
-  });
-}
+/* --------------------------------------------------------------- drawer --- */
 
 async function openDetail(id) {
   S.selectedId = id;
-  try {
-    S.detail = await window.apy.detail(id);
-  } catch { S.detail = null; }
+  try { S.detail = await window.apy.detail(id); } catch { S.detail = null; }
   const d = $('#drawer');
   if (!S.detail) { d.classList.add('hidden'); return; }
   d.classList.remove('hidden');
-  d.innerHTML = window.R.drawer(S.detail, {
-    watchlist: S.watchlist,
-    classes: S.boot.constants.ASSET_CLASS_LABELS,
-    budget: S.boot.settings.budget ?? 10000,
-  });
+  d.innerHTML = window.R.drawer(S.detail, renderCtx());
   $$('#tablewrap tr').forEach((tr) => tr.classList.toggle('selected', tr.dataset.id === id));
 }
 
@@ -138,30 +161,197 @@ function closeDrawer() {
   $$('#tablewrap tr.selected').forEach((tr) => tr.classList.remove('selected'));
 }
 
+/* ---------------------------------------------------------------- filters -- */
+
+const defFor = (key) => window.FILTER_DEFS.find((d) => d.key === key);
+
+function closePopovers() {
+  $('#fmenu').classList.add('hidden');
+  $('#fedit').classList.add('hidden');
+  S.editingFilter = null;
+}
+
+function positionNear(el, anchor) {
+  const r = anchor.getBoundingClientRect();
+  el.classList.remove('hidden');
+  const w = el.offsetWidth;
+  el.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.left))}px`;
+  el.style.top = `${Math.min(window.innerHeight - el.offsetHeight - 8, r.bottom + 6)}px`;
+}
+
+function openFilterMenu(anchor) {
+  S.filterSearch = '';
+  const el = $('#fmenu');
+  el.innerHTML = window.R.filterMenu(S.query, renderCtx(), '');
+  positionNear(el, anchor);
+  const inp = $('#fmenu-search');
+  if (inp) inp.focus();
+}
+
+function openPresetMenu(anchor) {
+  const el = $('#fmenu');
+  el.innerHTML = window.R.presetMenu(renderCtx());
+  positionNear(el, anchor);
+}
+
+function openFilterEditor(key, anchor) {
+  const def = defFor(key);
+  if (!def) return;
+  S.editingFilter = key;
+  const el = $('#fedit');
+  el.innerHTML = window.R.filterEditor(def, S.query, renderCtx());
+  positionNear(el, anchor);
+  const first = el.querySelector('input[type="number"], input[type="text"], select');
+  if (first) first.focus();
+}
+
+/** Give a newly-added filter a sensible starting value so it does something. */
+function seedFilterValue(def) {
+  const q = S.query;
+  const k = def.keys[0];
+  if (def.type === 'bool') { q[k] = !def.defaultOn; return; }
+  if (def.type === 'multi') { if (!Array.isArray(q[k])) q[k] = []; return; }
+  if (def.type === 'select') return;
+  if (q[k] === null || q[k] === undefined) {
+    const seeds = {
+      minApy: 4, maxRisk: 40, minPrincipalAxis: 4, minInvestmentMax: 10000,
+      minTvl: 1e8, minHeat: 40, catalystWithinDays: 14, minConfidence: 0.6,
+      maxLockupDays: 365, minIncomeYear1: 500,
+    };
+    if (seeds[k] !== undefined) q[k] = seeds[k];
+  }
+}
+
+function clearAllFilters() {
+  const keepTrack = S.query.track;
+  const keepSort = S.query.sortBy;
+  const keepText = S.query.text;
+  S.query = { ...S.boot.constants.DEFAULT_QUERY, track: keepTrack, sortBy: keepSort, text: keepText };
+  closePopovers();
+  runQuery();
+}
+
+function applyPreset(key) {
+  const p = window.R.PRESETS.find((x) => x.key === key);
+  if (!p) return;
+  S.query = { ...S.boot.constants.DEFAULT_QUERY, ...p.q, text: S.query.text };
+  if (p.track && p.track !== 'all') S.query.track = p.track;
+  syncTrackButtons();
+  syncSortOptions();
+  closePopovers();
+  runQuery();
+}
+
+/* ------------------------------------------------------------ track & sort */
+
+function syncTrackButtons() {
+  $$('#trackswitch button').forEach((b) => b.classList.toggle('on', b.dataset.track === (S.query.track || 'all')));
+}
+
+const INCOME_SORTS = [
+  ['dogScore', 'Best risk-adjusted'], ['apy', 'Highest yield'], ['afterTax', 'Highest after tax'],
+  ['taxEquivalent', 'Tax-equivalent'], ['afterTaxReal', 'After inflation'], ['sharpe', 'Return per unit of risk'],
+  ['grade', 'Safest first'], ['trap', 'Fewest warnings'], ['term', 'Shortest commitment'],
+  ['tvl', 'Largest'], ['minInvestment', 'Lowest minimum'], ['name', 'Name'],
+];
+const MOVEMENT_SORTS = [
+  ['heat', 'Most likely to move'], ['soonest', 'Soonest catalyst'], ['biggestMove', 'Biggest expected move'],
+  ['clarity', 'Clearest signal'], ['grade', 'Safest first'], ['price', 'Lowest price'], ['name', 'Name'],
+];
+
+function syncSortOptions() {
+  const list = S.query.track === 'movement' ? MOVEMENT_SORTS : INCOME_SORTS;
+  const valid = list.some(([v]) => v === S.query.sortBy);
+  if (!valid) S.query.sortBy = list[0][0];
+  $('#q-sort').innerHTML = list.map(([v, l]) => `<option value="${v}"${S.query.sortBy === v ? ' selected' : ''}>${l}</option>`).join('');
+}
+
 /* ------------------------------------------------------------ other views - */
 
+function renderEvents() {
+  const upcoming = S.events.filter((e) => !e.past).sort((a, b) => a.dateMs - b.dateMs);
+  const past = S.events.filter((e) => e.past).sort((a, b) => b.dateMs - a.dateMs);
+  const byWeek = {};
+  for (const e of upcoming.slice(0, 200)) {
+    const wk = e.daysAway <= 7 ? 'This week' : e.daysAway <= 14 ? 'Next week' : e.daysAway <= 31 ? 'This month' : 'Later';
+    (byWeek[wk] = byWeek[wk] || []).push(e);
+  }
+
+  $('#view-events').innerHTML = `<div class="wrap">
+    <h2>Calendar</h2>
+    <p class="lead">Dated events that can move what you hold. Nothing here predicts direction — it tells you when
+      something is scheduled to happen and roughly how much this kind of event usually moves things.</p>
+    ${S.events.length === 0 ? `<div class="infobox">No events loaded. The calendar and filings sources supply these —
+      check <a href="#" data-act="goto-view" data-val="sources">Sources</a> to see whether they connected.</div>` : ''}
+    ${['This week', 'Next week', 'This month', 'Later'].filter((k) => byWeek[k]).map((k) => `
+      <section><h3>${k} <span style="color:var(--text-faint);font-weight:500">${byWeek[k].length}</span></h3>
+        ${byWeek[k].map((e) => window.R.eventRow(e)).join('')}
+      </section>`).join('')}
+    ${past.length ? `<section><h3>Recently filed</h3>${past.slice(0, 40).map((e) => window.R.eventRow(e)).join('')}</section>` : ''}
+  </div>`;
+}
+
+async function renderWatchlist() {
+  let rows = [];
+  try {
+    const res = await window.apy.query({ ...S.boot.constants.DEFAULT_QUERY, track: 'all', watchlistOnly: true, hideTraps: false, includeSpeculative: true });
+    rows = res.rows;
+  } catch { /* fall through to an empty list */ }
+  const entries = S.boot.watchlist || [];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+
+  $('#view-watch').innerHTML = `<div class="wrap">
+    <h2>Watchlist</h2>
+    <p class="lead">What you are tracking. Every scan records these, so the longer something sits here the more you
+      actually know about whether its rate holds or its setup resolves.</p>
+    ${entries.length === 0
+    ? '<div class="infobox">Nothing here yet. Click the ☆ next to anything to track it.</div>'
+    : `<section><div class="statgrid">${entries.map((w) => {
+      const o = byId.get(w.id);
+      const ch = S.changes[w.id];
+      return `<div class="stat" data-act="goto" data-id="${esc(w.id)}" style="cursor:pointer">
+        <div class="v">${o ? (o.track === 'movement' ? `${Math.round(o.movement?.heat ?? 0)}` : window.F.pct(o.apy?.total, 2)) : '—'}
+          ${ch && ch.direction !== 'flat' ? `<span class="trend ${ch.direction}" style="font-size:11px">${ch.direction === 'up' ? '▲' : '▼'}${Math.abs(ch.delta).toFixed(2)}</span>` : ''}</div>
+        <div class="k">${esc(o?.name || w.name || w.id)}</div>
+        ${o?.track === 'movement' ? '<div class="k" style="color:var(--text-faint)">heat</div>' : ''}
+        ${!o ? '<div class="k" style="color:var(--warn)">not in the latest scan</div>' : ''}
+      </div>`;
+    }).join('')}</div></section>`}
+    <section><h3>Alerts</h3>
+      ${(S.boot.alerts || []).length
+    ? S.boot.alerts.map((a) => `<div class="srccard"><div class="info">
+        <div class="nm">${esc(a.label || `${String(a.kind).replace(/_/g, ' ')} ${a.threshold}`)}</div>
+        <div class="meta">${a.lastFired ? `Last fired ${window.F.ago(a.lastFired)}` : 'Never fired'}</div>
+      </div><button class="btn ghost sm" data-act="rm-alert" data-id="${esc(a.id)}">Remove</button></div>`).join('')
+    : '<div class="infobox">No alerts set. Open anything and choose “Alert me”.</div>'}
+    </section>
+    ${rows.length ? `<section><h3>Details</h3><div class="tablewrap">${window.R.table(rows, { ...renderCtx(), track: 'all' })}</div></section>` : ''}
+  </div>`;
+}
+
 function renderSources() {
-  const statusColor = { ok: 'var(--pos)', partial: 'var(--warn)', offline: 'var(--info)', failed: 'var(--neg)', disabled: 'var(--text-faint)' };
-  const statusWord = { ok: 'live', partial: 'partial', offline: 'snapshot', failed: 'failed', disabled: 'off' };
+  const colour = { ok: 'var(--pos)', partial: 'var(--warn)', offline: 'var(--info)', failed: 'var(--neg)', disabled: 'var(--text-faint)' };
+  const word = { ok: 'live', partial: 'partial', offline: 'snapshot', failed: 'failed', disabled: 'off' };
   const m = S.meta || {};
   const enabled = S.boot.settings.enabledSources;
 
   $('#view-sources').innerHTML = `<div class="wrap">
     <h2>Sources</h2>
-    <p class="lead">Where every number in the table came from, and whether it is a live quote or the bundled
-      snapshot that ships with the app. If a source says <b>snapshot</b>, refresh it before you act on the rate.</p>
+    <p class="lead">Where every number came from, and whether it is a live quote or the bundled snapshot that ships
+      with the app. If a source says <b>snapshot</b>, refresh before acting on its rates.</p>
 
     <section><h3>This scan</h3>
       <div class="statgrid">
         <div class="stat"><div class="v">${(m.total ?? 0).toLocaleString()}</div><div class="k">Opportunities</div></div>
         <div class="stat"><div class="v" style="color:var(--pos)">${(m.liveRows ?? 0).toLocaleString()}</div><div class="k">Live</div></div>
         <div class="stat"><div class="v" style="color:var(--warn)">${(m.seedRows ?? 0).toLocaleString()}</div><div class="k">From snapshot</div></div>
+        <div class="stat"><div class="v">${(m.upcomingEvents ?? 0).toLocaleString()}</div><div class="k">Upcoming events</div></div>
         <div class="stat"><div class="v">${window.F.pct(m.riskFree, 2)}</div><div class="k">Risk-free rate</div></div>
-        <div class="stat"><div class="v">${m.duplicatesMerged ?? 0}</div><div class="k">Duplicates merged</div></div>
-        <div class="stat"><div class="v">${m.invalidDropped ?? 0}</div><div class="k">Dropped as invalid</div></div>
+        <div class="stat"><div class="v">${(m.measured ?? 0).toLocaleString()}</div><div class="k">Measured</div></div>
       </div>
       <div style="margin-top:9px;font-size:11.5px;color:var(--text-faint)">
-        Last scan ${m.generatedAt ? window.F.ago(m.generatedAt) : 'never'} · risk-free rate from ${esc(m.riskFreeSource || 'fallback')}
+        Last scan ${m.generatedAt ? window.F.ago(m.generatedAt) : 'never'} · risk-free from ${esc(m.riskFreeSource || 'fallback')}
+        · ${m.duplicatesMerged ?? 0} duplicates merged · ${m.invalidDropped ?? 0} dropped as invalid
       </div>
     </section>
 
@@ -170,35 +360,28 @@ function renderSources() {
     const src = S.boot.sources.find((s) => s.id === h.id) || {};
     const on = enabled === null || enabled === undefined ? src.defaultEnabled !== false : enabled.includes(h.id);
     return `<div class="srccard">
-          <span class="dot" style="background:${statusColor[h.status] || 'var(--text-faint)'}"></span>
-          <div class="info">
-            <div class="nm">${esc(h.label)} <span class="st" style="color:${statusColor[h.status]}">${statusWord[h.status] || h.status}</span></div>
-            <div class="meta">${esc(src.description || '')}</div>
-            <div class="meta">${h.count.toLocaleString()} rows${h.ms ? ` · ${h.ms}ms` : ''}${src.homepage ? ` · <a href="#" data-act="open" data-url="${esc(src.homepage)}">${esc(new URL(src.homepage).host)}</a>` : ''}</div>
-            ${(h.notes || []).map((n) => `<div class="msg">${esc(n)}</div>`).join('')}
-            ${(h.warnings || []).map((w) => `<div class="msg warn">⚠ ${esc(w)}</div>`).join('')}
-          </div>
-          <label class="check"><input type="checkbox" data-act="source-toggle" data-val="${esc(h.id)}" ${on ? 'checked' : ''} /> on</label>
-        </div>`;
+      <span class="dot" style="background:${colour[h.status] || 'var(--text-faint)'}"></span>
+      <div class="info">
+        <div class="nm">${esc(h.label)} <span class="st" style="color:${colour[h.status]}">${word[h.status] || h.status}</span></div>
+        <div class="meta">${esc(src.description || '')}</div>
+        <div class="meta">${h.count.toLocaleString()} rows${h.ms ? ` · ${h.ms}ms` : ''}</div>
+        ${(h.notes || []).map((n) => `<div class="msg">${esc(n)}</div>`).join('')}
+        ${(h.warnings || []).map((w) => `<div class="msg warn">⚠ ${esc(w)}</div>`).join('')}
+      </div>
+      <label class="check"><input type="checkbox" data-act="source-toggle" data-val="${esc(h.id)}" ${on ? 'checked' : ''} /> on</label>
+    </div>`;
   }).join('')}
-      ${(S.boot.sourceProblems || []).length ? `<div class="warnbox severe" style="margin-top:10px">
-        <div class="ttl">Adapters that failed to load</div>
-        ${S.boot.sourceProblems.map((p) => `${esc(p.file)}: ${esc(p.error)}`).join('<br>')}
-      </div>` : ''}
     </section>
 
     <section><h3>Your own rates</h3>
-      <p class="lead" style="margin-bottom:10px">No free public API publishes retail savings and CD rates, so those ship as a
-        curated list. Keep your own current rates in a JSON file and APY Dog will merge them over the bundled ones.</p>
+      <p class="lead" style="margin-bottom:10px">No free API publishes retail deposit rates or promotional offers, so
+        those ship curated. Keep your own current numbers in a JSON file and they are merged over the bundled ones.</p>
       <button class="btn" data-act="open-user-rates">Edit my rates file</button>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-faint);user-select:text">${esc(S.boot.paths?.userRates || '')}</div>
     </section>
 
     <section><h3>Storage</h3>
       <div id="storage-stats" class="statgrid"></div>
-      <div style="margin-top:10px;display:flex;gap:7px">
-        <button class="btn sm" data-act="clear-cache">Clear cache</button>
-      </div>
+      <div style="margin-top:10px"><button class="btn sm" data-act="clear-cache">Clear cache</button></div>
       <div style="margin-top:8px;font-size:11px;color:var(--text-faint);user-select:text">Everything stays on this machine: ${esc(S.boot.paths?.userData || '')}</div>
     </section>
   </div>`;
@@ -214,55 +397,6 @@ function renderSources() {
   }).catch(() => {});
 }
 
-async function renderWatchlist() {
-  // Query the full dataset rather than reusing the Find view's filtered rows —
-  // otherwise a watched rate vanishes from your own watchlist the moment it
-  // falls outside whatever filters you happen to have set.
-  let rows = [];
-  let changes = S.changes;
-  try {
-    const res = await window.apy.query({ watchlistOnly: true, hideTraps: false, includeSpeculative: true, sortBy: S.query.sortBy });
-    rows = res.rows;
-    changes = res.changes || {};
-  } catch { /* fall back to an empty list rather than blanking the pane */ }
-
-  const entries = S.boot.watchlist || [];
-  const byId = new Map(rows.map((r) => [r.id, r]));
-
-  $('#view-watch').innerHTML = `<div class="wrap">
-    <h2>Watchlist</h2>
-    <p class="lead">Rates you are tracking. APY Dog records each one on every scan, so the longer you keep it here
-      the more you actually know about whether the rate holds.</p>
-    ${entries.length === 0
-    ? '<div class="infobox">Nothing here yet. Click the ☆ next to anything in the table to track it.</div>'
-    : `<section><div class="statgrid">${entries.map((w) => {
-      const o = byId.get(w.id);
-      const ch = changes[w.id];
-      const gone = !o;
-      return `<div class="stat" data-act="goto" data-id="${esc(w.id)}" style="cursor:pointer">
-          <div class="v">${o ? window.F.pct(o.apy?.total ?? o.expected?.annualReturn, 2) : '—'}
-            ${ch && ch.direction !== 'flat' ? `<span class="trend ${ch.direction}" style="font-size:11px" title="${window.F.pctSigned(ch.delta)} over ${ch.days} days">${ch.direction === 'up' ? '▲' : '▼'}${Math.abs(ch.delta).toFixed(2)}</span>` : ''}</div>
-          <div class="k">${esc(o?.name || w.name || w.id)}</div>
-          ${gone ? '<div class="k" style="color:var(--warn)">not in the latest scan</div>' : ''}
-        </div>`;
-    }).join('')}</div></section>`}
-
-    <section><h3>Alerts</h3>
-      ${(S.boot.alerts || []).length
-    ? (S.boot.alerts).map((a) => `<div class="srccard"><div class="info">
-          <div class="nm">${esc(a.label || `${String(a.kind).replace(/_/g, ' ')} ${a.threshold}%`)}</div>
-          <div class="meta">${a.lastFired ? `Last fired ${window.F.ago(a.lastFired)}` : 'Never fired'}</div>
-        </div><button class="btn ghost sm" data-act="rm-alert" data-id="${esc(a.id)}">Remove</button></div>`).join('')
-    : '<div class="infobox">No alerts set. Open any opportunity and choose “Alert me if it changes”.</div>'}
-    </section>
-
-    ${rows.length ? `<section><h3>Details</h3><div class="tablewrap">${window.R.table(rows, {
-    watchlist: S.watchlist, changes, selectedId: S.selectedId,
-    classes: S.boot.constants.ASSET_CLASS_LABELS, sortBy: S.query.sortBy, sortDir: S.query.sortDir,
-  })}</div></section>` : ''}
-  </div>`;
-}
-
 function renderSettings() {
   const st = S.boot.settings;
   const t = st.tax || {};
@@ -271,27 +405,21 @@ function renderSettings() {
 
   $('#view-settings').innerHTML = `<div class="wrap">
     <h2>Settings</h2>
-    <p class="lead">Your tax situation and how much risk you are willing to take change which opportunity is
-      genuinely best — often dramatically. Set these honestly and the ranking becomes yours rather than generic.</p>
+    <p class="lead">Your tax situation and risk appetite change which opportunity is genuinely best, often
+      dramatically. Set these honestly and the ranking becomes yours rather than generic.</p>
 
     <section><h3>Tax</h3>
       <div class="grid3">
-        <div class="field"><label>Federal ordinary bracket</label>
+        <div class="field"><label>Federal bracket</label>
           <select id="s-fedOrd">${S.boot.constants.FEDERAL_ORDINARY_BRACKETS.map((b) => opt(b, t.federalOrdinary, `${b}%`)).join('')}</select></div>
         <div class="field"><label>Long-term capital gains</label>
           <select id="s-fedLtcg">${S.boot.constants.FEDERAL_LTCG_BRACKETS.map((b) => opt(b, t.federalLtcg, `${b}%`)).join('')}</select></div>
         <div class="field"><label>State</label>
           <select id="s-state">${states.map((v) => opt(v, t.state, `${v} — ${S.boot.constants.STATE_TOP_RATES[v]}%`)).join('')}</select></div>
         <div class="field"><label>Account type</label>
-          <select id="s-account">
-            ${opt('taxable', t.accountType, 'Taxable brokerage / bank')}
-            ${opt('traditional', t.accountType, 'Traditional IRA / 401(k)')}
-            ${opt('roth', t.accountType, 'Roth')}
-          </select></div>
-        <div class="field"><label>Assumed inflation (%)</label>
-          <input type="number" id="s-inflation" value="${t.inflation ?? 2.6}" step="0.1" /></div>
-        <div class="field" style="justify-content:flex-end">
-          <label class="check"><input type="checkbox" id="s-niit" ${t.niitApplies ? 'checked' : ''} /> Net investment income tax applies</label></div>
+          <select id="s-account">${opt('taxable', t.accountType, 'Taxable')}${opt('traditional', t.accountType, 'Traditional IRA / 401(k)')}${opt('roth', t.accountType, 'Roth')}</select></div>
+        <div class="field"><label>Assumed inflation (%)</label><input type="number" id="s-inflation" value="${t.inflation ?? 2.6}" step="0.1" /></div>
+        <div class="field" style="justify-content:flex-end"><label class="check"><input type="checkbox" id="s-niit" ${t.niitApplies ? 'checked' : ''} /> Net investment income tax applies</label></div>
       </div>
       <div class="infobox" style="margin-top:12px" id="tax-preview"></div>
     </section>
@@ -301,52 +429,42 @@ function renderSettings() {
         <div class="field"><label>Risk appetite: <b id="s-appetite-lbl">${st.riskAppetite}</b> / 100</label>
           <input type="range" id="s-appetite" min="0" max="100" step="1" value="${st.riskAppetite}" />
           <span style="font-size:10.5px;color:var(--text-faint)">0 = I cannot lose this. 100 = swing for the fences.</span></div>
-        <div class="field"><label>Rank using</label>
-          <select id="s-basis">
-            ${opt('gross', st.rankingBasis, 'Headline APY')}
-            ${opt('afterTax', st.rankingBasis, 'After tax')}
-            ${opt('afterTaxReal', st.rankingBasis, 'After tax and inflation')}
-          </select></div>
-        <div class="field"><label>Amount you'd deploy ($)</label>
-          <input type="number" id="s-budget" value="${st.budget ?? 10000}" step="1000" /></div>
-        <div class="field"><label>When you need it back (days, blank = no constraint)</label>
-          <input type="number" id="s-horizon" value="${st.horizonDays ?? ''}" step="30" placeholder="no constraint" /></div>
+        <div class="field"><label>Rank income using</label>
+          <select id="s-basis">${opt('gross', st.rankingBasis, 'Headline yield')}${opt('afterTax', st.rankingBasis, 'After tax')}${opt('afterTaxReal', st.rankingBasis, 'After tax and inflation')}</select></div>
+        <div class="field"><label>Amount you would deploy ($)</label><input type="number" id="s-budget" value="${st.budget ?? 10000}" step="1000" /></div>
+        <div class="field"><label>Movement horizon (days)</label><input type="number" id="s-mhorizon" value="${st.movementHorizonDays ?? 30}" step="7" min="1" />
+          <span style="font-size:10.5px;color:var(--text-faint)">Expected-move bands are computed over this window.</span></div>
       </div>
     </section>
 
     <section><h3>Scanning</h3>
       <div class="grid2">
-        <div class="field"><label>Auto-refresh every (minutes, 0 = off)</label>
-          <input type="number" id="s-auto" value="${st.autoRefreshMinutes ?? 60}" step="15" min="0" /></div>
-        <div class="field"><label>Max DeFi pools to pull</label>
-          <input type="number" id="s-maxpools" value="${st.maxDefiPools ?? 1200}" step="100" min="50" /></div>
+        <div class="field"><label>Auto-refresh every (minutes, 0 = off)</label><input type="number" id="s-auto" value="${st.autoRefreshMinutes ?? 60}" step="15" min="0" /></div>
+        <div class="field"><label>Max DeFi pools</label><input type="number" id="s-maxpools" value="${st.maxDefiPools ?? 4000}" step="500" min="50" /></div>
         <div class="field"><label class="check"><input type="checkbox" id="s-launch" ${st.refreshOnLaunch ? 'checked' : ''} /> Refresh when the app opens</label></div>
-        <div class="field"><label class="check"><input type="checkbox" id="s-offline" ${st.offlineMode ? 'checked' : ''} /> Offline mode (bundled snapshot only)</label></div>
+        <div class="field"><label class="check"><input type="checkbox" id="s-offline" ${st.offlineMode ? 'checked' : ''} /> Offline mode</label></div>
       </div>
     </section>
 
     <section><h3>Appearance</h3>
-      <div class="grid2">
-        <div class="field"><label>Theme</label>
-          <select id="s-theme">${opt('system', st.theme, 'Match system')}${opt('dark', st.theme, 'Dark')}${opt('light', st.theme, 'Light')}</select></div>
-      </div>
+      <div class="grid2"><div class="field"><label>Theme</label>
+        <select id="s-theme">${opt('system', st.theme, 'Match system')}${opt('dark', st.theme, 'Dark')}${opt('light', st.theme, 'Light')}</select></div></div>
     </section>
 
     <section><h3>Reality check</h3>
       <div class="disclaimer">
-        <b>APY Dog finds and ranks rates. It does not give advice, and it cannot tell you what to buy.</b><br><br>
-        Every rate here comes from a public feed or a bundled snapshot and can be wrong, stale, or no longer
-        available to you. Verify the number with the provider before you move money. Advertised yields are not
-        promises: variable rates change without notice, trailing yields describe the past, and modelled
-        expectations in the High Upside section are guesses with wide error bars.<br><br>
-        Risk scores and trap flags are this app's own opinion, computed from the fields each source publishes.
-        They are a starting point for your own thinking, not a verdict. Nothing here is a recommendation, and
-        no one involved in this app knows your circumstances.
+        <b>APY Dog finds and ranks. It does not give advice and cannot tell you what to buy.</b><br><br>
+        Every rate comes from a public feed or a bundled snapshot and can be wrong, stale, or unavailable to you.
+        Verify with the provider before moving money.<br><br>
+        On the movement side: nothing here predicts direction. Heat means something is unusually likely to happen
+        soon, which is as often a reason to stay away as to buy. Expected-move bands are arithmetic on past
+        volatility, not forecasts. Timing the market is not possible; knowing what is on the calendar is.<br><br>
+        Safety grades and warning flags are this app's computed opinion from what each source publishes. A starting
+        point for your own thinking, not a verdict.
       </div>
       <div style="margin-top:12px"><button class="btn ghost" data-act="reset-settings">Reset all settings</button></div>
     </section>
   </div>`;
-
   updateTaxPreview();
 }
 
@@ -354,12 +472,12 @@ async function updateTaxPreview() {
   const el = $('#tax-preview');
   if (!el) return;
   try {
-    const ord = await window.apy.taxPreview('ordinary');
-    const tre = await window.apy.taxPreview('treasury');
-    const muni = await window.apy.taxPreview('muni_federal_exempt');
-    el.innerHTML = `At your settings, a fully taxable rate loses <b>${ord.rate}%</b> to tax, a Treasury loses
-      <b>${tre.rate}%</b>, and a municipal bond loses <b>${muni.rate}%</b>.
-      That is why a lower headline Treasury or muni rate can genuinely beat a higher savings rate for you.`;
+    const [ord, tre, muni] = await Promise.all([
+      window.apy.taxPreview('ordinary'), window.apy.taxPreview('treasury'), window.apy.taxPreview('muni_federal_exempt'),
+    ]);
+    el.innerHTML = `At your settings a fully taxable rate loses <b>${ord.rate}%</b> to tax, a Treasury loses
+      <b>${tre.rate}%</b>, and a municipal bond loses <b>${muni.rate}%</b>. That is why a lower headline Treasury or
+      muni rate can genuinely beat a higher savings rate for you.`;
   } catch { el.textContent = ''; }
 }
 
@@ -367,9 +485,9 @@ function switchView(view) {
   S.view = view;
   $$('#tabs .tab').forEach((t) => t.classList.toggle('active', t.dataset.view === view));
   $('#view-find').style.display = view === 'find' ? 'flex' : 'none';
-  $('#sidebar').classList.toggle('collapsed', view !== 'find');
   $('#drawer').classList.toggle('hidden', view !== 'find' || !S.detail);
-  for (const v of ['watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
+  for (const v of ['events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
+  if (view === 'events') renderEvents();
   if (view === 'sources') renderSources();
   if (view === 'settings') renderSettings();
   if (view === 'watch') renderWatchlist().catch(() => {});
@@ -377,89 +495,114 @@ function switchView(view) {
 
 /* ----------------------------------------------------------------- events - */
 
-function applyPreset(key) {
-  const p = window.R.PRESETS.find((x) => x.key === key);
-  if (!p) return;
-  S.preset = key;
-  S.query = { ...S.boot.constants.DEFAULT_QUERY, ...p.q, text: S.query.text };
-  runQuery();
-}
-
 function wire() {
-  // --- tabs / chrome ------------------------------------------------------
   $('#tabs').addEventListener('click', (e) => {
     const tab = e.target.closest('.tab');
     if (tab) switchView(tab.dataset.view);
   });
+
+  $('#trackswitch').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-track]');
+    if (!b) return;
+    S.query.track = b.dataset.track;
+    syncTrackButtons();
+    syncSortOptions();
+    closePopovers();
+    runQuery();
+  });
+
   $('#btn-refresh').addEventListener('click', () => refresh(false));
-  $('#btn-sidebar').addEventListener('click', () => $('#sidebar').classList.toggle('collapsed'));
   $('#btn-theme').addEventListener('click', async () => {
     const order = ['system', 'dark', 'light'];
     const next = order[(order.indexOf(S.boot.settings.theme) + 1) % 3];
     S.boot.settings = await window.apy.updateSettings({ theme: next });
     applyTheme();
-    toast('Theme', next);
   });
   $('#btn-export').addEventListener('click', async () => {
-    try {
-      const r = await window.apy.exportCSV(S.query);
-      if (r.saved) toast('Exported', `${r.rows} rows to ${r.path}`);
-    } catch (err) { toast('Export failed', err.message, 'err'); }
+    try { const r = await window.apy.exportCSV(S.query); if (r.saved) toast('Exported', `${r.rows} rows`); }
+    catch (err) { toast('Export failed', err.message, 'err'); }
   });
-  $('#btn-reset').addEventListener('click', () => applyPreset('best'));
   $('#notice-close').addEventListener('click', () => $('#notice').classList.add('hidden'));
   $('#progress-cancel').addEventListener('click', () => window.apy.cancelRefresh());
 
-  // --- search -------------------------------------------------------------
   let searchTimer = null;
   $('#q-text').addEventListener('input', (e) => {
     clearTimeout(searchTimer);
     const v = e.target.value;
-    searchTimer = setTimeout(() => { S.query.text = v; runQuery({ rerenderSidebar: false }); }, 130);
+    searchTimer = setTimeout(() => { S.query.text = v; runQuery(); }, 130);
   });
 
-  // --- sort ---------------------------------------------------------------
-  $('#q-sort').addEventListener('change', (e) => { S.query.sortBy = e.target.value; runQuery({ rerenderSidebar: false }); });
+  $('#q-sort').addEventListener('change', (e) => { S.query.sortBy = e.target.value; runQuery(); });
 
-  // --- sidebar (delegated; it is re-rendered constantly) ------------------
-  $('#sidebar').addEventListener('click', (e) => {
+  // --- filter bar ---------------------------------------------------------
+  $('#filterbar').addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
-    const { act, val } = b.dataset;
-    const q = S.query;
-    if (act === 'preset') return applyPreset(val);
-    S.preset = null;
-    if (act === 'class') toggleIn(q.assetClasses, val);
-    else if (act === 'tier') toggleIn(q.riskTiers, val);
-    else if (act === 'liq') toggleIn(q.liquidity, val);
-    else if (act === 'denom') toggleIn(q.denominations, val);
-    else if (act === 'chain') toggleIn(q.chains, val);
-    else if (act === 'source') toggleIn(q.sources, val);
-    else if (act === 'term') { q.termPreset = val === 'any' ? null : val; if (val === 'any') { q.termMinDays = null; q.termMaxDays = null; q.includeOpenEnded = true; } }
-    else return;
-    runQuery();
+    const { act, key } = b.dataset;
+    if (act === 'open-filter-menu') return openFilterMenu(b);
+    if (act === 'open-presets') return openPresetMenu(b);
+    if (act === 'clear-filters') return clearAllFilters();
+    if (act === 'remove-filter') {
+      window.filterClear(defFor(key), S.query);
+      closePopovers();
+      return runQuery();
+    }
+    if (act === 'edit-filter') return openFilterEditor(key, b.closest('.fpill'));
   });
 
-  $('#sidebar').addEventListener('change', (e) => {
+  // --- filter picker ------------------------------------------------------
+  $('#fmenu').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    if (b.dataset.act === 'pick-preset') return applyPreset(b.dataset.key);
+    if (b.dataset.act === 'pick-filter') {
+      const def = defFor(b.dataset.key);
+      seedFilterValue(def);
+      $('#fmenu').classList.add('hidden');
+      runQuery().then(() => {
+        const pill = document.querySelector(`.fpill[data-filter="${CSS.escape(def.key)}"]`);
+        openFilterEditor(def.key, pill || $('#filterbar'));
+      });
+    }
+  });
+  $('#fmenu').addEventListener('input', (e) => {
+    if (e.target.id !== 'fmenu-search') return;
+    S.filterSearch = e.target.value;
+    const list = $('#fmenu .list');
+    const tmp = document.createElement('div');
+    tmp.innerHTML = window.R.filterMenu(S.query, renderCtx(), S.filterSearch);
+    if (list) list.innerHTML = tmp.querySelector('.list').innerHTML;
+  });
+
+  // --- filter value editor ------------------------------------------------
+  $('#fedit').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    if (b.dataset.act === 'close-editor') { closePopovers(); return; }
+    if (b.dataset.act === 'toggle-fval') {
+      const k = b.dataset.fkey;
+      if (!Array.isArray(S.query[k])) S.query[k] = [];
+      toggleIn(S.query[k], b.dataset.val);
+      b.classList.toggle('on');
+      runQuery();
+    }
+  });
+  $('#fedit').addEventListener('change', (e) => {
     const el = e.target;
-    const q = S.query;
-    const id = el.id?.replace(/^q-/, '');
-    if (!id) return;
-    S.preset = null;
-    if (el.type === 'checkbox') q[id] = el.checked;
-    else if (el.type === 'number') q[id] = numOrNull(el.value);
-    else q[id] = el.value;
-    if (id === 'maxRisk') q.maxRisk = Number(el.value) >= 100 ? null : Number(el.value);
-    if (id === 'minConfidence') q.minConfidence = Number(el.value) <= 0 ? null : Number(el.value) / 100;
-    if (id === 'maxProbabilityOfLoss') q.maxProbabilityOfLoss = numOrNull(el.value) === null ? null : numOrNull(el.value) / 100;
-    if (id === 'onlySpeculative' && el.checked) q.includeSpeculative = true;
+    const k = el.dataset.fkey;
+    if (!k) return;
+    const def = defFor(S.editingFilter);
+    if (el.type === 'checkbox') S.query[k] = el.checked;
+    else if (el.type === 'number') {
+      const raw = numOrNull(el.value);
+      S.query[k] = raw !== null && def?.encode ? def.encode(raw) : raw;
+    } else S.query[k] = el.value === '' ? null : el.value;
     runQuery();
   });
 
-  // Live label updates on sliders without a full re-render on every pixel.
-  $('#sidebar').addEventListener('input', (e) => {
-    if (e.target.id === 'q-maxRisk') $('#lbl-maxRisk').textContent = Number(e.target.value) >= 100 ? 'any' : e.target.value;
-    if (e.target.id === 'q-minConfidence') $('#lbl-minConfidence').textContent = Number(e.target.value) <= 0 ? 'any' : `${e.target.value}%`;
+  document.addEventListener('mousedown', (e) => {
+    if (e.target.closest('#fmenu, #fedit, .fpill, .addfilter')) return;
+    closePopovers();
   });
 
   // --- table --------------------------------------------------------------
@@ -475,21 +618,14 @@ function wire() {
       star.textContent = star.classList.contains('on') ? '★' : '☆';
       return;
     }
-    if (e.target.closest('[data-act="reset"]')) return applyPreset('best');
-    if (e.target.closest('[data-act="enable-speculative"]')) {
-      const all = S.boot.sources.map((x) => x.id);
-      const cur = S.boot.settings.enabledSources ?? all;
-      S.boot.settings = await window.apy.updateSettings({ enabledSources: [...new Set([...cur, 'speculative'])] });
-      toast('Turned back on', 'Refreshing to pull those in.');
-      return refresh(true);
-    }
+    if (e.target.closest('[data-act="clear-filters"]')) return clearAllFilters();
     const th = e.target.closest('th[data-sort]');
     if (th) {
       const key = th.dataset.sort;
       if (S.query.sortBy === key) S.query.sortDir = S.query.sortDir === 'asc' ? 'desc' : 'asc';
       else { S.query.sortBy = key; S.query.sortDir = 'desc'; }
       $('#q-sort').value = key;
-      return runQuery({ rerenderSidebar: false });
+      return runQuery();
     }
     const tr = e.target.closest('tr[data-id]');
     if (tr) openDetail(tr.dataset.id);
@@ -507,41 +643,43 @@ function wire() {
       S.boot.watchlist = await window.apy.watchlist();
       $('#watch-count').textContent = S.watchlist.length;
       openDetail(id);
-      renderResults();
-      if (S.view === 'watch') renderWatchlist().catch(() => {});
-      return;
+      return runQuery();
     }
-    if (act === 'dismiss') {
-      await window.apy.dismiss(id);
-      closeDrawer();
-      toast('Hidden', 'It will not come back until you refresh settings.');
-      return refresh(true);
+    if (act === 'dismiss') { await window.apy.dismiss(id); closeDrawer(); return refresh(true); }
+    if (act === 'measure') {
+      toast('Measuring…', 'Fetching price history for this one.');
+      try { await window.apy.measure(id); await refresh(true); openDetail(id); }
+      catch (err) { toast('Could not measure', err.message, 'err'); }
+      return;
     }
     if (act === 'alert') {
       const o = S.detail?.opportunity;
       const cur = o?.apy?.total;
-      if (!Number.isFinite(cur)) return toast('No rate to watch', '', 'warn');
-      const threshold = Math.round((cur * 0.9) * 100) / 100;
-      await window.apy.addAlert({
-        opportunityId: id, kind: 'apy_below', threshold,
-        label: `${o.name} falls below ${threshold}%`,
-      });
+      if (Number.isFinite(cur)) {
+        const threshold = Math.round(cur * 0.9 * 100) / 100;
+        await window.apy.addAlert({ opportunityId: id, kind: 'apy_below', threshold, label: `${o.name} falls below ${threshold}%` });
+        toast('Alert set', `You will be told if it drops below ${threshold}%.`);
+      } else {
+        await window.apy.addAlert({ opportunityId: id, kind: 'apy_above', threshold: 0, label: `${o.name} changes` });
+        toast('Alert set', 'You will be told when this one changes.');
+      }
       S.boot.alerts = await window.apy.alerts();
-      toast('Alert set', `You'll be notified if it drops below ${threshold}%.`);
     }
   });
 
   // --- panes --------------------------------------------------------------
   document.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-act]');
-    if (!b || b.closest('#sidebar, #drawer, #tablewrap')) return;
+    if (!b || b.closest('#filterbar, #drawer, #tablewrap, #fmenu, #fedit')) return;
     const { act, id, url, val } = b.dataset;
     if (act === 'open') { e.preventDefault(); return window.apy.openExternal(url); }
+    if (act === 'goto-view') { e.preventDefault(); return switchView(val); }
+    if (act === 'goto') { switchView('find'); return openDetail(id); }
+    if (act === 'goto-symbol') { switchView('find'); S.query.text = val; $('#q-text').value = val; return runQuery(); }
     if (act === 'open-user-rates') { await window.apy.openUserRates(); return toast('Opened', 'Edit, save, then refresh.'); }
     if (act === 'clear-cache') { const n = await window.apy.clearCache(); toast('Cache cleared', `${n} files`); return renderSources(); }
     if (act === 'reset-settings') { S.boot.settings = await window.apy.resetSettings(); applyTheme(); renderSettings(); return toast('Settings reset'); }
     if (act === 'rm-alert') { await window.apy.removeAlert(id); S.boot.alerts = await window.apy.alerts(); return renderWatchlist().catch(() => {}); }
-    if (act === 'goto') { switchView('find'); return openDetail(id); }
     if (act === 'source-toggle') {
       const all = S.boot.sources.map((s) => s.id);
       const cur = S.boot.settings.enabledSources ?? all.filter((x) => (S.boot.sources.find((s) => s.id === x) || {}).defaultEnabled !== false);
@@ -551,7 +689,7 @@ function wire() {
     }
   });
 
-  // --- settings inputs ----------------------------------------------------
+  // --- settings -----------------------------------------------------------
   document.addEventListener('change', async (e) => {
     const el = e.target;
     if (!el.id?.startsWith('s-')) return;
@@ -565,7 +703,7 @@ function wire() {
       's-appetite': (v) => ({ riskAppetite: Number(v) }),
       's-basis': (v) => ({ rankingBasis: v }),
       's-budget': (v) => ({ budget: Number(v) }),
-      's-horizon': (v) => ({ horizonDays: v === '' ? null : Number(v) }),
+      's-mhorizon': (v) => ({ movementHorizonDays: Number(v) }),
       's-auto': (v) => ({ autoRefreshMinutes: Number(v) }),
       's-maxpools': (v) => ({ maxDefiPools: Number(v) }),
       's-launch': () => ({ refreshOnLaunch: $('#s-launch').checked }),
@@ -588,21 +726,25 @@ function wire() {
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#q-text').focus(); $('#q-text').select(); }
+    else if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); openFilterMenu($('#filterbar').querySelector('.addfilter') || $('#filterbar')); }
     else if (mod && e.key.toLowerCase() === 'r') { e.preventDefault(); refresh(false); }
-    else if (e.key === 'Escape') { if (S.detail) closeDrawer(); else $('#q-text').blur(); }
-    else if (!mod && ['1', '2', '3', '4'].includes(e.key) && document.activeElement.tagName !== 'INPUT') {
-      switchView(['find', 'watch', 'sources', 'settings'][Number(e.key) - 1]);
+    else if (e.key === 'Escape') {
+      if (!$('#fmenu').classList.contains('hidden') || !$('#fedit').classList.contains('hidden')) closePopovers();
+      else if (S.detail) closeDrawer();
+      else $('#q-text').blur();
+    } else if (!mod && ['1', '2', '3'].includes(e.key) && document.activeElement.tagName !== 'INPUT') {
+      S.query.track = ['income', 'movement', 'all'][Number(e.key) - 1];
+      syncTrackButtons(); syncSortOptions(); runQuery();
     }
   });
 
   // --- from main ----------------------------------------------------------
   window.apy.onProgress((evt) => {
-    const p = $('#progress');
     const txt = $('#progress-text');
-    if (evt.type === 'start') { S.sourcesTotal = evt.total; S.doneCount = 0; p.classList.remove('hidden'); txt.textContent = `Scanning ${evt.total} sources…`; }
+    if (evt.type === 'start') { S.sourcesTotal = evt.total; S.doneCount = 0; $('#progress').classList.remove('hidden'); txt.textContent = `Scanning ${evt.total} sources…`; }
     else if (evt.type === 'source_start') txt.textContent = `Fetching ${evt.label}…`;
     else if (evt.type === 'source_done') {
-      S.doneCount = (S.doneCount || 0) + 1;
+      S.doneCount += 1;
       $('#progress-bar').style.width = `${(S.doneCount / Math.max(1, S.sourcesTotal)) * 100}%`;
       txt.textContent = `${evt.label}: ${evt.count} found`;
     } else if (evt.type === 'log') txt.textContent = `${evt.source}: ${evt.message}`;
@@ -612,9 +754,12 @@ function wire() {
   window.apy.onDataUpdated(async (payload) => {
     S.meta = payload.meta;
     S.health = payload.health;
+    S.events = payload.events || [];
     await runQuery();
     $('#src-count').textContent = `${payload.meta.sourcesOk}/${payload.meta.sourcesTotal}`;
+    $('#ev-count').textContent = (payload.meta.upcomingEvents ?? 0).toLocaleString();
     if (S.view === 'sources') renderSources();
+    if (S.view === 'events') renderEvents();
     for (const a of payload.alerts || []) toast('Alert', a.message, 'warn');
 
     const failed = payload.health.filter((h) => h.status === 'failed');
@@ -622,11 +767,10 @@ function wire() {
     if (failed.length) {
       notice(`<b>${failed.length} source${failed.length > 1 ? 's' : ''} failed.</b> ${esc(failed.map((f) => f.label).join(', '))} — showing bundled data for those.`,
         'See why', () => switchView('sources'));
-    } else if (snap > 0 && payload.meta.liveRows > 0) {
-      notice(`<b>${snap} row${snap > 1 ? 's are' : ' is'} from the bundled snapshot</b>, not a live quote. Verify before acting.`,
-        'Which ones?', () => { $('#notice').classList.add('hidden'); S.query.hideSeed = false; switchView('find'); });
     } else if (payload.meta.offline) {
-      notice('<b>Showing the bundled snapshot.</b> These rates are a starting point, not live quotes.', 'Scan now', () => refresh(false));
+      notice('<b>Showing the bundled snapshot.</b> These are a starting point, not live quotes.', 'Scan now', () => refresh(false));
+    } else if (snap > 0) {
+      notice(`<b>${snap} row${snap > 1 ? 's are' : ' is'} from the bundled snapshot.</b> Verify before acting.`, null);
     } else {
       $('#notice').classList.add('hidden');
     }
@@ -646,27 +790,35 @@ async function main() {
   S.watchlist = (S.boot.watchlist || []).map((w) => w.id);
   S.health = S.boot.health || [];
   S.meta = S.boot.meta;
+  S.events = S.boot.events || [];
   S.query = { ...S.boot.constants.DEFAULT_QUERY, ...(S.boot.settings.lastQuery || {}) };
+
+  window.RATING_AXES = S.boot.constants.RATING_AXES;
+  window.EVENT_INFO = S.boot.constants.EVENT_INFO;
+  window.CATALYST_WHEN = (d) => {
+    if (!Number.isFinite(d)) return '';
+    const n = Math.round(d);
+    if (n === 0) return 'today';
+    if (n === 1) return 'tomorrow';
+    if (n === -1) return 'yesterday';
+    if (n > 0) return n < 14 ? `in ${n} days` : n < 60 ? `in ${Math.round(n / 7)} weeks` : `in ${Math.round(n / 30.44)} months`;
+    const a = Math.abs(n);
+    return a < 14 ? `${a} days ago` : a < 60 ? `${Math.round(a / 7)} weeks ago` : `${Math.round(a / 30.44)} months ago`;
+  };
 
   if (S.boot.platform === 'darwin') document.body.classList.add('mac');
   $('#ver').textContent = `v${S.boot.version}`;
   $('#watch-count').textContent = S.watchlist.length;
   $('#search-hint').textContent = S.boot.platform === 'darwin' ? '⌘K' : 'Ctrl K';
   applyTheme();
-
-  $('#q-sort').innerHTML = [
-    ['dogScore', 'Best overall'], ['apy', 'Highest APY'], ['afterTax', 'Highest after tax'],
-    ['taxEquivalent', 'Tax-equivalent'], ['afterTaxReal', 'After inflation'],
-    ['certaintyEquivalent', 'Certainty equivalent'], ['sharpe', 'Return per unit of risk'],
-    ['risk', 'Lowest risk'], ['trap', 'Fewest warnings'], ['term', 'Shortest term'],
-    ['tvl', 'Largest'], ['minInvestment', 'Lowest minimum'], ['price', 'Lowest price'], ['name', 'Name'],
-  ].map(([v, l]) => `<option value="${v}"${S.query.sortBy === v ? ' selected' : ''}>${l}</option>`).join('');
+  syncTrackButtons();
+  syncSortOptions();
 
   wire();
   await runQuery();
 
   if (!S.boot.settings.acknowledgedDisclaimer) {
-    notice('<b>APY Dog finds rates, it does not give advice.</b> Verify every number with the provider before moving money.',
+    notice('<b>APY Dog finds and ranks — it does not give advice.</b> Nothing here predicts direction. Verify every number before moving money.',
       'Got it', async () => {
         await window.apy.updateSettings({ acknowledgedDisclaimer: true });
         $('#notice').classList.add('hidden');

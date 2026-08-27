@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('apy', {
   refresh: (opts) => invoke('data:refresh', opts),
   cancelRefresh: () => invoke('data:cancelRefresh'),
   health: () => invoke('data:health'),
+  measure: (id) => invoke('data:measure', id),
 
   getSettings: () => invoke('settings:get'),
   updateSettings: (patch) => invoke('settings:update', patch),
