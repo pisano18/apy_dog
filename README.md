@@ -89,6 +89,9 @@ node scripts/scan.js --json > today.json
 | **Yahoo Finance** | Prices, dividend histories, computed volatility and drawdown for ~120 funds and tickers | Free public endpoint, no key |
 | **Savings & CDs** | Curated list of real banks, credit unions and money market funds | **Curated — see below** |
 | **Bonds, I-Bonds, RWA** | Series I/EE bonds, bond-fund index proxies, tokenized Treasuries | Curated + DefiLlama |
+| **High Upside** | ~45 liquid tickers run through an expected-return model with p10/p50/p90 bands | Yahoo Finance |
+
+211 opportunities ship in the bundled snapshot across all sixteen asset classes, so the app is useful the moment it opens and stays useful with no network at all.
 
 **About deposit rates.** No free public API publishes retail savings and CD rates — the FDIC publishes which institutions are insured, not what they pay. So those ship as a curated list with an honest "as of" date, and the app labels every one as a snapshot rather than a quote. Sources → *Edit my rates file* opens a JSON file where you keep your own current rates; they're merged over the bundled ones on every scan.
 
@@ -105,6 +108,8 @@ The UI runs fully sandboxed with no Node integration and a strict CSP; all netwo
 ---
 
 ## Some things worth knowing
+
+**Term means three different things.** A CD's term is a lockup, a Treasury note's is a maturity you can sell before, and a bond fund's "term" is really its duration — a rate-sensitivity figure for a thing you can sell any morning. The app models these separately, so a "1–3 years" filter returns real commitments and never a daily-liquid fund, and duration shows up under risk where it belongs.
 
 **Rate history.** Every scan appends a snapshot of each rate to a local JSONL file. After a few weeks the app can tell you whether that 9% pool has actually been a 9% pool, or whether it was 3% last Tuesday. Watch anything with the ☆ and the table shows its 30-day drift.
 
@@ -143,8 +148,11 @@ test/              node --test
 Adding a data source is one file in `src/sources/` that satisfies `_contract.js`. The registry picks it up automatically.
 
 ```bash
-npm test          # 141 unit tests over the analytical core and every adapter
+npm test          # 231 tests: analytical core, all six adapters, whole-pipeline invariants
 npm run smoke     # boots the real app headlessly, exercises every view, screenshots each
+npm run probe     # checks each upstream API is reachable and still the right shape
 ```
+
+The pipeline tests assert things that are easy to break and expensive to get wrong: no row reaching the table without a way to buy it, rates in percent rather than decimals, nothing insured rated above conservative, nothing paying over 40% left unflagged, and modelled estimates never presented as yields or leaking into a yield sort.
 
 MIT.

@@ -73,6 +73,8 @@ const round = (v, dp) => {
 };
 const r1 = (v) => round(v, 1);
 const r3 = (v) => round(v, 3);
+/** Percentages in basis[] always carry their sign; "+0%" for a loss reads as a lie. */
+const signed = (v, dp = 0) => `${v >= 0 ? '+' : ''}${v.toFixed(dp)}%`;
 
 // ---------------------------------------------------------------------------
 // Price access — reuse funds.js where it is present
@@ -398,8 +400,10 @@ function modelFromCloses(closes, opts = {}) {
 function modelFromSignals({ vol = null, momentum = null, drawdown = null, priors = {}, horizonDays = HORIZON_DAYS, bars = null, seed = false } = {}) {
   const v = num(vol);
   // Without a volatility there is no width, and a band with no width is the
-  // point estimate this whole source exists to avoid. Skip the row instead.
-  if (v === null) return null;
+  // point estimate this whole source exists to avoid. A zero, negative or
+  // absurd volatility is bad data, and it would print as a suspiciously
+  // confident row, so those are dropped rather than rendered.
+  if (v === null || v <= 0 || v > 400) return null;
 
   const blend = blendedExpectedReturn({ momentum: num(momentum), drawdown: num(drawdown), vol: v, priors });
   const bands = lognormalBands(blend.mu, v, horizonDays);
@@ -408,10 +412,12 @@ function modelFromSignals({ vol = null, momentum = null, drawdown = null, priors
   // dash where the downside figure should be.
   if (![bands.p10, bands.p50, bands.p90, bands.probabilityOfLoss].every(Number.isFinite)) return null;
 
+  const horizonLabel = horizonDays === 365 ? 'One-year' : `${Math.round(horizonDays)}-day`;
   const basis = [...blend.basis];
-  basis.push(`One-year lognormal band from ${v.toFixed(0)}% volatility: p10 ${bands.p10.toFixed(0)}%, `
-    + `p50 ${bands.p50.toFixed(0)}%, p90 +${Math.max(bands.p90, 0).toFixed(0)}%`);
-  basis.push(`Chance of ending the year below zero: ${Math.round(bands.probabilityOfLoss * 100)}%, computed from that band`);
+  basis.push(`${horizonLabel} lognormal band from ${v.toFixed(0)}% volatility: `
+    + `p10 ${signed(bands.p10)}, p50 ${signed(bands.p50)}, p90 ${signed(bands.p90)}`);
+  basis.push(`Chance of ending below where you started: ${Math.round(bands.probabilityOfLoss * 100)}%, `
+    + 'computed from that band rather than asserted');
   if (Number.isFinite(bars) && bars < TRADING_DAYS + 1) {
     basis.push(`Only ${bars} sessions of history — less than the model wants`);
   }
@@ -591,8 +597,8 @@ function buildOpportunity(entry, model, opts = {}) {
 
   // Every row says the same thing, on purpose: this is a model estimate with
   // wide error bars, and here is the tenth-percentile year in plain numbers.
-  const notes = `A model estimate, not a yield. The error bars are wide: one year in ten looks like `
-    + `${b.p10 >= 0 ? '+' : ''}${b.p10.toFixed(0)}% or worse, and the model puts the chance of simply losing money at `
+  const notes = 'A model estimate, not a yield. The error bars are wide: one year in ten looks like '
+    + `${signed(b.p10)} or worse, and the model puts the chance of simply losing money at `
     + `${Math.round(b.probabilityOfLoss * 100)}%. Nothing here is contracted to pay you anything.`;
 
   const row = {

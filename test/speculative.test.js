@@ -241,6 +241,10 @@ test('confidence stays low by construction', () => {
 test('modelFromSignals refuses to produce a band it cannot support', () => {
   assert.equal(adapter.modelFromSignals({ vol: null, momentum: 10, drawdown: -30 }), null);
   assert.equal(adapter.modelFromSignals({}), null);
+  // A zero or nonsense volatility would print as a suspiciously confident row.
+  for (const vol of [0, -5, 900, Number.NaN, 'x']) {
+    assert.equal(adapter.modelFromSignals({ vol, momentum: 10, drawdown: -30 }), null, `vol ${vol} should be rejected`);
+  }
   const m = adapter.modelFromSignals({ vol: 40, momentum: 10, drawdown: -30 });
   assert.ok(Number.isFinite(m.mu) && Number.isFinite(m.bands.p10));
   assert.ok(m.basis.some((b) => /computed from that band/.test(b)));
