@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "source": "treasury",
+    "dataAsOf": "2026-08-01",
+    "origin": "US Treasury daily par yield curve (nominal) and daily real yield curve (TIPS)",
+    "note": "Offline snapshot rounded to plausible levels for the stated date. Not a quote — refresh for live rates."
+  },
+  "items": [
+    { "curve": "nominal", "tenor": "1 Mo",       "rate": 3.85 },
+    { "curve": "nominal", "tenor": "1.5 Month",  "rate": 3.85 },
+    { "curve": "nominal", "tenor": "2 Mo",       "rate": 3.83 },
+    { "curve": "nominal", "tenor": "3 Mo",       "rate": 3.80 },
+    { "curve": "nominal", "tenor": "4 Mo",       "rate": 3.78 },
+    { "curve": "nominal", "tenor": "6 Mo",       "rate": 3.72 },
+    { "curve": "nominal", "tenor": "1 Yr",       "rate": 3.65 },
+    { "curve": "nominal", "tenor": "2 Yr",       "rate": 3.60 },
+    { "curve": "nominal", "tenor": "3 Yr",       "rate": 3.65 },
+    { "curve": "nominal", "tenor": "5 Yr",       "rate": 3.80 },
+    { "curve": "nominal", "tenor": "7 Yr",       "rate": 3.95 },
+    { "curve": "nominal", "tenor": "10 Yr",      "rate": 4.15 },
+    { "curve": "nominal", "tenor": "20 Yr",      "rate": 4.60 },
+    { "curve": "nominal", "tenor": "30 Yr",      "rate": 4.70 },
+
+    { "curve": "real",    "tenor": "5 YR",       "rate": 1.55 },
+    { "curve": "real",    "tenor": "7 YR",       "rate": 1.70 },
+    { "curve": "real",    "tenor": "10 YR",      "rate": 1.85 },
+    { "curve": "real",    "tenor": "20 YR",      "rate": 2.15 },
+    { "curve": "real",    "tenor": "30 YR",      "rate": 2.25 }
+  ]
+}

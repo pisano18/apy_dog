@@ -1,0 +1,40 @@
+{
+  "name": "apy-dog",
+  "productName": "APY Dog",
+  "version": "1.0.0",
+  "description": "Sniffs out the highest-yielding investments you can actually buy, and tells you which ones are lying.",
+  "main": "electron/main.js",
+  "author": "Joe Pisano",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node --test test/",
+    "scan": "node scripts/scan.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.apydog.app",
+    "productName": "APY Dog",
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "data/**/*",
+      "!**/*.test.js",
+      "!test/**/*"
+    ],
+    "directories": { "output": "release", "buildResources": "build" },
+    "mac": { "category": "public.app-category.finance", "target": ["dmg", "zip"] },
+    "win": { "target": ["nsis", "portable"] },
+    "linux": { "target": ["AppImage", "deb"], "category": "Office" }
+  }
+}
