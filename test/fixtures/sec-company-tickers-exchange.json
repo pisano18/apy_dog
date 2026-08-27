@@ -1,0 +1,89 @@
+{
+ "fields": [
+  "cik",
+  "name",
+  "ticker",
+  "exchange"
+ ],
+ "data": [
+  [
+   320193,
+   "Apple Inc.",
+   "AAPL",
+   "Nasdaq"
+  ],
+  [
+   789019,
+   "MICROSOFT CORP",
+   "MSFT",
+   "Nasdaq"
+  ],
+  [
+   37996,
+   "Ford Motor Company",
+   "F",
+   "NYSE"
+  ],
+  [
+   1467858,
+   "General Motors Company",
+   "GM",
+   "NYSE"
+  ],
+  [
+   1318605,
+   "Tesla, Inc.",
+   "TSLA",
+   "Nasdaq"
+  ],
+  [
+   1067983,
+   "BERKSHIRE HATHAWAY INC",
+   "BRK-B",
+   "NYSE"
+  ],
+  [
+   732717,
+   "AT&T INC.",
+   "T",
+   "NYSE"
+  ],
+  [
+   1164727,
+   "Newmont Corporation",
+   "NEM",
+   "NYSE"
+  ],
+  [
+   56873,
+   "Kroger Co",
+   "KR",
+   "NYSE"
+  ],
+  [
+   null,
+   "Some Issuer With No CIK",
+   "ZZQQ",
+   "NYSE"
+  ],
+  [
+   123456,
+   "No Ticker Corp",
+   "",
+   "NYSE"
+  ],
+  [
+   123457,
+   "Punctuation Only",
+   "###",
+   "NYSE"
+  ],
+  [
+   320193,
+   "Apple Inc. (duplicate listing)",
+   "AAPL",
+   "Nasdaq"
+  ],
+  "not an array"
+ ]
+}

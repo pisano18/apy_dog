@@ -1,43 +1,79 @@
 # 🐕 APY Dog
 
-A desktop app that hunts down the highest-yielding investments you can actually buy — and tells you which of them are lying to you.
+A desktop app for finding where money can be made — and for seeing what is about to happen to it.
 
-Sorting the world by APY is easy. The problem is that the top of that list is almost entirely garbage: emissions farms that pay 200% for three weeks, teaser rates capped at $5,000, closed-end funds paying you back your own money and calling it a distribution. APY Dog's job is to find the high numbers **and** separate the real ones from the rest.
+It does two different jobs, because they are genuinely different questions and one table cannot answer both honestly:
+
+**Income** — what will pay me, and how reliably? Ranked by after-tax certainty equivalent, because that number is knowable.
+
+**Movement** — what is about to move, and how hard? Ranked by how wound-up something is and how close its next dated catalyst is. Never given a fake expected return, because no honest model produces one.
 
 ---
 
-## What it does
+## Why two tracks
 
-**Finds yield everywhere.** Treasuries and TIPS, savings accounts, CDs, money market funds, I-Bonds, corporate and municipal bonds, REITs, BDCs, covered-call ETFs, closed-end funds, preferreds, DeFi lending, liquidity pools, staking, and tokenized T-bills — in one sortable table.
+A share of NVDA has roughly a 0.02% dividend yield. Ranking it by that number says something true and completely irrelevant — essentially all of its return comes from price movement that nobody can put a decimal on. The old version of this app did exactly that, and the stock rows were nonsense.
 
-**Ranks them honestly.** Three things happen before anything reaches the top of the list:
+So stocks, crypto and growth funds now live on the Movement track, where the columns are:
 
-- **Tax.** A 3.70% muni beats a 4.60% savings account if you're in California's top bracket. The app knows this — it computes after-tax, tax-equivalent and inflation-adjusted yields from *your* bracket, and can rank on any of them. Treasuries are state-exempt, REIT dividends get the §199A deduction, qualified dividends get capital-gains rates.
-- **Risk, as a certainty equivalent.** Rather than pretend 4.3% guaranteed and 40%-probably are comparable, it computes what guaranteed return would make you equally happy, using mean-variance utility driven by a risk-appetite slider you control. Cautious and aggressive users genuinely get different rankings from the same data — that's the point.
-- **Catastrophic risk, separately.** Variance can't see a jump to zero, which is exactly how DeFi positions fail. So the probability of a severe loss event and how much it would take are modelled explicitly and subtracted as expected loss, weighted by loss aversion. Without this, a 3%-volatility stablecoin pool outranks a Treasury bill, which is nonsense.
+| Heat | Setup | Next catalyst | If it moves | Lean | Clarity | Safety |
+|---|---|---|---|---|---|---|
+| 68 | Coiled | Earnings · 6d | ±7.8% typical | ▼ weak | Sharp | D |
 
-**Flags the traps.** Yield that's 90% token emissions. Pools with $180k in them. Rates that spiked 6x above their own 30-day average. Distributions that are mostly return of capital. Funds trading above NAV. Promotional rates that revert. Every flag comes with a plain sentence explaining what it means.
+No expected return, no price target, no decimal on anything unknowable. What it tells you is: this is trading much quieter than its own normal, it reports earnings in six days, and a move of about ±8% would be ordinary for it — *which way is not knowable and the app never pretends otherwise*.
 
-**Shows its work.** Every risk score opens into the list of factors that produced it, with points. Every trap flag explains itself. Every tax number shows the arithmetic. If you disagree with a number you can see exactly which assumption to argue with.
+Things that are honestly both — a REIT that pays 5% and can fall 30% — appear in either view rather than being forced into one.
 
-**Finds the uncertain upside too.** A separate, opt-in section for things with large expected returns that aren't remotely guaranteed — modelled from momentum, drawdown and volatility, presented with p10/p50/p90 bands and a computed probability of loss. These are never mixed into the yield rankings and never called yields.
+---
+
+## What it looks at
+
+| | Covers | Live? |
+|---|---|---|
+| **SEC company index** | Every US-listed issuer, searchable | Free, no key |
+| **Equities & ETFs** | Core index, target-date, sector, factor, dividend, growth — measured with volatility, drawdown, trend and volume | Yahoo, batched |
+| **Crypto assets** | Spot markets by cap, with 7-day series | CoinGecko, 250 per call |
+| **DeFi** | Thousands of lending, LP and staking pools | DefiLlama |
+| **US Treasury** | Full nominal curve and TIPS real curve | Free CSV |
+| **Savings, CDs, MMFs** | Curated real institutions, editable | Curated |
+| **Bonds, I-Bonds, RWA** | Savings bonds, index proxies, tokenized Treasuries | Curated + DefiLlama |
+| **Cash bonuses** | Bank and brokerage opening offers | Curated |
+| **Calendar** | FOMC, CPI, jobs, PPI, Treasury auctions, earnings, opex, rebalances | Free |
+| **Filings** | SEC EDGAR 8-K, S-1, 13D — what just happened, from the primary source | Free |
+
+**On breadth:** the whole US market is indexed cheaply and a priority subset is fully measured, because ten thousand price fetches per refresh is not a reasonable thing to do to your machine. Rows that are indexed but not measured say **not measured** and sort last — open one and it measures just that one. The app never implies it looked at something it did not.
+
+**On bank bonuses:** a bank paying $300 for a $5,000 deposit held 90 days is a 26% annualised return on FDIC-insured money. That belongs in an app about the highest available APY, and no screener lists it. It is also one-time, capped, and full of hoops — so the row shows the annualised figure, the plain first-year percentage, and the cap, and trips the trap detector rather than sitting at the top looking like a savings account.
+
+---
+
+## Safety, as a grade rather than a number
+
+"Risk: 47.3" tells a person nothing. Every row now carries a grade from **A+** (principal guaranteed) to **F** (you can lose all of it), with a sentence, backed by five axes:
+
+```
+Principal safe   ●●●○○   a bad year here looks like roughly -34%
+Payout reliable  ●●●○○   backward-looking — this is what it paid, not what it will
+Easy to exit     ●●●●●   sellable any trading day
+Steady           ●●●○○   bumpy, about 15% a year
+Well understood  ●●●●○   refreshed recently
+```
+
+Risk is not one thing. A 30-year Treasury and a memecoin are both risky for opposite reasons — one will absolutely pay you back and might swing 20% getting there, the other might cease to exist. Five axes say which danger applies to you.
+
+The grade is a **safety** grade, never a quality one. Some of the most rewarding things here are Fs, and that is the point.
 
 ---
 
 ## Filters
 
-| | |
-|---|---|
-| **Return** | Min/max APY · compare as headline, after-tax, tax-equivalent, or after inflation |
-| **Type** | 18 asset classes, multi-select, with live counts |
-| **Length** | Presets (no lockup, under 3mo, 3–12mo, 1–3y, 3–10y, 10y+), exact day ranges, max lockup |
-| **Money in** | Most you'd invest (hides anything with a higher minimum) · share price range · minimum pool size / fund AUM |
-| **Risk** | Max risk score · risk tier · insured-only · hide likely traps · minimum data confidence |
-| **Access** | Instant, daily, T+2, notice period, locked, illiquid |
-| **Upside** | Min expected return · max probability of loss |
-| **Source** | Per-feed · live-data-only · strict mode (drop rows with missing data) |
+Every filter is declared once as data, so the interface is a bar of removable pills rather than a permanent wall of switches:
 
-Plus free-text search, twelve sort orders, and one-click presets: *Best overall · Max APY · Safe & liquid · Best after tax · Lock a rate · High upside*.
+- **Start from** — eight starting points: *Safe income · Highest yield · Best risk-adjusted · No lockup · Retirement core · Happening this week · Coiled up · Biggest expected moves*
+- **+ Filter** — a searchable picker over 31 filters, grouped, with movement-only filters hidden while you are looking at income
+- **Clear all** — provably resets everything, because it iterates the same declaration
+
+Filters cover return, safety grade and axes, category, what it pays in, term and lockup, entry cost and share price, heat, setup, catalyst window, catalyst kind, signal clarity, and data quality. They combine freely.
 
 ---
 
@@ -50,84 +86,47 @@ npm install
 npm start
 ```
 
-That opens the app. To build a real double-clickable application:
+Build a real double-clickable app:
 
 ```bash
-npm run dist        # for your current platform
+npm run dist        # current platform
 npm run dist:mac    # .dmg
-npm run dist:win    # .exe installer
-npm run dist:linux  # .AppImage / .deb
+npm run dist:win    # .exe
+npm run dist:linux  # AppImage / .deb
 ```
 
-The result lands in `release/`.
-
-**If something looks wrong, probe the endpoints first:**
-
-```bash
-npm run probe
-```
-
-That hits every upstream API directly and checks the response still has the shape the adapters expect — so "DefiLlama is down" and "DefiLlama renamed a field" and "your firewall blocks it" are three different, clearly-labelled answers rather than one silent fallback to bundled data. `--verbose` prints a sample record; `--json` is paste-able into a bug report.
-
-There's also a headless mode, same pipeline, no window:
+Headless, same pipeline:
 
 ```bash
 node scripts/scan.js --sort apy --limit 40
 node scripts/scan.js --min-apy 6 --insured --max-days 365
-node scripts/scan.js --only-speculative
 node scripts/scan.js --json > today.json
+npm run probe       # which upstream feeds are reachable, and still the right shape
 ```
 
 ---
 
-## Where the numbers come from
+## What it will not do
 
-| Source | Covers | Live? |
-|---|---|---|
-| **DefiLlama** | Thousands of DeFi pools: lending, LPs, staking, with TVL, base-vs-reward split, 30-day means | Free public API, no key |
-| **US Treasury** | Full nominal yield curve (1mo–30yr) and the TIPS real curve, refreshed daily | Free public CSV, no key |
-| **Yahoo Finance** | Prices, dividend histories, computed volatility and drawdown for ~120 funds and tickers | Free public endpoint, no key |
-| **Savings & CDs** | Curated list of real banks, credit unions and money market funds | **Curated — see below** |
-| **Bonds, I-Bonds, RWA** | Series I/EE bonds, bond-fund index proxies, tokenized Treasuries | Curated + DefiLlama |
-| **High Upside** | ~45 liquid tickers run through an expected-return model with p10/p50/p90 bands | Yahoo Finance |
+It will not tell you which way anything is going. Heat means something is unusually likely to happen soon, which is as often a reason to stay away as to buy. Expected-move bands are arithmetic on past volatility, not forecasts. The direction lean returns **none** for most things most of the time, because that is the honest answer.
 
-211 opportunities ship in the bundled snapshot across all sixteen asset classes, so the app is useful the moment it opens and stays useful with no network at all.
-
-**About deposit rates.** No free public API publishes retail savings and CD rates — the FDIC publishes which institutions are insured, not what they pay. So those ship as a curated list with an honest "as of" date, and the app labels every one as a snapshot rather than a quote. Sources → *Edit my rates file* opens a JSON file where you keep your own current rates; they're merged over the bundled ones on every scan.
-
-**Everything is a starting point, not a quote.** Rows sourced from the bundled snapshot are marked `snapshot` in the table and called out in a banner. Refresh pulls live data where a live feed exists.
+Timing the market is not possible. Knowing that a coiled stock reports on Tuesday, that CPI lands Thursday, and that a token unlock hits on the third is just a calendar — and that is what this surfaces.
 
 ---
 
 ## Privacy
 
-Everything stays on your machine. No accounts, no telemetry, no analytics, nothing phones home. Your tax bracket, your watchlist and your rate history live in a JSON file in your user data directory and go nowhere. The app only makes outbound requests to the public rate APIs listed above.
+Everything stays on your machine. No accounts, no telemetry, nothing phones home. Your tax bracket, watchlist and rate history live in a JSON file in your user data directory. The only outbound requests go to the public feeds listed above.
 
-The UI runs fully sandboxed with no Node integration and a strict CSP; all network and disk access happens in the main process behind a narrow, explicitly-enumerated IPC surface.
-
----
-
-## Some things worth knowing
-
-**Term means three different things.** A CD's term is a lockup, a Treasury note's is a maturity you can sell before, and a bond fund's "term" is really its duration — a rate-sensitivity figure for a thing you can sell any morning. The app models these separately, so a "1–3 years" filter returns real commitments and never a daily-liquid fund, and duration shows up under risk where it belongs.
-
-**Rate history.** Every scan appends a snapshot of each rate to a local JSONL file. After a few weeks the app can tell you whether that 9% pool has actually been a 9% pool, or whether it was 3% last Tuesday. Watch anything with the ☆ and the table shows its 30-day drift.
-
-**Alerts.** Set a threshold on anything you're watching, or a standing "tell me if anything in this category crosses X%". Fires a native desktop notification on refresh.
-
-**The risk-free rate is real.** It's read from the live 3-month T-bill, not hardcoded, and everything else is scored as a spread over it.
-
-**Corroboration counts.** When two independent sources report the same instrument, they're merged and the confidence goes up.
+The UI runs fully sandboxed with no Node integration and a strict CSP; all network and disk access happens in the main process behind an explicitly-enumerated IPC bridge.
 
 ---
 
 ## Not financial advice
 
-APY Dog finds and ranks rates. It does not know your circumstances and it cannot tell you what to buy.
+APY Dog finds and ranks. It does not know your circumstances and cannot tell you what to buy.
 
-Every rate here comes from a public feed or a bundled snapshot and can be wrong, stale, or unavailable to you. Verify the number with the provider before you move money. Advertised yields aren't promises: variable rates change without notice, trailing yields describe the past, and the High Upside section contains model estimates with wide error bars.
-
-The risk scores and trap flags are this app's own opinion, computed from what each source publishes. They're a starting point for your thinking, not a verdict.
+Every rate comes from a public feed or a bundled snapshot and can be wrong, stale, or unavailable to you. Verify with the provider before moving money. Safety grades, heat scores and warning flags are this app's computed opinion from what each source publishes — a starting point for your own thinking, not a verdict.
 
 ---
 
@@ -135,24 +134,20 @@ The risk scores and trap flags are this app's own opinion, computed from what ea
 
 ```
 electron/          main process (network, disk, IPC) + sandboxed preload bridge
-src/core/          schema · risk · tail · tax · traps · score · filters · aggregate · history · store
-src/sources/       one adapter per data source, auto-discovered, contract in _contract.js
-src/ui/            renderer: index.html · styles.css · format.js · render.js · app.js
+src/core/          schema · tracks · rating · risk · tail · tax · traps · score
+                   catalyst · movement · filters · aggregate · history · store · export
+src/sources/       one adapter per feed, auto-discovered, contract in _contract.js
+src/ui/            index.html · styles.css · format.js · filters-def.js · render.js · app.js
 data/seed/         bundled offline snapshots
-scripts/scan.js    headless scanner
-scripts/probe.js   upstream endpoint diagnostic
-scripts/make-icon.js
+scripts/           scan.js (headless) · probe.js (feed diagnostics) · make-icon.js
 test/              node --test
 ```
 
-Adding a data source is one file in `src/sources/` that satisfies `_contract.js`. The registry picks it up automatically.
+Adding a data source is one file in `src/sources/` satisfying `_contract.js`. Adding a filter is one entry in `src/ui/filters-def.js`.
 
 ```bash
-npm test          # 231 tests: analytical core, all six adapters, whole-pipeline invariants
+npm test          # unit + whole-pipeline invariants
 npm run smoke     # boots the real app headlessly, exercises every view, screenshots each
-npm run probe     # checks each upstream API is reachable and still the right shape
 ```
-
-The pipeline tests assert things that are easy to break and expensive to get wrong: no row reaching the table without a way to buy it, rates in percent rather than decimals, nothing insured rated above conservative, nothing paying over 40% left unflagged, and modelled estimates never presented as yields or leaking into a yield sort.
 
 MIT.

@@ -346,6 +346,7 @@ const MEASURED_UNIVERSE = {
     ['MBB', 'iShares MBS ETF'],
     ['VCSH', 'Vanguard Short-Term Corporate Bond ETF'],
     ['VCIT', 'Vanguard Intermediate-Term Corporate Bond ETF'],
+    ['LQD', 'iShares iBoxx $ Investment Grade Corporate Bond ETF'],
     ['IGSB', 'iShares 1-5 Year Investment Grade Corporate Bond ETF'],
     ['TIP', 'iShares TIPS Bond ETF'],
     ['VTIP', 'Vanguard Short-Term Inflation-Protected Securities ETF'],
@@ -965,15 +966,15 @@ function worstDrawdown(closes) {
 }
 
 /**
- * A dividend yield below 0.05% is not income and pretending otherwise is worse
- * than saying nothing: it puts a growth stock in an income sort. Report it as
- * the zero it effectively is, which also keeps it clear of the units check that
- * treats a sub-0.05 rate as a percent/decimal mix-up.
+ * A dividend yield below 0.05% is not income, and carrying it as a number is
+ * worse than carrying nothing: it puts a growth stock into an income sort and
+ * prints "0.00%" in a rate column, which reads as a measurement of income rather
+ * than the absence of any. NVDA's entire return is price. So sub-threshold and
+ * absent both come back null, and the row says in words which one it is.
  */
 function tidyYield(y) {
-  if (!Number.isFinite(y)) return null;
-  if (y < 0) return null;
-  return y < 0.05 ? 0 : Math.round(y * 1000) / 1000;
+  if (!Number.isFinite(y) || y < 0.05) return null;
+  return Math.round(y * 1000) / 1000;
 }
 
 // ---------------------------------------------------------------------------
@@ -1059,6 +1060,9 @@ function buildMeasured(entry, series, opts = {}) {
     ? num(opts.yieldPct)
     : (series?.dividends ? trailingYield(series.dividends, price, nowMs) : null);
   const y = tidyYield(rawYield);
+  // A measured zero and a missing number both leave apy null, but they are not
+  // the same fact and the row must not blur them.
+  const paysNothing = Number.isFinite(rawYield) && rawYield < 0.05;
 
   const vol = num(stats?.vol);
   const maxDD = num(opts.maxDrawdown) ?? worstDrawdown(series?.closes);
@@ -1067,12 +1071,12 @@ function buildMeasured(entry, series, opts = {}) {
   if (yieldSource === 'remembered') {
     detail.push('Price and chart read are measured; the dividend yield is the bundled snapshot figure, because the '
       + 'batch price endpoint carries no dividend history. Open this row to measure the yield too.');
+  } else if (paysNothing) {
+    detail.push('Pays no dividend. The entire return is price, which is not something anyone can put a number on in '
+      + 'advance, so this row is ranked on what its chart is doing and never on a forecast.');
   } else if (y === null) {
     detail.push('No dividend history was available, so no yield is claimed. This row is here for what its price is '
       + 'doing, not for income.');
-  } else if (y === 0) {
-    detail.push('Pays no dividend. The entire return is price, which is not something anyone can put a number on in '
-      + 'advance — so this row is ranked on what its chart is doing, never on a forecast.');
   }
   if (Array.isArray(opts.extraNotes)) detail.push(...opts.extraNotes.filter(Boolean));
 

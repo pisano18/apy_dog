@@ -1,0 +1,2980 @@
+{
+  "meta": {
+    "source": "equities",
+    "dataAsOf": "2026-08-01",
+    "origin": "Measured tier: Yahoo Finance batch spark endpoint (v7/finance/spark, range=1y&interval=1d). Index tier: the SEC company_tickers_exchange.json listed-issuer file.",
+    "note": "Offline starting point, NOT a quote. Every ticker, fund and company name here is real. Prices, trailing yields, volatility and the movementStats block are approximate round figures for 2026-08-01, hand-set to be plainly reasonable rather than precise. movementStats has exactly the shape core/movement.js analyse() returns, so the setup, heat and expected-move band shown offline are computed by the same code that runs on refresh. Classification, mutual-fund minimums and access notes come from MEASURED_UNIVERSE in src/sources/equities.js, not from this file.",
+    "fields": {
+      "symbol": "ticker; must exist in the adapter MEASURED_UNIVERSE or the row is skipped",
+      "price": "share or NAV price in USD; also the minimum investment unless the fund sets one",
+      "trailingYield": "sum of the last 12 months of distributions over price, percent. 0 means it genuinely pays nothing",
+      "maxDrawdown": "deepest peak-to-trough fall over the window, percent — a risk input",
+      "movementStats": "precomputed chart read: vol, regime{recent,baseline,ratio}, rangePos, drawdown, trend, volumeRatio, lastClose, bars"
+    },
+    "secSampleNote": "A 62-row sample of the SEC listed-issuer file in the shape that endpoint publishes, so the two-tier UI has unmeasured rows to render offline. These carry identity only — no price, no rate, nothing measured. CIK is present only where it can be stated exactly; the live file always carries one. Live, this tier covers about 10,000 issuers.",
+    "secSample": {
+      "fields": [
+        "cik",
+        "name",
+        "ticker",
+        "exchange"
+      ],
+      "data": [
+        [
+          37996,
+          "Ford Motor Company",
+          "F",
+          "NYSE"
+        ],
+        [
+          1467858,
+          "General Motors Company",
+          "GM",
+          "NYSE"
+        ],
+        [
+          732712,
+          "Verizon Communications Inc.",
+          "VZ",
+          "NYSE"
+        ],
+        [
+          732717,
+          "AT&T Inc.",
+          "T",
+          "NYSE"
+        ],
+        [
+          1166691,
+          "Comcast Corporation",
+          "CMCSA",
+          "Nasdaq"
+        ],
+        [
+          64803,
+          "CVS Health Corporation",
+          "CVS",
+          "NYSE"
+        ],
+        [
+          27904,
+          "Delta Air Lines, Inc.",
+          "DAL",
+          "NYSE"
+        ],
+        [
+          92380,
+          "Southwest Airlines Co.",
+          "LUV",
+          "NYSE"
+        ],
+        [
+          56873,
+          "The Kroger Co.",
+          "KR",
+          "NYSE"
+        ],
+        [
+          831259,
+          "Freeport-McMoRan Inc.",
+          "FCX",
+          "NYSE"
+        ],
+        [
+          1164727,
+          "Newmont Corporation",
+          "NEM",
+          "NYSE"
+        ],
+        [
+          73309,
+          "Nucor Corporation",
+          "NUE",
+          "NYSE"
+        ],
+        [
+          92122,
+          "The Southern Company",
+          "SO",
+          "NYSE"
+        ],
+        [
+          753308,
+          "NextEra Energy, Inc.",
+          "NEE",
+          "NYSE"
+        ],
+        [
+          1326160,
+          "Duke Energy Corporation",
+          "DUK",
+          "NYSE"
+        ],
+        [
+          4904,
+          "American Electric Power Company, Inc.",
+          "AEP",
+          "Nasdaq"
+        ],
+        [
+          715957,
+          "Dominion Energy, Inc.",
+          "D",
+          "NYSE"
+        ],
+        [
+          1109357,
+          "Exelon Corporation",
+          "EXC",
+          "Nasdaq"
+        ],
+        [
+          1047862,
+          "Consolidated Edison, Inc.",
+          "ED",
+          "NYSE"
+        ],
+        [
+          1004980,
+          "PG&E Corporation",
+          "PCG",
+          "NYSE"
+        ],
+        [
+          8670,
+          "Automatic Data Processing, Inc.",
+          "ADP",
+          "Nasdaq"
+        ],
+        [
+          80661,
+          "The Progressive Corporation",
+          "PGR",
+          "NYSE"
+        ],
+        [
+          86312,
+          "The Travelers Companies, Inc.",
+          "TRV",
+          "NYSE"
+        ],
+        [
+          899051,
+          "The Allstate Corporation",
+          "ALL",
+          "NYSE"
+        ],
+        [
+          4977,
+          "Aflac Incorporated",
+          "AFL",
+          "NYSE"
+        ],
+        [
+          93751,
+          "State Street Corporation",
+          "STT",
+          "NYSE"
+        ],
+        [
+          1113169,
+          "T. Rowe Price Group, Inc.",
+          "TROW",
+          "Nasdaq"
+        ],
+        [
+          109380,
+          "Zions Bancorporation",
+          "ZION",
+          "Nasdaq"
+        ],
+        [
+          89800,
+          "The Sherwin-Williams Company",
+          "SHW",
+          "NYSE"
+        ],
+        [
+          79879,
+          "PPG Industries, Inc.",
+          "PPG",
+          "NYSE"
+        ],
+        [
+          26172,
+          "Cummins Inc.",
+          "CMI",
+          "NYSE"
+        ],
+        [
+          47111,
+          "The Hershey Company",
+          "HSY",
+          "NYSE"
+        ],
+        [
+          48465,
+          "Hormel Foods Corporation",
+          "HRL",
+          "NYSE"
+        ],
+        [
+          23217,
+          "Conagra Brands, Inc.",
+          "CAG",
+          "NYSE"
+        ],
+        [
+          21076,
+          "The Clorox Company",
+          "CLX",
+          "NYSE"
+        ],
+        [
+          24741,
+          "Corning Incorporated",
+          "GLW",
+          "NYSE"
+        ],
+        [
+          47217,
+          "HP Inc.",
+          "HPQ",
+          "NYSE"
+        ],
+        [
+          1048286,
+          "Marriott International, Inc.",
+          "MAR",
+          "Nasdaq"
+        ],
+        [
+          1585689,
+          "Hilton Worldwide Holdings Inc.",
+          "HLT",
+          "NYSE"
+        ],
+        [
+          815097,
+          "Carnival Corporation",
+          "CCL",
+          "NYSE"
+        ],
+        [
+          789570,
+          "MGM Resorts International",
+          "MGM",
+          "NYSE"
+        ],
+        [
+          null,
+          "Linde plc",
+          "LIN",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Ecolab Inc.",
+          "ECL",
+          "NYSE"
+        ],
+        [
+          null,
+          "Air Products and Chemicals, Inc.",
+          "APD",
+          "NYSE"
+        ],
+        [
+          null,
+          "PACCAR Inc",
+          "PCAR",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Genuine Parts Company",
+          "GPC",
+          "NYSE"
+        ],
+        [
+          null,
+          "Campbell's Company",
+          "CPB",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Kellanova",
+          "K",
+          "NYSE"
+        ],
+        [
+          null,
+          "The J. M. Smucker Company",
+          "SJM",
+          "NYSE"
+        ],
+        [
+          null,
+          "Church & Dwight Co., Inc.",
+          "CHD",
+          "NYSE"
+        ],
+        [
+          null,
+          "The Estee Lauder Companies Inc.",
+          "EL",
+          "NYSE"
+        ],
+        [
+          null,
+          "Motorola Solutions, Inc.",
+          "MSI",
+          "NYSE"
+        ],
+        [
+          null,
+          "Dell Technologies Inc.",
+          "DELL",
+          "NYSE"
+        ],
+        [
+          null,
+          "Seagate Technology Holdings plc",
+          "STX",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Western Digital Corporation",
+          "WDC",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "NetApp, Inc.",
+          "NTAP",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Juniper Networks, Inc.",
+          "JNPR",
+          "NYSE"
+        ],
+        [
+          null,
+          "Etsy, Inc.",
+          "ETSY",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Expedia Group, Inc.",
+          "EXPE",
+          "Nasdaq"
+        ],
+        [
+          null,
+          "Royal Caribbean Cruises Ltd.",
+          "RCL",
+          "NYSE"
+        ],
+        [
+          null,
+          "Norwegian Cruise Line Holdings Ltd.",
+          "NCLH",
+          "NYSE"
+        ],
+        [
+          null,
+          "Wynn Resorts, Limited",
+          "WYNN",
+          "Nasdaq"
+        ]
+      ]
+    }
+  },
+  "items": [
+    {
+      "symbol": "VTI",
+      "price": 330,
+      "trailingYield": 1.2,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 11.97,
+          "baseline": 13.43,
+          "ratio": 0.891
+        },
+        "rangePos": 0.887,
+        "drawdown": 4.6,
+        "trend": 4.83,
+        "volumeRatio": 0.91,
+        "lastClose": 330,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "VOO",
+      "price": 640,
+      "trailingYield": 1.2,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 13.81,
+          "baseline": 13.54,
+          "ratio": 1.02
+        },
+        "rangePos": 0.849,
+        "drawdown": 2.4,
+        "trend": 5.11,
+        "volumeRatio": 1.18,
+        "lastClose": 640,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "SPY",
+      "price": 700,
+      "trailingYield": 1.2,
+      "maxDrawdown": 18,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 15.81,
+          "baseline": 14.33,
+          "ratio": 1.103
+        },
+        "rangePos": 0.418,
+        "drawdown": 13.6,
+        "trend": 0.49,
+        "volumeRatio": 1.14,
+        "lastClose": 700,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "QQQ",
+      "price": 620,
+      "trailingYield": 0.5,
+      "maxDrawdown": 18,
+      "movementStats": {
+        "vol": 19,
+        "regime": {
+          "recent": 22.44,
+          "baseline": 18.33,
+          "ratio": 1.224
+        },
+        "rangePos": 0.974,
+        "drawdown": 0.7,
+        "trend": 7.18,
+        "volumeRatio": 1.93,
+        "lastClose": 620,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "SCHB",
+      "price": 25,
+      "trailingYield": 1.2,
+      "maxDrawdown": 17,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 12.48,
+          "baseline": 13.84,
+          "ratio": 0.902
+        },
+        "rangePos": 0.541,
+        "drawdown": 13.4,
+        "trend": -0.79,
+        "volumeRatio": 0.87,
+        "lastClose": 25,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "VXUS",
+      "price": 76,
+      "trailingYield": 3,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 12.62,
+          "baseline": 13.85,
+          "ratio": 0.911
+        },
+        "rangePos": 0.91,
+        "drawdown": 6.5,
+        "trend": 6.06,
+        "volumeRatio": 1.12,
+        "lastClose": 76,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "VT",
+      "price": 132,
+      "trailingYield": 1.9,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 12.03,
+          "baseline": 12.89,
+          "ratio": 0.933
+        },
+        "rangePos": 0.895,
+        "drawdown": 4.3,
+        "trend": 6.3,
+        "volumeRatio": 1.18,
+        "lastClose": 132,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "IWM",
+      "price": 260,
+      "trailingYield": 1.2,
+      "maxDrawdown": 20,
+      "movementStats": {
+        "vol": 21,
+        "regime": {
+          "recent": 17.77,
+          "baseline": 20.54,
+          "ratio": 0.865
+        },
+        "rangePos": 0.471,
+        "drawdown": 6.3,
+        "trend": 1.14,
+        "volumeRatio": 1.04,
+        "lastClose": 260,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "IJH",
+      "price": 68,
+      "trailingYield": 1.4,
+      "maxDrawdown": 16,
+      "movementStats": {
+        "vol": 17,
+        "regime": {
+          "recent": 8.56,
+          "baseline": 17.69,
+          "ratio": 0.484
+        },
+        "rangePos": 0.508,
+        "drawdown": 6.4,
+        "trend": 0.88,
+        "volumeRatio": 0.71,
+        "lastClose": 68,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "DIA",
+      "price": 500,
+      "trailingYield": 1.6,
+      "maxDrawdown": 12,
+      "movementStats": {
+        "vol": 13,
+        "regime": {
+          "recent": 13.08,
+          "baseline": 13.44,
+          "ratio": 0.973
+        },
+        "rangePos": 0.351,
+        "drawdown": 6.3,
+        "trend": -0.87,
+        "volumeRatio": 0.87,
+        "lastClose": 500,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "RSP",
+      "price": 190,
+      "trailingYield": 1.5,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 7.15,
+          "baseline": 14.05,
+          "ratio": 0.509
+        },
+        "rangePos": 0.608,
+        "drawdown": 8.7,
+        "trend": -0.93,
+        "volumeRatio": 0.81,
+        "lastClose": 190,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "FXAIX",
+      "price": 230,
+      "trailingYield": 1.2,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 12.21,
+          "baseline": 14.1,
+          "ratio": 0.866
+        },
+        "rangePos": 0.843,
+        "drawdown": 2.1,
+        "trend": 3.11,
+        "volumeRatio": 1.11,
+        "lastClose": 230,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "VTSAX",
+      "price": 165,
+      "trailingYield": 1.2,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 11.74,
+          "baseline": 13.37,
+          "ratio": 0.878
+        },
+        "rangePos": 0.815,
+        "drawdown": 2.5,
+        "trend": 3.13,
+        "volumeRatio": 1.15,
+        "lastClose": 165,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "VTINX",
+      "price": 15,
+      "trailingYield": 3.2,
+      "maxDrawdown": 12,
+      "movementStats": {
+        "vol": 6,
+        "regime": {
+          "recent": 6,
+          "baseline": 5.56,
+          "ratio": 1.08
+        },
+        "rangePos": 0.484,
+        "drawdown": 8.7,
+        "trend": -0.04,
+        "volumeRatio": 1.05,
+        "lastClose": 15,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "VTHRX",
+      "price": 42,
+      "trailingYield": 2.6,
+      "maxDrawdown": 11,
+      "movementStats": {
+        "vol": 10,
+        "regime": {
+          "recent": 9.33,
+          "baseline": 9.33,
+          "ratio": 1
+        },
+        "rangePos": 0.814,
+        "drawdown": 7.5,
+        "trend": 5.87,
+        "volumeRatio": 0.96,
+        "lastClose": 42,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "VTTHX",
+      "price": 26,
+      "trailingYield": 2.4,
+      "maxDrawdown": 10,
+      "movementStats": {
+        "vol": 11,
+        "regime": {
+          "recent": 11.3,
+          "baseline": 11.73,
+          "ratio": 0.963
+        },
+        "rangePos": 0.848,
+        "drawdown": 5.8,
+        "trend": 6.36,
+        "volumeRatio": 0.97,
+        "lastClose": 26,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "VFORX",
+      "price": 47,
+      "trailingYield": 2.3,
+      "maxDrawdown": 11,
+      "movementStats": {
+        "vol": 12,
+        "regime": {
+          "recent": 10.57,
+          "baseline": 12.19,
+          "ratio": 0.867
+        },
+        "rangePos": 0.816,
+        "drawdown": 8,
+        "trend": 5.39,
+        "volumeRatio": 1,
+        "lastClose": 47,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "VFIFX",
+      "price": 50,
+      "trailingYield": 2.1,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 13.5,
+        "regime": {
+          "recent": 11.75,
+          "baseline": 13.51,
+          "ratio": 0.87
+        },
+        "rangePos": 0.88,
+        "drawdown": 3.9,
+        "trend": 4.52,
+        "volumeRatio": 0.94,
+        "lastClose": 50,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "VTTSX",
+      "price": 46,
+      "trailingYield": 2,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 12.73,
+          "baseline": 14.7,
+          "ratio": 0.866
+        },
+        "rangePos": 0.873,
+        "drawdown": 7.7,
+        "trend": 4.46,
+        "volumeRatio": 0.93,
+        "lastClose": 46,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "VLXVX",
+      "price": 32,
+      "trailingYield": 2,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 7.44,
+          "baseline": 13.72,
+          "ratio": 0.542
+        },
+        "rangePos": 0.66,
+        "drawdown": 3.7,
+        "trend": 1.27,
+        "volumeRatio": 0.73,
+        "lastClose": 32,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "BND",
+      "price": 74,
+      "trailingYield": 3.8,
+      "maxDrawdown": 6,
+      "movementStats": {
+        "vol": 5.5,
+        "regime": {
+          "recent": 2.94,
+          "baseline": 5.24,
+          "ratio": 0.562
+        },
+        "rangePos": 0.551,
+        "drawdown": 3.8,
+        "trend": 1.44,
+        "volumeRatio": 0.91,
+        "lastClose": 74,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "AGG",
+      "price": 100,
+      "trailingYield": 3.9,
+      "maxDrawdown": 7,
+      "movementStats": {
+        "vol": 5.5,
+        "regime": {
+          "recent": 2.96,
+          "baseline": 5.18,
+          "ratio": 0.571
+        },
+        "rangePos": 0.631,
+        "drawdown": 4,
+        "trend": -0.46,
+        "volumeRatio": 0.7,
+        "lastClose": 100,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "BNDX",
+      "price": 49,
+      "trailingYield": 3.4,
+      "maxDrawdown": 9,
+      "movementStats": {
+        "vol": 4.5,
+        "regime": {
+          "recent": 4.77,
+          "baseline": 4.22,
+          "ratio": 1.131
+        },
+        "rangePos": 0.634,
+        "drawdown": 6.5,
+        "trend": 0.41,
+        "volumeRatio": 0.9,
+        "lastClose": 49,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "VGSH",
+      "price": 59,
+      "trailingYield": 4,
+      "maxDrawdown": 15,
+      "movementStats": {
+        "vol": 2,
+        "regime": {
+          "recent": 1.81,
+          "baseline": 1.9,
+          "ratio": 0.954
+        },
+        "rangePos": 0.412,
+        "drawdown": 11.7,
+        "trend": -1.33,
+        "volumeRatio": 1.13,
+        "lastClose": 59,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "VGIT",
+      "price": 59,
+      "trailingYield": 3.9,
+      "maxDrawdown": 11,
+      "movementStats": {
+        "vol": 6,
+        "regime": {
+          "recent": 5.44,
+          "baseline": 5.71,
+          "ratio": 0.953
+        },
+        "rangePos": 0.822,
+        "drawdown": 7.8,
+        "trend": 5.41,
+        "volumeRatio": 1.12,
+        "lastClose": 59,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "VGLT",
+      "price": 56,
+      "trailingYield": 4.5,
+      "maxDrawdown": 62,
+      "movementStats": {
+        "vol": 13,
+        "regime": {
+          "recent": 13.72,
+          "baseline": 13.89,
+          "ratio": 0.988
+        },
+        "rangePos": 0.151,
+        "drawdown": 51.9,
+        "trend": -2.65,
+        "volumeRatio": 1.03,
+        "lastClose": 56,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "TLT",
+      "price": 90,
+      "trailingYield": 4.3,
+      "maxDrawdown": 57,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 13.82,
+          "baseline": 13.37,
+          "ratio": 1.034
+        },
+        "rangePos": 0.103,
+        "drawdown": 47.4,
+        "trend": 0.87,
+        "volumeRatio": 0.96,
+        "lastClose": 90,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "IEF",
+      "price": 96,
+      "trailingYield": 4,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 7,
+        "regime": {
+          "recent": 7.04,
+          "baseline": 7.32,
+          "ratio": 0.962
+        },
+        "rangePos": 0.385,
+        "drawdown": 10.1,
+        "trend": -0.14,
+        "volumeRatio": 0.91,
+        "lastClose": 96,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "LQD",
+      "price": 110,
+      "trailingYield": 4.6,
+      "maxDrawdown": 8,
+      "movementStats": {
+        "vol": 8,
+        "regime": {
+          "recent": 8.8,
+          "baseline": 8.53,
+          "ratio": 1.032
+        },
+        "rangePos": 0.877,
+        "drawdown": 3.3,
+        "trend": 4.25,
+        "volumeRatio": 1.05,
+        "lastClose": 110,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "VCIT",
+      "price": 82,
+      "trailingYield": 4.8,
+      "maxDrawdown": 7,
+      "movementStats": {
+        "vol": 7,
+        "regime": {
+          "recent": 7.17,
+          "baseline": 6.82,
+          "ratio": 1.051
+        },
+        "rangePos": 0.856,
+        "drawdown": 2.7,
+        "trend": 4.62,
+        "volumeRatio": 1.09,
+        "lastClose": 82,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "TIP",
+      "price": 110,
+      "trailingYield": 3.6,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 6,
+        "regime": {
+          "recent": 6.82,
+          "baseline": 6.22,
+          "ratio": 1.096
+        },
+        "rangePos": 0.354,
+        "drawdown": 10.2,
+        "trend": 0.01,
+        "volumeRatio": 0.88,
+        "lastClose": 110,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "SCHD",
+      "price": 29,
+      "trailingYield": 3.6,
+      "maxDrawdown": 15,
+      "movementStats": {
+        "vol": 13,
+        "regime": {
+          "recent": 11.86,
+          "baseline": 12.5,
+          "ratio": 0.949
+        },
+        "rangePos": 0.384,
+        "drawdown": 10.9,
+        "trend": 0.34,
+        "volumeRatio": 0.91,
+        "lastClose": 29,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "VIG",
+      "price": 210,
+      "trailingYield": 1.7,
+      "maxDrawdown": 12,
+      "movementStats": {
+        "vol": 13,
+        "regime": {
+          "recent": 12.82,
+          "baseline": 12.68,
+          "ratio": 1.011
+        },
+        "rangePos": 0.825,
+        "drawdown": 2.5,
+        "trend": 4.18,
+        "volumeRatio": 0.93,
+        "lastClose": 210,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "DGRO",
+      "price": 66,
+      "trailingYield": 2.2,
+      "maxDrawdown": 12,
+      "movementStats": {
+        "vol": 13,
+        "regime": {
+          "recent": 13.15,
+          "baseline": 12.99,
+          "ratio": 1.012
+        },
+        "rangePos": 0.835,
+        "drawdown": 6.5,
+        "trend": 6.05,
+        "volumeRatio": 1,
+        "lastClose": 66,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "VYM",
+      "price": 135,
+      "trailingYield": 2.7,
+      "maxDrawdown": 11,
+      "movementStats": {
+        "vol": 12,
+        "regime": {
+          "recent": 10.79,
+          "baseline": 11.28,
+          "ratio": 0.957
+        },
+        "rangePos": 0.851,
+        "drawdown": 6.6,
+        "trend": 3.34,
+        "volumeRatio": 1.09,
+        "lastClose": 135,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "XLK",
+      "price": 275,
+      "trailingYield": 0.6,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 24.25,
+          "baseline": 21.95,
+          "ratio": 1.105
+        },
+        "rangePos": 0.991,
+        "drawdown": 0.7,
+        "trend": 8.72,
+        "volumeRatio": 1.89,
+        "lastClose": 275,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "XLE",
+      "price": 92,
+      "trailingYield": 3.2,
+      "maxDrawdown": 23,
+      "movementStats": {
+        "vol": 24,
+        "regime": {
+          "recent": 23.16,
+          "baseline": 23.56,
+          "ratio": 0.983
+        },
+        "rangePos": 0.21,
+        "drawdown": 17.4,
+        "trend": -5.55,
+        "volumeRatio": 1.06,
+        "lastClose": 92,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "XLF",
+      "price": 55,
+      "trailingYield": 1.4,
+      "maxDrawdown": 16,
+      "movementStats": {
+        "vol": 17,
+        "regime": {
+          "recent": 15.5,
+          "baseline": 17.36,
+          "ratio": 0.893
+        },
+        "rangePos": 0.864,
+        "drawdown": 3.6,
+        "trend": 5.2,
+        "volumeRatio": 1.1,
+        "lastClose": 55,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "XLV",
+      "price": 145,
+      "trailingYield": 1.6,
+      "maxDrawdown": 59,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 15.88,
+          "baseline": 14.52,
+          "ratio": 1.094
+        },
+        "rangePos": 0.117,
+        "drawdown": 50,
+        "trend": -2.29,
+        "volumeRatio": 1.17,
+        "lastClose": 145,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "XLI",
+      "price": 155,
+      "trailingYield": 1.3,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 15,
+        "regime": {
+          "recent": 13.68,
+          "baseline": 15.55,
+          "ratio": 0.88
+        },
+        "rangePos": 0.922,
+        "drawdown": 2.4,
+        "trend": 3.95,
+        "volumeRatio": 0.99,
+        "lastClose": 155,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "XLU",
+      "price": 88,
+      "trailingYield": 2.8,
+      "maxDrawdown": 15,
+      "movementStats": {
+        "vol": 16,
+        "regime": {
+          "recent": 16.54,
+          "baseline": 15.57,
+          "ratio": 1.062
+        },
+        "rangePos": 0.877,
+        "drawdown": 7.3,
+        "trend": 3.36,
+        "volumeRatio": 1.04,
+        "lastClose": 88,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "XLP",
+      "price": 82,
+      "trailingYield": 2.5,
+      "maxDrawdown": 17,
+      "movementStats": {
+        "vol": 11,
+        "regime": {
+          "recent": 9.26,
+          "baseline": 10.36,
+          "ratio": 0.894
+        },
+        "rangePos": 0.401,
+        "drawdown": 13.1,
+        "trend": -0.9,
+        "volumeRatio": 0.89,
+        "lastClose": 82,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "XLY",
+      "price": 235,
+      "trailingYield": 0.8,
+      "maxDrawdown": 19,
+      "movementStats": {
+        "vol": 20,
+        "regime": {
+          "recent": 21.07,
+          "baseline": 18.42,
+          "ratio": 1.144
+        },
+        "rangePos": 0.404,
+        "drawdown": 13.8,
+        "trend": -0.54,
+        "volumeRatio": 1.03,
+        "lastClose": 235,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "XLRE",
+      "price": 44,
+      "trailingYield": 3.3,
+      "maxDrawdown": 17,
+      "movementStats": {
+        "vol": 18,
+        "regime": {
+          "recent": 9.88,
+          "baseline": 18.2,
+          "ratio": 0.543
+        },
+        "rangePos": 0.463,
+        "drawdown": 8.4,
+        "trend": -0.74,
+        "volumeRatio": 0.78,
+        "lastClose": 44,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "VTV",
+      "price": 190,
+      "trailingYield": 2.2,
+      "maxDrawdown": 12,
+      "movementStats": {
+        "vol": 13,
+        "regime": {
+          "recent": 11.64,
+          "baseline": 12.54,
+          "ratio": 0.928
+        },
+        "rangePos": 0.806,
+        "drawdown": 3.9,
+        "trend": 3.69,
+        "volumeRatio": 1.08,
+        "lastClose": 190,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "VUG",
+      "price": 470,
+      "trailingYield": 0.5,
+      "maxDrawdown": 19,
+      "movementStats": {
+        "vol": 20,
+        "regime": {
+          "recent": 22.25,
+          "baseline": 19.13,
+          "ratio": 1.163
+        },
+        "rangePos": 0.977,
+        "drawdown": 1.3,
+        "trend": 5.51,
+        "volumeRatio": 1.9,
+        "lastClose": 470,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "VBR",
+      "price": 210,
+      "trailingYield": 1.9,
+      "maxDrawdown": 19,
+      "movementStats": {
+        "vol": 20,
+        "regime": {
+          "recent": 24.02,
+          "baseline": 21.09,
+          "ratio": 1.139
+        },
+        "rangePos": 0.409,
+        "drawdown": 9.9,
+        "trend": 1.08,
+        "volumeRatio": 1.04,
+        "lastClose": 210,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "MTUM",
+      "price": 250,
+      "trailingYield": 0.7,
+      "maxDrawdown": 18,
+      "movementStats": {
+        "vol": 19,
+        "regime": {
+          "recent": 20.05,
+          "baseline": 20.03,
+          "ratio": 1.001
+        },
+        "rangePos": 0.984,
+        "drawdown": 1,
+        "trend": 7.01,
+        "volumeRatio": 1.41,
+        "lastClose": 250,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "QUAL",
+      "price": 200,
+      "trailingYield": 1.1,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 15,
+        "regime": {
+          "recent": 13.34,
+          "baseline": 14.3,
+          "ratio": 0.933
+        },
+        "rangePos": 0.938,
+        "drawdown": 4.4,
+        "trend": 5.84,
+        "volumeRatio": 0.92,
+        "lastClose": 200,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "USMV",
+      "price": 95,
+      "trailingYield": 1.6,
+      "maxDrawdown": 16,
+      "movementStats": {
+        "vol": 11,
+        "regime": {
+          "recent": 12,
+          "baseline": 10.85,
+          "ratio": 1.106
+        },
+        "rangePos": 0.606,
+        "drawdown": 12.6,
+        "trend": 0.52,
+        "volumeRatio": 0.88,
+        "lastClose": 95,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "VEA",
+      "price": 60,
+      "trailingYield": 3,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 12.89,
+          "baseline": 13.29,
+          "ratio": 0.97
+        },
+        "rangePos": 0.92,
+        "drawdown": 6,
+        "trend": 3.51,
+        "volumeRatio": 0.98,
+        "lastClose": 60,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "VWO",
+      "price": 52,
+      "trailingYield": 2.8,
+      "maxDrawdown": 17,
+      "movementStats": {
+        "vol": 18,
+        "regime": {
+          "recent": 18.65,
+          "baseline": 18.65,
+          "ratio": 1
+        },
+        "rangePos": 0.993,
+        "drawdown": 1.4,
+        "trend": 4.54,
+        "volumeRatio": 1.61,
+        "lastClose": 52,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "EFA",
+      "price": 92,
+      "trailingYield": 2.9,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 14.3,
+          "baseline": 14.7,
+          "ratio": 0.973
+        },
+        "rangePos": 0.901,
+        "drawdown": 3.3,
+        "trend": 3.5,
+        "volumeRatio": 1.04,
+        "lastClose": 92,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "EEM",
+      "price": 52,
+      "trailingYield": 2.4,
+      "maxDrawdown": 17,
+      "movementStats": {
+        "vol": 18,
+        "regime": {
+          "recent": 20.09,
+          "baseline": 19.13,
+          "ratio": 1.05
+        },
+        "rangePos": 0.931,
+        "drawdown": 4.1,
+        "trend": 5,
+        "volumeRatio": 1.11,
+        "lastClose": 52,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "FXI",
+      "price": 38,
+      "trailingYield": 2.3,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 28,
+        "regime": {
+          "recent": 59.12,
+          "baseline": 29.31,
+          "ratio": 2.017
+        },
+        "rangePos": 0.45,
+        "drawdown": 14.9,
+        "trend": -3.1,
+        "volumeRatio": 1.73,
+        "lastClose": 38,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "EWZ",
+      "price": 30,
+      "trailingYield": 6.5,
+      "maxDrawdown": 46,
+      "movementStats": {
+        "vol": 30,
+        "regime": {
+          "recent": 35.39,
+          "baseline": 32.03,
+          "ratio": 1.105
+        },
+        "rangePos": 0.112,
+        "drawdown": 37.9,
+        "trend": -0.25,
+        "volumeRatio": 0.97,
+        "lastClose": 30,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "GLD",
+      "price": 335,
+      "trailingYield": 0,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 15,
+        "regime": {
+          "recent": 17.17,
+          "baseline": 14.49,
+          "ratio": 1.185
+        },
+        "rangePos": 0.983,
+        "drawdown": 0.2,
+        "trend": 7.26,
+        "volumeRatio": 1.73,
+        "lastClose": 335,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "SLV",
+      "price": 40,
+      "trailingYield": 0,
+      "maxDrawdown": 29,
+      "movementStats": {
+        "vol": 30,
+        "regime": {
+          "recent": 56.33,
+          "baseline": 29.63,
+          "ratio": 1.901
+        },
+        "rangePos": 0.211,
+        "drawdown": 16.5,
+        "trend": -2.57,
+        "volumeRatio": 2.36,
+        "lastClose": 40,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "DBC",
+      "price": 24,
+      "trailingYield": 4,
+      "maxDrawdown": 13,
+      "movementStats": {
+        "vol": 14,
+        "regime": {
+          "recent": 15.22,
+          "baseline": 13.52,
+          "ratio": 1.126
+        },
+        "rangePos": 0.364,
+        "drawdown": 6.6,
+        "trend": -1.04,
+        "volumeRatio": 1.08,
+        "lastClose": 24,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "USO",
+      "price": 78,
+      "trailingYield": 0,
+      "maxDrawdown": 34,
+      "movementStats": {
+        "vol": 34,
+        "regime": {
+          "recent": 33.03,
+          "baseline": 31.85,
+          "ratio": 1.037
+        },
+        "rangePos": 0.263,
+        "drawdown": 27.9,
+        "trend": -3.79,
+        "volumeRatio": 1.15,
+        "lastClose": 78,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "GDX",
+      "price": 65,
+      "trailingYield": 1,
+      "maxDrawdown": 34,
+      "movementStats": {
+        "vol": 36,
+        "regime": {
+          "recent": 43.17,
+          "baseline": 35.71,
+          "ratio": 1.209
+        },
+        "rangePos": 0.982,
+        "drawdown": 0.5,
+        "trend": 5.88,
+        "volumeRatio": 1.98,
+        "lastClose": 65,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "AAPL",
+      "price": 250,
+      "trailingYield": 0.4,
+      "maxDrawdown": 25,
+      "movementStats": {
+        "vol": 26,
+        "regime": {
+          "recent": 28.92,
+          "baseline": 25.17,
+          "ratio": 1.149
+        },
+        "rangePos": 0.461,
+        "drawdown": 10.5,
+        "trend": -0.62,
+        "volumeRatio": 0.99,
+        "lastClose": 250,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "MSFT",
+      "price": 520,
+      "trailingYield": 0.7,
+      "maxDrawdown": 23,
+      "movementStats": {
+        "vol": 24,
+        "regime": {
+          "recent": 26.18,
+          "baseline": 24.31,
+          "ratio": 1.077
+        },
+        "rangePos": 0.863,
+        "drawdown": 3,
+        "trend": 6.01,
+        "volumeRatio": 1.02,
+        "lastClose": 520,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "NVDA",
+      "price": 190,
+      "trailingYield": 0,
+      "maxDrawdown": 43,
+      "movementStats": {
+        "vol": 45,
+        "regime": {
+          "recent": 81.99,
+          "baseline": 44.63,
+          "ratio": 1.837
+        },
+        "rangePos": 0.255,
+        "drawdown": 17.6,
+        "trend": -5.85,
+        "volumeRatio": 2.4,
+        "lastClose": 190,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "AMZN",
+      "price": 240,
+      "trailingYield": 0,
+      "maxDrawdown": 29,
+      "movementStats": {
+        "vol": 30,
+        "regime": {
+          "recent": 27.75,
+          "baseline": 32.38,
+          "ratio": 0.857
+        },
+        "rangePos": 0.839,
+        "drawdown": 2.5,
+        "trend": 3.04,
+        "volumeRatio": 1.1,
+        "lastClose": 240,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "GOOGL",
+      "price": 210,
+      "trailingYield": 0.4,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 28,
+        "regime": {
+          "recent": 33.34,
+          "baseline": 27.04,
+          "ratio": 1.233
+        },
+        "rangePos": 0.985,
+        "drawdown": 0.9,
+        "trend": 8.28,
+        "volumeRatio": 1.54,
+        "lastClose": 210,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "META",
+      "price": 750,
+      "trailingYield": 0.3,
+      "maxDrawdown": 31,
+      "movementStats": {
+        "vol": 33,
+        "regime": {
+          "recent": 36.82,
+          "baseline": 34.12,
+          "ratio": 1.079
+        },
+        "rangePos": 0.821,
+        "drawdown": 3.5,
+        "trend": 5.24,
+        "volumeRatio": 1.07,
+        "lastClose": 750,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "TSLA",
+      "price": 350,
+      "trailingYield": 0,
+      "maxDrawdown": 52,
+      "movementStats": {
+        "vol": 55,
+        "regime": {
+          "recent": 91.24,
+          "baseline": 51.43,
+          "ratio": 1.774
+        },
+        "rangePos": 0.257,
+        "drawdown": 17.8,
+        "trend": -2.26,
+        "volumeRatio": 1.8,
+        "lastClose": 350,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "BRK-B",
+      "price": 520,
+      "trailingYield": 0,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 15,
+        "regime": {
+          "recent": 12.97,
+          "baseline": 14.28,
+          "ratio": 0.908
+        },
+        "rangePos": 0.827,
+        "drawdown": 8,
+        "trend": 5.6,
+        "volumeRatio": 0.93,
+        "lastClose": 520,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "AVGO",
+      "price": 340,
+      "trailingYield": 0.8,
+      "maxDrawdown": 38,
+      "movementStats": {
+        "vol": 40,
+        "regime": {
+          "recent": 46.23,
+          "baseline": 42.1,
+          "ratio": 1.098
+        },
+        "rangePos": 0.977,
+        "drawdown": 1.5,
+        "trend": 7.52,
+        "volumeRatio": 1.58,
+        "lastClose": 340,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "JPM",
+      "price": 300,
+      "trailingYield": 1.9,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 21.8,
+          "baseline": 23.57,
+          "ratio": 0.925
+        },
+        "rangePos": 0.819,
+        "drawdown": 5.3,
+        "trend": 3.75,
+        "volumeRatio": 1.11,
+        "lastClose": 300,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "UNH",
+      "price": 340,
+      "trailingYield": 2.2,
+      "maxDrawdown": 48,
+      "movementStats": {
+        "vol": 30,
+        "regime": {
+          "recent": 27.52,
+          "baseline": 28.82,
+          "ratio": 0.955
+        },
+        "rangePos": 0.162,
+        "drawdown": 40.2,
+        "trend": 0.42,
+        "volumeRatio": 1.15,
+        "lastClose": 340,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "XOM",
+      "price": 120,
+      "trailingYield": 3.4,
+      "maxDrawdown": 20,
+      "movementStats": {
+        "vol": 21,
+        "regime": {
+          "recent": 23.59,
+          "baseline": 21.76,
+          "ratio": 1.084
+        },
+        "rangePos": 0.351,
+        "drawdown": 11.7,
+        "trend": 0.65,
+        "volumeRatio": 0.97,
+        "lastClose": 120,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "JNJ",
+      "price": 175,
+      "trailingYield": 3,
+      "maxDrawdown": 15,
+      "movementStats": {
+        "vol": 16,
+        "regime": {
+          "recent": 7.3,
+          "baseline": 15.21,
+          "ratio": 0.48
+        },
+        "rangePos": 0.508,
+        "drawdown": 6.3,
+        "trend": 1.41,
+        "volumeRatio": 0.87,
+        "lastClose": 175,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "PG",
+      "price": 165,
+      "trailingYield": 2.5,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 15,
+        "regime": {
+          "recent": 8.63,
+          "baseline": 15.41,
+          "ratio": 0.56
+        },
+        "rangePos": 0.523,
+        "drawdown": 5.5,
+        "trend": 0.61,
+        "volumeRatio": 0.71,
+        "lastClose": 165,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "PLTR",
+      "price": 160,
+      "trailingYield": 0,
+      "maxDrawdown": 57,
+      "movementStats": {
+        "vol": 60,
+        "regime": {
+          "recent": 124.04,
+          "baseline": 63.84,
+          "ratio": 1.943
+        },
+        "rangePos": 0.389,
+        "drawdown": 16.8,
+        "trend": -4.76,
+        "volumeRatio": 1.64,
+        "lastClose": 160,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "CRWD",
+      "price": 480,
+      "trailingYield": 0,
+      "maxDrawdown": 38,
+      "movementStats": {
+        "vol": 40,
+        "regime": {
+          "recent": 39.65,
+          "baseline": 41.52,
+          "ratio": 0.955
+        },
+        "rangePos": 0.938,
+        "drawdown": 3.6,
+        "trend": 4.06,
+        "volumeRatio": 0.97,
+        "lastClose": 480,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "SNOW",
+      "price": 220,
+      "trailingYield": 0,
+      "maxDrawdown": 51,
+      "movementStats": {
+        "vol": 45,
+        "regime": {
+          "recent": 42.58,
+          "baseline": 47.15,
+          "ratio": 0.903
+        },
+        "rangePos": 0.14,
+        "drawdown": 42.3,
+        "trend": -0.23,
+        "volumeRatio": 1.27,
+        "lastClose": 220,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "NET",
+      "price": 190,
+      "trailingYield": 0,
+      "maxDrawdown": 46,
+      "movementStats": {
+        "vol": 48,
+        "regime": {
+          "recent": 63.74,
+          "baseline": 51.78,
+          "ratio": 1.231
+        },
+        "rangePos": 0.973,
+        "drawdown": 0.3,
+        "trend": 5.7,
+        "volumeRatio": 1.82,
+        "lastClose": 190,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "UBER",
+      "price": 95,
+      "trailingYield": 0,
+      "maxDrawdown": 32,
+      "movementStats": {
+        "vol": 34,
+        "regime": {
+          "recent": 27.8,
+          "baseline": 32.7,
+          "ratio": 0.85
+        },
+        "rangePos": 0.459,
+        "drawdown": 12.9,
+        "trend": -0.72,
+        "volumeRatio": 1.02,
+        "lastClose": 95,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "HOOD",
+      "price": 110,
+      "trailingYield": 0,
+      "maxDrawdown": 57,
+      "movementStats": {
+        "vol": 60,
+        "regime": {
+          "recent": 95.57,
+          "baseline": 55.53,
+          "ratio": 1.721
+        },
+        "rangePos": 0.392,
+        "drawdown": 19.5,
+        "trend": -4.8,
+        "volumeRatio": 1.53,
+        "lastClose": 110,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "AMD",
+      "price": 180,
+      "trailingYield": 0,
+      "maxDrawdown": 46,
+      "movementStats": {
+        "vol": 48,
+        "regime": {
+          "recent": 97.73,
+          "baseline": 46.67,
+          "ratio": 2.094
+        },
+        "rangePos": 0.45,
+        "drawdown": 19.6,
+        "trend": -4.02,
+        "volumeRatio": 2.32,
+        "lastClose": 180,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "INTC",
+      "price": 30,
+      "trailingYield": 0,
+      "maxDrawdown": 46,
+      "movementStats": {
+        "vol": 45,
+        "regime": {
+          "recent": 42.37,
+          "baseline": 42.84,
+          "ratio": 0.989
+        },
+        "rangePos": 0.117,
+        "drawdown": 38.4,
+        "trend": 0.88,
+        "volumeRatio": 1.2,
+        "lastClose": 30,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "TSM",
+      "price": 260,
+      "trailingYield": 1.3,
+      "maxDrawdown": 32,
+      "movementStats": {
+        "vol": 34,
+        "regime": {
+          "recent": 39.34,
+          "baseline": 34.27,
+          "ratio": 1.148
+        },
+        "rangePos": 0.988,
+        "drawdown": 1.1,
+        "trend": 5.98,
+        "volumeRatio": 1.61,
+        "lastClose": 260,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "MU",
+      "price": 130,
+      "trailingYield": 0.5,
+      "maxDrawdown": 43,
+      "movementStats": {
+        "vol": 45,
+        "regime": {
+          "recent": 84.57,
+          "baseline": 48.3,
+          "ratio": 1.751
+        },
+        "rangePos": 0.403,
+        "drawdown": 17.4,
+        "trend": -4.05,
+        "volumeRatio": 1.85,
+        "lastClose": 130,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "AMAT",
+      "price": 200,
+      "trailingYield": 0.8,
+      "maxDrawdown": 32,
+      "movementStats": {
+        "vol": 34,
+        "regime": {
+          "recent": 37.12,
+          "baseline": 31.86,
+          "ratio": 1.165
+        },
+        "rangePos": 0.358,
+        "drawdown": 8.7,
+        "trend": 0,
+        "volumeRatio": 1.09,
+        "lastClose": 200,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "TXN",
+      "price": 200,
+      "trailingYield": 2.8,
+      "maxDrawdown": 23,
+      "movementStats": {
+        "vol": 24,
+        "regime": {
+          "recent": 13.35,
+          "baseline": 23.92,
+          "ratio": 0.558
+        },
+        "rangePos": 0.666,
+        "drawdown": 6.6,
+        "trend": -0.1,
+        "volumeRatio": 0.85,
+        "lastClose": 200,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "SMH",
+      "price": 300,
+      "trailingYield": 0.4,
+      "maxDrawdown": 30,
+      "movementStats": {
+        "vol": 32,
+        "regime": {
+          "recent": 35.95,
+          "baseline": 32.33,
+          "ratio": 1.112
+        },
+        "rangePos": 0.972,
+        "drawdown": 1.9,
+        "trend": 4.63,
+        "volumeRatio": 1.78,
+        "lastClose": 300,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "PFE",
+      "price": 26,
+      "trailingYield": 6.5,
+      "maxDrawdown": 44,
+      "movementStats": {
+        "vol": 24,
+        "regime": {
+          "recent": 25.97,
+          "baseline": 24.11,
+          "ratio": 1.077
+        },
+        "rangePos": 0.093,
+        "drawdown": 36.1,
+        "trend": -2.96,
+        "volumeRatio": 1.17,
+        "lastClose": 26,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "MRK",
+      "price": 90,
+      "trailingYield": 3.6,
+      "maxDrawdown": 50,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 18.94,
+          "baseline": 20.72,
+          "ratio": 0.914
+        },
+        "rangePos": 0.169,
+        "drawdown": 41.4,
+        "trend": -2.67,
+        "volumeRatio": 0.9,
+        "lastClose": 90,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "ABBV",
+      "price": 200,
+      "trailingYield": 3.2,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 22.06,
+          "baseline": 21.33,
+          "ratio": 1.034
+        },
+        "rangePos": 0.828,
+        "drawdown": 4.5,
+        "trend": 5.25,
+        "volumeRatio": 0.9,
+        "lastClose": 200,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "AMGN",
+      "price": 300,
+      "trailingYield": 3.2,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 25.71,
+          "baseline": 23.67,
+          "ratio": 1.086
+        },
+        "rangePos": 0.52,
+        "drawdown": 13.8,
+        "trend": 1.25,
+        "volumeRatio": 0.95,
+        "lastClose": 300,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "MRNA",
+      "price": 30,
+      "trailingYield": 0,
+      "maxDrawdown": 67,
+      "movementStats": {
+        "vol": 70,
+        "regime": {
+          "recent": 84.27,
+          "baseline": 66.41,
+          "ratio": 1.269
+        },
+        "rangePos": 0.018,
+        "drawdown": 41.4,
+        "trend": -7.55,
+        "volumeRatio": 1.9,
+        "lastClose": 30,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "XBI",
+      "price": 95,
+      "trailingYield": 0.1,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 28,
+        "regime": {
+          "recent": 15.74,
+          "baseline": 29.15,
+          "ratio": 0.54
+        },
+        "rangePos": 0.449,
+        "drawdown": 5.9,
+        "trend": -0.83,
+        "volumeRatio": 0.85,
+        "lastClose": 95,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "CVX",
+      "price": 160,
+      "trailingYield": 4.4,
+      "maxDrawdown": 20,
+      "movementStats": {
+        "vol": 21,
+        "regime": {
+          "recent": 16.8,
+          "baseline": 20.27,
+          "ratio": 0.829
+        },
+        "rangePos": 0.398,
+        "drawdown": 6.4,
+        "trend": -0.3,
+        "volumeRatio": 0.87,
+        "lastClose": 160,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "COP",
+      "price": 100,
+      "trailingYield": 3.3,
+      "maxDrawdown": 25,
+      "movementStats": {
+        "vol": 26,
+        "regime": {
+          "recent": 28.75,
+          "baseline": 27.7,
+          "ratio": 1.038
+        },
+        "rangePos": 0.243,
+        "drawdown": 18.5,
+        "trend": -5.21,
+        "volumeRatio": 1.01,
+        "lastClose": 100,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "SLB",
+      "price": 40,
+      "trailingYield": 3,
+      "maxDrawdown": 47,
+      "movementStats": {
+        "vol": 30,
+        "regime": {
+          "recent": 31.01,
+          "baseline": 28.95,
+          "ratio": 1.071
+        },
+        "rangePos": 0.072,
+        "drawdown": 38.8,
+        "trend": -1.65,
+        "volumeRatio": 1.23,
+        "lastClose": 40,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "OXY",
+      "price": 45,
+      "trailingYield": 2.2,
+      "maxDrawdown": 54,
+      "movementStats": {
+        "vol": 32,
+        "regime": {
+          "recent": 42.28,
+          "baseline": 34.32,
+          "ratio": 1.232
+        },
+        "rangePos": 0.014,
+        "drawdown": 45.4,
+        "trend": -6.79,
+        "volumeRatio": 1.53,
+        "lastClose": 45,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "KMI",
+      "price": 30,
+      "trailingYield": 4.5,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 20.04,
+          "baseline": 21.81,
+          "ratio": 0.919
+        },
+        "rangePos": 0.903,
+        "drawdown": 6.8,
+        "trend": 4.41,
+        "volumeRatio": 1.19,
+        "lastClose": 30,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "BAC",
+      "price": 50,
+      "trailingYield": 2.4,
+      "maxDrawdown": 25,
+      "movementStats": {
+        "vol": 26,
+        "regime": {
+          "recent": 27.12,
+          "baseline": 25.98,
+          "ratio": 1.044
+        },
+        "rangePos": 0.879,
+        "drawdown": 3.7,
+        "trend": 4.03,
+        "volumeRatio": 0.99,
+        "lastClose": 50,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "WFC",
+      "price": 80,
+      "trailingYield": 2.2,
+      "maxDrawdown": 23,
+      "movementStats": {
+        "vol": 24,
+        "regime": {
+          "recent": 27.51,
+          "baseline": 25.1,
+          "ratio": 1.096
+        },
+        "rangePos": 0.87,
+        "drawdown": 8,
+        "trend": 6.25,
+        "volumeRatio": 0.97,
+        "lastClose": 80,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "GS",
+      "price": 750,
+      "trailingYield": 2,
+      "maxDrawdown": 24,
+      "movementStats": {
+        "vol": 25,
+        "regime": {
+          "recent": 26.97,
+          "baseline": 23.39,
+          "ratio": 1.153
+        },
+        "rangePos": 0.969,
+        "drawdown": 1.7,
+        "trend": 5.45,
+        "volumeRatio": 1.73,
+        "lastClose": 750,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "SCHW",
+      "price": 95,
+      "trailingYield": 1.2,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 28,
+        "regime": {
+          "recent": 24.21,
+          "baseline": 26.72,
+          "ratio": 0.906
+        },
+        "rangePos": 0.356,
+        "drawdown": 7.3,
+        "trend": -1.41,
+        "volumeRatio": 1.03,
+        "lastClose": 95,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "USB",
+      "price": 50,
+      "trailingYield": 4,
+      "maxDrawdown": 25,
+      "movementStats": {
+        "vol": 26,
+        "regime": {
+          "recent": 12.93,
+          "baseline": 26.77,
+          "ratio": 0.483
+        },
+        "rangePos": 0.499,
+        "drawdown": 7.4,
+        "trend": 0.08,
+        "volumeRatio": 0.73,
+        "lastClose": 50,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "KRE",
+      "price": 65,
+      "trailingYield": 2.4,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 28,
+        "regime": {
+          "recent": 47.47,
+          "baseline": 28.24,
+          "ratio": 1.681
+        },
+        "rangePos": 0.342,
+        "drawdown": 14.5,
+        "trend": -4.7,
+        "volumeRatio": 1.63,
+        "lastClose": 65,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "KO",
+      "price": 70,
+      "trailingYield": 2.9,
+      "maxDrawdown": 14,
+      "movementStats": {
+        "vol": 15,
+        "regime": {
+          "recent": 8.16,
+          "baseline": 15.26,
+          "ratio": 0.535
+        },
+        "rangePos": 0.586,
+        "drawdown": 5.2,
+        "trend": 0.51,
+        "volumeRatio": 0.86,
+        "lastClose": 70,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "PEP",
+      "price": 145,
+      "trailingYield": 3.8,
+      "maxDrawdown": 64,
+      "movementStats": {
+        "vol": 16,
+        "regime": {
+          "recent": 17.4,
+          "baseline": 15.33,
+          "ratio": 1.135
+        },
+        "rangePos": 0.18,
+        "drawdown": 53.6,
+        "trend": -0.85,
+        "volumeRatio": 1.06,
+        "lastClose": 145,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "MCD",
+      "price": 310,
+      "trailingYield": 2.3,
+      "maxDrawdown": 15,
+      "movementStats": {
+        "vol": 16,
+        "regime": {
+          "recent": 14.21,
+          "baseline": 15.67,
+          "ratio": 0.907
+        },
+        "rangePos": 0.607,
+        "drawdown": 11.3,
+        "trend": 1.35,
+        "volumeRatio": 0.93,
+        "lastClose": 310,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "NKE",
+      "price": 75,
+      "trailingYield": 2.1,
+      "maxDrawdown": 58,
+      "movementStats": {
+        "vol": 32,
+        "regime": {
+          "recent": 33.65,
+          "baseline": 33.38,
+          "ratio": 1.008
+        },
+        "rangePos": 0.098,
+        "drawdown": 48.6,
+        "trend": 0.21,
+        "volumeRatio": 1.27,
+        "lastClose": 75,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "SBUX",
+      "price": 95,
+      "trailingYield": 2.6,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 27,
+        "regime": {
+          "recent": 26.43,
+          "baseline": 26.25,
+          "ratio": 1.007
+        },
+        "rangePos": 0.234,
+        "drawdown": 21.9,
+        "trend": -5.75,
+        "volumeRatio": 1.09,
+        "lastClose": 95,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "TGT",
+      "price": 105,
+      "trailingYield": 3.9,
+      "maxDrawdown": 55,
+      "movementStats": {
+        "vol": 32,
+        "regime": {
+          "recent": 31.26,
+          "baseline": 31.48,
+          "ratio": 0.993
+        },
+        "rangePos": 0.099,
+        "drawdown": 46.5,
+        "trend": -0.9,
+        "volumeRatio": 0.92,
+        "lastClose": 105,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "DIS",
+      "price": 120,
+      "trailingYield": 1,
+      "maxDrawdown": 27,
+      "movementStats": {
+        "vol": 28,
+        "regime": {
+          "recent": 25.22,
+          "baseline": 27,
+          "ratio": 0.934
+        },
+        "rangePos": 0.542,
+        "drawdown": 6.5,
+        "trend": 1.09,
+        "volumeRatio": 0.92,
+        "lastClose": 120,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "MO",
+      "price": 60,
+      "trailingYield": 6.8,
+      "maxDrawdown": 16,
+      "movementStats": {
+        "vol": 17,
+        "regime": {
+          "recent": 15.83,
+          "baseline": 18.19,
+          "ratio": 0.87
+        },
+        "rangePos": 0.904,
+        "drawdown": 5.3,
+        "trend": 6.08,
+        "volumeRatio": 1.1,
+        "lastClose": 60,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "CAT",
+      "price": 420,
+      "trailingYield": 1.5,
+      "maxDrawdown": 25,
+      "movementStats": {
+        "vol": 26,
+        "regime": {
+          "recent": 30.75,
+          "baseline": 25.99,
+          "ratio": 1.183
+        },
+        "rangePos": 0.982,
+        "drawdown": 0.7,
+        "trend": 7.27,
+        "volumeRatio": 1.49,
+        "lastClose": 420,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "UNP",
+      "price": 240,
+      "trailingYield": 2.3,
+      "maxDrawdown": 19,
+      "movementStats": {
+        "vol": 20,
+        "regime": {
+          "recent": 20.49,
+          "baseline": 19.19,
+          "ratio": 1.068
+        },
+        "rangePos": 0.378,
+        "drawdown": 8.8,
+        "trend": 0.22,
+        "volumeRatio": 0.96,
+        "lastClose": 240,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "UPS",
+      "price": 100,
+      "trailingYield": 6,
+      "maxDrawdown": 46,
+      "movementStats": {
+        "vol": 27,
+        "regime": {
+          "recent": 27.11,
+          "baseline": 28.21,
+          "ratio": 0.961
+        },
+        "rangePos": 0.142,
+        "drawdown": 38.5,
+        "trend": -2.25,
+        "volumeRatio": 1.07,
+        "lastClose": 100,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "BA",
+      "price": 220,
+      "trailingYield": 0,
+      "maxDrawdown": 36,
+      "movementStats": {
+        "vol": 38,
+        "regime": {
+          "recent": 78.64,
+          "baseline": 39.24,
+          "ratio": 2.004
+        },
+        "rangePos": 0.213,
+        "drawdown": 14.5,
+        "trend": -4.46,
+        "volumeRatio": 2.37,
+        "lastClose": 220,
+        "bars": 249
+      }
+    },
+    {
+      "symbol": "LMT",
+      "price": 470,
+      "trailingYield": 2.8,
+      "maxDrawdown": 26,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 24.62,
+          "baseline": 23.36,
+          "ratio": 1.054
+        },
+        "rangePos": 0.309,
+        "drawdown": 21.2,
+        "trend": -4.51,
+        "volumeRatio": 0.92,
+        "lastClose": 470,
+        "bars": 248
+      }
+    },
+    {
+      "symbol": "AVUV",
+      "price": 105,
+      "trailingYield": 1.4,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 23.93,
+          "baseline": 20.47,
+          "ratio": 1.169
+        },
+        "rangePos": 0.648,
+        "drawdown": 12.3,
+        "trend": 0.65,
+        "volumeRatio": 0.91,
+        "lastClose": 105,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "IJS",
+      "price": 115,
+      "trailingYield": 1.9,
+      "maxDrawdown": 21,
+      "movementStats": {
+        "vol": 22,
+        "regime": {
+          "recent": 10.32,
+          "baseline": 21.63,
+          "ratio": 0.477
+        },
+        "rangePos": 0.621,
+        "drawdown": 5.9,
+        "trend": -0.1,
+        "volumeRatio": 0.82,
+        "lastClose": 115,
+        "bars": 252
+      }
+    },
+    {
+      "symbol": "IBIT",
+      "price": 65,
+      "trailingYield": 0,
+      "maxDrawdown": 43,
+      "movementStats": {
+        "vol": 45,
+        "regime": {
+          "recent": 83.42,
+          "baseline": 42.54,
+          "ratio": 1.961
+        },
+        "rangePos": 0.244,
+        "drawdown": 20.7,
+        "trend": -2.84,
+        "volumeRatio": 2.02,
+        "lastClose": 65,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "COIN",
+      "price": 350,
+      "trailingYield": 0,
+      "maxDrawdown": 62,
+      "movementStats": {
+        "vol": 65,
+        "regime": {
+          "recent": 81.8,
+          "baseline": 65.7,
+          "ratio": 1.245
+        },
+        "rangePos": 0.971,
+        "drawdown": 1.7,
+        "trend": 7.43,
+        "volumeRatio": 1.65,
+        "lastClose": 350,
+        "bars": 246
+      }
+    },
+    {
+      "symbol": "MSTR",
+      "price": 380,
+      "trailingYield": 0,
+      "maxDrawdown": 81,
+      "movementStats": {
+        "vol": 85,
+        "regime": {
+          "recent": 162.08,
+          "baseline": 79.45,
+          "ratio": 2.04
+        },
+        "rangePos": 0.419,
+        "drawdown": 18.2,
+        "trend": -5.43,
+        "volumeRatio": 1.91,
+        "lastClose": 380,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "MARA",
+      "price": 18,
+      "trailingYield": 0,
+      "maxDrawdown": 86,
+      "movementStats": {
+        "vol": 90,
+        "regime": {
+          "recent": 103.28,
+          "baseline": 89.89,
+          "ratio": 1.149
+        },
+        "rangePos": 0.101,
+        "drawdown": 48.4,
+        "trend": 0.46,
+        "volumeRatio": 1.26,
+        "lastClose": 18,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "RIOT",
+      "price": 15,
+      "trailingYield": 0,
+      "maxDrawdown": 86,
+      "movementStats": {
+        "vol": 90,
+        "regime": {
+          "recent": 120.71,
+          "baseline": 84.41,
+          "ratio": 1.43
+        },
+        "rangePos": 0.016,
+        "drawdown": 42.9,
+        "trend": -7.06,
+        "volumeRatio": 1.73,
+        "lastClose": 15,
+        "bars": 247
+      }
+    },
+    {
+      "symbol": "VIXY",
+      "price": 22,
+      "trailingYield": 0,
+      "maxDrawdown": 76,
+      "movementStats": {
+        "vol": 80,
+        "regime": {
+          "recent": 78.42,
+          "baseline": 76.81,
+          "ratio": 1.021
+        },
+        "rangePos": 0.101,
+        "drawdown": 48.8,
+        "trend": -2.33,
+        "volumeRatio": 1.02,
+        "lastClose": 22,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "UVXY",
+      "price": 20,
+      "trailingYield": 0,
+      "maxDrawdown": 124,
+      "movementStats": {
+        "vol": 130,
+        "regime": {
+          "recent": 157.26,
+          "baseline": 137.95,
+          "ratio": 1.14
+        },
+        "rangePos": 0.077,
+        "drawdown": 35,
+        "trend": -1.54,
+        "volumeRatio": 0.92,
+        "lastClose": 20,
+        "bars": 251
+      }
+    },
+    {
+      "symbol": "SVXY",
+      "price": 50,
+      "trailingYield": 0,
+      "maxDrawdown": 43,
+      "movementStats": {
+        "vol": 45,
+        "regime": {
+          "recent": 39.94,
+          "baseline": 45.96,
+          "ratio": 0.869
+        },
+        "rangePos": 0.909,
+        "drawdown": 4.9,
+        "trend": 3.64,
+        "volumeRatio": 0.95,
+        "lastClose": 50,
+        "bars": 250
+      }
+    },
+    {
+      "symbol": "SPLV",
+      "price": 78,
+      "trailingYield": 1.9,
+      "maxDrawdown": 10,
+      "movementStats": {
+        "vol": 11,
+        "regime": {
+          "recent": 9.86,
+          "baseline": 11.6,
+          "ratio": 0.85
+        },
+        "rangePos": 0.635,
+        "drawdown": 7.2,
+        "trend": 1.47,
+        "volumeRatio": 0.97,
+        "lastClose": 78,
+        "bars": 246
+      }
+    }
+  ]
+}

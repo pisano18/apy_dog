@@ -118,6 +118,27 @@ const STAKING_IDS = new Set([
 ]);
 
 /**
+ * Pegs whose backing is an off-chain reserve held by a named issuer, and
+ * tokenized commodities, which are the same idea with a different asset in the
+ * vault. These get the RWA class rather than the speculative one, and it is a
+ * factual distinction rather than a favour: the app's speculative baseline
+ * assumes "losing half in a bad year is realistic", which is a true sentence
+ * about a memecoin and a false one about a token redeemable one-for-one from a
+ * custodian holding T-bills. Grading USDC the same way as BONK would be as
+ * wrong as grading BONK the same way as USDC.
+ *
+ * Deliberately NOT on this list: crypto-collateralised and synthetic pegs (DAI,
+ * USDe, crvUSD, GHO). Those hold their dollar through market mechanics rather
+ * than a redeemable reserve, so they keep the higher baseline — that gap is the
+ * real difference between the two designs, not a labelling detail.
+ */
+const RESERVE_BACKED_IDS = new Set([
+  'tether', 'usd-coin', 'first-digital-usd', 'paypal-usd', 'true-usd', 'usds',
+  'binance-usd', 'tether-eurt', 'stasis-eurs', 'euro-coin',
+]);
+const TOKENIZED_COMMODITY_IDS = new Set(['pax-gold', 'tether-gold']);
+
+/**
  * Wrapped or bridged representations. The price tracks the underlying; the risk
  * does not, because a wrapper adds a custodian or a bridge that can fail on its
  * own. Worth naming on the row.
@@ -270,7 +291,11 @@ function movementStatsFromRecord(rec, opts = {}) {
     trend: r1(trend),
     volumeRatio: null,
     lastClose: num(rec.current_price),
-    bars: hours > 0 ? Math.max(1, Math.round(hours / 24)) : 1,
+    // Days of price history behind this read, which is what "bars" means to the
+    // clarity score downstream. A 24h-range row has seen exactly one day; a
+    // bundled row has seen no series at all, and claiming otherwise would buy
+    // clarity we did not earn.
+    bars: hours > 0 ? Math.max(1, Math.round(hours / 24)) : (basis === 'range-24h' ? 1 : 0),
     volBasis: basis,
     windowHours: hours || null,
   };
@@ -341,10 +366,18 @@ function classifyPeg(rec, vol) {
   return { stablecoin: false, basis: null };
 }
 
-function classifyAsset(rec, C) {
+function classifyAsset(rec, C, peg) {
   const id = String(rec?.id || '').toLowerCase();
   if (STAKING_IDS.has(id)) {
     return { assetClass: C.ASSET_CLASS.CRYPTO_STAKING, subType: 'liquid_staking' };
+  }
+  if (TOKENIZED_COMMODITY_IDS.has(id)) {
+    return { assetClass: C.ASSET_CLASS.RWA, subType: 'tokenized_commodity' };
+  }
+  if (peg?.stablecoin) {
+    return RESERVE_BACKED_IDS.has(id)
+      ? { assetClass: C.ASSET_CLASS.RWA, subType: 'stablecoin' }
+      : { assetClass: C.ASSET_CLASS.SPECULATIVE, subType: 'stablecoin' };
   }
   // Everything else is a spot holding, and the app has no "spot crypto" class —
   // SPECULATIVE is the honest home for it: an asset with no contractual yield
@@ -417,7 +450,7 @@ function assetConfidence({ rank, volume, marketCap, volBasis, seed }) {
  * would be a claim we have not checked. Saying what is normal for an asset of
  * this size, and telling the reader to check, is the honest version.
  */
-function accessFor({ rank, volume, stablecoin, staking, wrapped, symbol }) {
+function accessFor({ rank, volume, stablecoin, staking, wrapped, commodity, symbol }) {
   const r = num(rank);
   const v = num(volume) ?? 0;
   const sym = symbol || 'this asset';
@@ -441,7 +474,9 @@ function accessFor({ rank, volume, stablecoin, staking, wrapped, symbol }) {
       ? ` ${sym} accrues staking rewards in the token itself. This row measures the PRICE only; the staking rate is not reported by this endpoint and is not included anywhere on this row.`
       : wrapped
         ? ' This is a wrapped representation: its price tracks the underlying, but you also carry whatever custodian or bridge issues the wrapper.'
-        : '';
+        : commodity
+          ? ' This is a claim on metal held by an issuer, not the metal in your hand. It pays nothing, storage is priced into the product, and redeeming it for physical bars has its own minimums and paperwork.'
+          : '';
 
   return `${venue} Fractional purchases are standard — you do not need to buy a whole unit. ${custody}${extra}`;
 }
@@ -474,9 +509,18 @@ function buildRow(rec, opts = {}) {
   const rank = num(rec.market_cap_rank);
 
   const peg = classifyPeg(rec, stats.vol);
-  const { assetClass, subType } = classifyAsset(rec, C);
+
+  // Distance from the all-time high is meaningless for a peg. Every dollar
+  // stablecoin has an "all-time high" of $1.30-odd from one thin print during
+  // some past panic, and carrying that through would report USDT as 24% below
+  // its highs and TUSD as deep in a drawdown — which the setup classifier would
+  // then dutifully label "Deep drawdown" on an asset engineered not to move.
+  if (peg.stablecoin) stats.drawdown = null;
+
+  const { assetClass, subType } = classifyAsset(rec, C, peg);
   const staking = assetClass === C.ASSET_CLASS.CRYPTO_STAKING;
   const wrapped = subType === 'wrapped';
+  const commodity = subType === 'tokenized_commodity';
   const SYM = symbol.toUpperCase();
 
   const chg1y = num(rec.price_change_percentage_1y_in_currency);
@@ -531,6 +575,11 @@ function buildRow(rec, opts = {}) {
   }
   rowNotes.push('12-month range position and volume-versus-normal are not available from this feed and are left '
     + 'blank rather than approximated.');
+  // The realised move over exactly the window the volatility was measured on.
+  // Stated as history, next to a band that is explicitly not a projection.
+  if (Number.isFinite(chg7d)) {
+    rowNotes.push(`Over the same seven days it actually moved ${chg7d >= 0 ? '+' : ''}${chg7d.toFixed(1)}%.`);
+  }
   if (peg.stablecoin) {
     rowNotes.push(peg.basis === 'known'
       ? 'Flagged as a stablecoin: it is designed not to move, so it is not a movement candidate.'
@@ -540,6 +589,10 @@ function buildRow(rec, opts = {}) {
   if (staking) {
     rowNotes.push('Liquid staking token. It accrues staking rewards, and this row does not include them: this feed '
       + 'reports price only, and the rate belongs to the DefiLlama source.');
+  }
+  if (commodity) {
+    rowNotes.push('Tokenized commodity: a redeemable claim on metal held by the issuer, so the price tracks the '
+      + 'metal and the risk includes the issuer and the redemption process.');
   }
 
   const trapFlags = [];
@@ -609,7 +662,9 @@ function buildRow(rec, opts = {}) {
     trapFlags,
     url: `https://www.coingecko.com/en/coins/${encodeURIComponent(id)}`,
     notes: rowNotes.join(' '),
-    accessNotes: accessFor({ rank, volume, stablecoin: peg.stablecoin, staking, wrapped, symbol: SYM }),
+    accessNotes: accessFor({
+      rank, volume, stablecoin: peg.stablecoin, staking, wrapped, commodity, symbol: SYM,
+    }),
     requirements: ['Exchange account or a self-custody wallet'],
 
     confidence: assetConfidence({
@@ -623,9 +678,6 @@ function buildRow(rec, opts = {}) {
     seed,
     live: !seed,
   };
-
-  // Extra descriptors the schema keeps verbatim, useful in the drawer.
-  if (Number.isFinite(chg7d)) row.poolMeta = `7d ${chg7d >= 0 ? '+' : ''}${chg7d.toFixed(1)}%`;
 
   return schema.normalize(row, { source: ID, seed });
 }
@@ -744,7 +796,9 @@ function parseMarkets(payload, opts = {}) {
       notes.push(`${stablecoins} stablecoin${stablecoins === 1 ? '' : 's'} flagged: kept for completeness but designed not to move, so they are not movement candidates.`);
     }
     if (stakingTokens) {
-      notes.push(`${stakingTokens} liquid staking token${stakingTokens === 1 ? '' : 's'} classed as staking products. Their staking RATE is not in this source — see DefiLlama Yields for that.`);
+      notes.push(`${stakingTokens} liquid staking token${stakingTokens === 1 ? '' : 's'} classed as staking `
+        + 'products. The staking RATE is not in this source — this feed reports price only, so see DefiLlama '
+        + 'Yields for what they actually pay.');
     }
     notes.push('No dated events on these rows: unlock schedules, upgrade dates and halvings need a calendar feed '
       + 'this source does not have, so it ships none rather than guessing at dates.');
@@ -756,6 +810,26 @@ function parseMarkets(payload, opts = {}) {
 // ---------------------------------------------------------------------------
 // Network path
 // ---------------------------------------------------------------------------
+
+/**
+ * Settings -> what this run will actually ask for.
+ *
+ * Pulled out and clamped as its own function because the ceiling is not a
+ * preference: a stored `pages: 999` would be 999 calls at a free endpoint that
+ * tolerates a couple of dozen a minute, and the resulting rate-limit would take
+ * the source out for everyone using the app, not just the person who typed it.
+ */
+function resolveOptions(cfg = {}) {
+  const c = cfg && typeof cfg === 'object' ? cfg : {};
+  const pages = clamp(Math.floor(num(c.pages) ?? DEFAULT_PAGES), 1, MAX_PAGES);
+  const perPage = clamp(Math.floor(num(c.perPage) ?? PER_PAGE), 1, PER_PAGE);
+  const min = num(c.minVolumeUsd);
+  return {
+    pages: Number.isFinite(pages) ? pages : DEFAULT_PAGES,
+    perPage: Number.isFinite(perPage) ? perPage : PER_PAGE,
+    minVolumeUsd: Number.isFinite(min) && min >= 0 ? min : MIN_VOLUME_USD,
+  };
+}
 
 function marketsUrl(page, perPage) {
   const q = new URLSearchParams({
@@ -827,7 +901,7 @@ const adapter = {
   description: 'Spot crypto assets ranked by how much they could move, not by a yield they do not pay — a thousand '
     + 'assets in four calls, each with a measured seven-day volatility.',
   homepage: 'https://www.coingecko.com',
-  assetClasses: ['speculative', 'crypto_staking'],
+  assetClasses: ['speculative', 'crypto_staking', 'rwa'],
   requiresNetwork: true,
   requiresKey: false,
   defaultEnabled: true,
@@ -842,13 +916,12 @@ const adapter = {
   classifyPeg,
   liquidityFor,
   assetConfidence,
+  resolveOptions,
   marketsUrl,
 
   async fetch(ctx) {
     const cfg = ctx.settings?.sources?.crypto || ctx.settings?.crypto || {};
-    const pages = clamp(Math.floor(num(cfg.pages) ?? DEFAULT_PAGES), 1, MAX_PAGES);
-    const perPage = clamp(Math.floor(num(cfg.perPage) ?? PER_PAGE), 1, PER_PAGE);
-    const minVolumeUsd = Number.isFinite(num(cfg.minVolumeUsd)) ? num(cfg.minVolumeUsd) : MIN_VOLUME_USD;
+    const { pages, perPage, minVolumeUsd } = resolveOptions(cfg);
 
     ctx.log?.(`fetching ${pages} page(s) of ${perPage} from CoinGecko markets`);
 

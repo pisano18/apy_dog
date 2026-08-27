@@ -77,7 +77,17 @@ describe('aggregate', () => {
     for (const o of result.opportunities) {
       const s = o.scores;
       assert.ok(s, `${o.id} was not scored`);
-      assert.ok(Number.isFinite(s.dogScore) && s.dogScore >= 0 && s.dogScore <= 100, `${o.id} dogScore ${s.dogScore}`);
+      // dogScore is a risk-adjusted YIELD rank, so it exists exactly when there
+      // is a rate to rank. A pure movement row — a non-paying stock, or an
+      // index-tier row nobody has measured — honestly has none, and inventing
+      // one would be the bug this asserts against. Those rank on Heat instead.
+      const rateless = (o.apy?.total ?? o.expected?.annualReturn ?? null) === null;
+      if (rateless) {
+        assert.strictEqual(s.dogScore, null, `${o.id} has no rate but was given a yield rank of ${s.dogScore}`);
+        assert.strictEqual(o.track, 'movement', `${o.id} carries no rate but is not a movement row`);
+      } else {
+        assert.ok(Number.isFinite(s.dogScore) && s.dogScore >= 0 && s.dogScore <= 100, `${o.id} dogScore ${s.dogScore}`);
+      }
       assert.ok(Number.isFinite(o.risk.score) && o.risk.score >= 0 && o.risk.score <= 100, `${o.id} risk ${o.risk.score}`);
       assert.ok(Number.isFinite(o.trapScore) && o.trapScore >= 0 && o.trapScore <= 100);
       assert.ok(s.tail.annualProbability >= 0 && s.tail.annualProbability <= 1);
