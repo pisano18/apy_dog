@@ -140,6 +140,7 @@ async function refresh(offline = false) {
     $('#btn-refresh').disabled = false;
     $('#refresh-label').textContent = 'Refresh';
     $('#progress').classList.add('hidden');
+    syncLive();
   }
 }
 
@@ -533,6 +534,8 @@ function renderSettings() {
       <div class="grid2">
         <div class="field"><label>Auto-refresh every (minutes, 0 = off)</label><input type="number" id="s-auto" value="${st.autoRefreshMinutes ?? 60}" step="15" min="0" /></div>
         <div class="field"><label>Max DeFi pools</label><input type="number" id="s-maxpools" value="${st.maxDefiPools ?? 4000}" step="500" min="50" /></div>
+        <div class="field"><label class="check"><input type="checkbox" id="s-live" ${st.liveUpdates !== false ? 'checked' : ''} /> Live updating</label>
+          <span style="font-size:10.5px;color:var(--text-faint)">Each feed refreshes on its own cadence — crypto every minute, the Treasury curve hourly, curated lists daily. Off falls back to one timer.</span></div>
         <div class="field"><label class="check"><input type="checkbox" id="s-launch" ${st.refreshOnLaunch ? 'checked' : ''} /> Refresh when the app opens</label></div>
         <div class="field"><label class="check"><input type="checkbox" id="s-offline" ${st.offlineMode ? 'checked' : ''} /> Offline mode</label></div>
       </div>
@@ -819,6 +822,7 @@ function wire() {
       's-mhorizon': (v) => ({ movementHorizonDays: Number(v) }),
       's-auto': (v) => ({ autoRefreshMinutes: Number(v) }),
       's-maxpools': (v) => ({ maxDefiPools: Number(v) }),
+      's-live': () => ({ liveUpdates: $('#s-live').checked }),
       's-launch': () => ({ refreshOnLaunch: $('#s-launch').checked }),
       's-offline': () => ({ offlineMode: $('#s-offline').checked }),
       's-theme': (v) => ({ theme: v }),
@@ -827,6 +831,7 @@ function wire() {
     if (!fn) return;
     S.boot.settings = await window.apy.updateSettings(fn(el.value));
     if (el.id === 's-theme') applyTheme();
+    if (el.id === 's-live' || el.id === 's-offline') syncLive();
     if (el.id.startsWith('s-fed') || ['s-state', 's-account', 's-inflation', 's-niit'].includes(el.id)) updateTaxPreview();
     await runQuery();
     if (S.selectedId) openDetail(S.selectedId);
@@ -855,7 +860,12 @@ function wire() {
   // --- from main ----------------------------------------------------------
   window.apy.onProgress((evt) => {
     const txt = $('#progress-text');
-    if (evt.type === 'start') { S.sourcesTotal = evt.total; S.doneCount = 0; $('#progress').classList.remove('hidden'); txt.textContent = `Scanning ${evt.total} sources…`; }
+    if (evt.type === 'start') {
+      S.sourcesTotal = evt.total; S.doneCount = 0;
+      // A background cadence refresh touches one or two feeds; throwing a modal
+      // progress bar up every twenty seconds for that would be intolerable.
+      if (evt.total > 2) { $('#progress').classList.remove('hidden'); txt.textContent = `Scanning ${evt.total} sources…`; }
+    }
     else if (evt.type === 'source_start') txt.textContent = `Fetching ${evt.label}…`;
     else if (evt.type === 'source_done') {
       S.doneCount += 1;
@@ -872,6 +882,7 @@ function wire() {
     await runQuery();
     $('#src-count').textContent = `${payload.meta.sourcesOk}/${payload.meta.sourcesTotal}`;
     $('#ev-count').textContent = (payload.meta.upcomingEvents ?? 0).toLocaleString();
+    syncLive();
     if (S.view === 'radar') renderRadar().catch(() => {});
     if (S.view === 'sources') renderSources();
     if (S.view === 'events') renderEvents();
@@ -890,6 +901,23 @@ function wire() {
       $('#notice').classList.add('hidden');
     }
   });
+}
+
+/** The live indicator: on, busy, or off, with the age of the freshest feed. */
+function syncLive() {
+  const el = $('#livedot');
+  const lbl = $('#live-label');
+  if (!el || !lbl) return;
+  const live = S.boot.settings.liveUpdates !== false && !S.boot.settings.offlineMode;
+  el.classList.toggle('on', live && !S.refreshing);
+  el.classList.toggle('busy', S.refreshing);
+  if (S.refreshing) { lbl.textContent = 'updating'; return; }
+  if (!live) { lbl.textContent = 'paused'; return; }
+  const at = S.meta?.generatedAt;
+  lbl.textContent = at ? window.F.ago(at).replace(' ago', '') : 'live';
+  el.title = S.meta?.partial
+    ? `Live. Last update refreshed ${(S.meta.refreshed || []).join(', ')}; the rest were not yet due.`
+    : 'Live. Each feed refreshes on its own cadence.';
 }
 
 function applyTheme() {
@@ -927,6 +955,7 @@ async function main() {
   $('#watch-count').textContent = S.watchlist.length;
   $('#search-hint').textContent = S.boot.platform === 'darwin' ? '⌘K' : 'Ctrl K';
   applyTheme();
+  syncLive();
   syncTrackButtons();
   syncSortOptions();
 

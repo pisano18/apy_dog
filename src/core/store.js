@@ -35,6 +35,9 @@ const DEFAULT_SETTINGS = {
 
   // --- sources -------------------------------------------------------------
   enabledSources: null,         // null = all enabled; else array of source ids
+  // Live updating refreshes each feed on its own cadence rather than everything
+  // on one timer. Turning it off falls back to a single interval.
+  liveUpdates: true,
   autoRefreshMinutes: 60,
   refreshOnLaunch: true,
   offlineMode: false,

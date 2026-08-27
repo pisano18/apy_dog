@@ -39,6 +39,16 @@ function yielded(res) {
   return (res?.opportunities?.length || 0) + (res?.events?.length || 0) > 0;
 }
 
+/**
+ * Strip everything the pipeline derives, so a carried-forward row is re-scored
+ * against the current settings rather than keeping a stale grade computed under
+ * a different tax bracket or budget.
+ */
+function stripDerived(o) {
+  const { scores, rating, movement, vehicles, vehiclesOutOfReach, tax, ...rest } = o;
+  return rest;
+}
+
 async function runSource(adapter, ctx) {
   const started = Date.now();
   try {
@@ -160,8 +170,19 @@ async function aggregate(adapters, opts = {}) {
   } = opts;
 
   const enabled = settings.enabledSources;
-  const active = adapters.filter((a) => (enabled === null || enabled === undefined ? a.defaultEnabled !== false : enabled.includes(a.id)));
-  const skipped = adapters.filter((a) => !active.includes(a));
+  let active = adapters.filter((a) => (enabled === null || enabled === undefined ? a.defaultEnabled !== false : enabled.includes(a.id)));
+
+  // Partial refresh. Different feeds go stale at wildly different rates: crypto
+  // moves by the second, Treasury publishes once a day, and a curated deposit
+  // list changes about monthly. Refreshing all of them on one timer is both
+  // slower and less current than refreshing each on its own cadence, so a run
+  // can be scoped to the sources that are actually due and merged over the rows
+  // already held.
+  const only = Array.isArray(opts.only) && opts.only.length ? new Set(opts.only) : null;
+  const carried = only && Array.isArray(opts.previous?.opportunities) ? opts.previous : null;
+  if (only) active = active.filter((a) => only.has(a.id));
+
+  const skipped = adapters.filter((a) => !active.includes(a) && (enabled === null || enabled === undefined ? a.defaultEnabled !== false : enabled.includes(a.id)));
 
   const now = Date.now();
   const makeCtx = (adapter) => ({
@@ -215,7 +236,20 @@ async function aggregate(adapters, opts = {}) {
   const events = results.flatMap((r) => (Array.isArray(r.events) ? r.events : [])).filter(Boolean);
 
   // --- merge ---------------------------------------------------------------
-  const raw = results.flatMap((r) => r.opportunities || []);
+  // On a partial run, rows and events from sources that were not refreshed are
+  // carried forward untouched. They keep their own fetchedAt, so the interface
+  // can show per-source freshness honestly rather than implying everything was
+  // just checked.
+  const refreshedIds = new Set(active.map((a) => a.id));
+  const carriedRows = carried
+    ? carried.opportunities.filter((o) => !refreshedIds.has(o.source)).map(stripDerived)
+    : [];
+  const carriedEvents = carried
+    ? (carried.events || []).filter((e) => !refreshedIds.has(e.source))
+    : [];
+  events.push(...carriedEvents);
+
+  const raw = [...results.flatMap((r) => r.opportunities || []), ...carriedRows];
   const dismissed = new Set(opts.dismissed || []);
   const kept = raw.filter((o) => o && !dismissed.has(o.id));
   const { list: deduped, merged } = dedupe(kept);
@@ -297,10 +331,18 @@ async function aggregate(adapters, opts = {}) {
     warnings: r.warnings || [],
     fetchedAt: r.fetchedAt || new Date().toISOString(),
     live: !offline && r.status === C.SOURCE_STATUS.OK,
-  })).concat(skipped.map((a) => ({
-    id: a.id, label: a.label, status: C.SOURCE_STATUS.DISABLED,
-    count: 0, ms: 0, notes: ['Disabled in settings.'], warnings: [], live: false,
-  })));
+  })).concat(skipped.map((a) => {
+    // A source skipped by a partial refresh is not disabled and must not be
+    // reported as one — its rows are still on screen and still valid.
+    const prev = (opts.previous?.health || []).find((h) => h.id === a.id);
+    if (only && prev) {
+      return { ...prev, carried: true, notes: [...(prev.notes || []), 'Not due for a refresh; showing the last scan.'] };
+    }
+    return {
+      id: a.id, label: a.label, status: C.SOURCE_STATUS.DISABLED,
+      count: 0, ms: 0, notes: ['Disabled in settings.'], warnings: [], live: false,
+    };
+  }));
 
   const seedCount = enriched.filter((o) => o.seed).length;
   onProgress({ type: 'done', count: enriched.length });
@@ -337,6 +379,9 @@ async function aggregate(adapters, opts = {}) {
       offline,
       sourcesOk: health.filter((h) => h.status === C.SOURCE_STATUS.OK).length,
       sourcesTotal: active.length,
+      partial: !!only,
+      refreshed: [...refreshedIds],
+      carriedRows: carriedRows.length,
     },
   };
 }

@@ -121,7 +121,7 @@ function send(channel, payload) {
 // Refresh
 // ---------------------------------------------------------------------------
 
-async function doRefresh({ offline = false } = {}) {
+async function doRefresh({ offline = false, only = null } = {}) {
   if (refreshing) return { ok: false, reason: 'A refresh is already running.' };
   refreshing = true;
   refreshAbort = new AbortController();
@@ -136,8 +136,16 @@ async function doRefresh({ offline = false } = {}) {
       offline: offline || store.settings.offlineMode,
       signal: refreshAbort.signal,
       dismissed: store.state.dismissed,
+      only,
+      previous: only ? dataset : null,
       onProgress: (evt) => send('refresh:progress', evt),
     });
+
+    // Record what actually came back, so cadence is measured from a real fetch
+    // rather than from the attempt.
+    for (const h of result.health) {
+      if (!h.carried && h.count + (h.eventCount || 0) > 0) lastFetched.set(h.id, Date.now());
+    }
 
     dataset = result;
 
@@ -163,6 +171,8 @@ async function doRefresh({ offline = false } = {}) {
       events: result.events || [],
       alerts: fired.map((f) => ({ message: f.message, id: f.opportunity?.id })),
       elapsedMs: Date.now() - startedAt,
+      partial: !!only,
+      refreshed: only || null,
     });
     return { ok: true, meta: result.meta };
   } catch (err) {
@@ -175,13 +185,71 @@ async function doRefresh({ offline = false } = {}) {
   }
 }
 
+/**
+ * How often each feed is worth re-asking, in seconds.
+ *
+ * Refreshing everything on one timer is both slower and less current than
+ * refreshing each source on its own cadence: crypto prices move by the second,
+ * the Treasury curve publishes once a day, and a curated deposit list changes
+ * about monthly. Polling the slow ones hard is wasted bandwidth; polling the
+ * fast ones on the slow timer means the app is quietly stale.
+ *
+ * An adapter can override this by exporting ttlMs.
+ */
+const CADENCE = {
+  crypto: 60,
+  equities: 150,
+  defillama: 300,
+  filings: 420,
+  funds: 900,
+  speculative: 1800,
+  treasury: 3600,
+  calendar: 3600,
+  savings: 86400,
+  bonds: 86400,
+  bonuses: 86400,
+  deals: 86400,
+  structural: 86400,
+};
+
+const lastFetched = new Map();   // source id -> ms
+
+function cadenceFor(a) {
+  if (Number.isFinite(a.ttlMs) && a.ttlMs > 0) return a.ttlMs;
+  return (CADENCE[a.id] ?? 900) * 1000;
+}
+
+/** Which sources are due right now. */
+function dueSources() {
+  const now = Date.now();
+  const enabled = store.settings.enabledSources;
+  return adapters
+    .filter((a) => (enabled === null || enabled === undefined ? a.defaultEnabled !== false : enabled.includes(a.id)))
+    .filter((a) => now - (lastFetched.get(a.id) ?? 0) >= cadenceFor(a))
+    .map((a) => a.id);
+}
+
 function rescheduleAuto() {
   if (autoTimer) clearInterval(autoTimer);
-  const mins = Number(store.settings.autoRefreshMinutes);
-  if (!Number.isFinite(mins) || mins <= 0) return;
+  if (store.settings.offlineMode) return;
+  if (store.settings.liveUpdates === false) {
+    // Fall back to the old single timer when live updating is switched off.
+    const mins = Number(store.settings.autoRefreshMinutes);
+    if (!Number.isFinite(mins) || mins <= 0) return;
+    autoTimer = setInterval(() => {
+      if (!refreshing) doRefresh().catch((e) => console.warn('[auto-refresh]', e.message));
+    }, Math.max(5, mins) * 60000);
+    return;
+  }
+
+  // Tick often, act rarely: the tick is cheap and each source decides for itself
+  // whether it is due.
   autoTimer = setInterval(() => {
-    if (!refreshing) doRefresh().catch((e) => console.warn('[auto-refresh]', e.message));
-  }, Math.max(5, mins) * 60000);
+    if (refreshing) return;
+    const due = dueSources();
+    if (!due.length) return;
+    doRefresh({ only: due }).catch((e) => console.warn('[live]', e.message));
+  }, 20000);
 }
 
 /**

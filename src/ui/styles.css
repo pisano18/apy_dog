@@ -677,3 +677,17 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 .vehrow .vgoal { font-size: 11px; color: var(--brand); }
 .vehrow .vwhat { font-size: 11.5px; color: var(--text-dim); line-height: 1.5; margin-top: 3px; }
 .vehrow .vcap { font-family: var(--mono); font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+
+/* ---------- live indicator ---------- */
+.livedot {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600;
+  color: var(--text-faint); font-family: var(--mono); white-space: nowrap; padding: 0 2px;
+}
+.livedot i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); display: block;
+}
+.livedot.on i { background: var(--pos); animation: pulse 2.4s ease-in-out infinite; }
+.livedot.on { color: var(--pos); }
+.livedot.busy i { background: var(--brand); animation: pulse .9s ease-in-out infinite; }
+.livedot.busy { color: var(--brand); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
