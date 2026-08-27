@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "source": "bonds",
+    "dataAsOf": "2026-08-01",
+    "origin": "TreasuryDirect published savings-bond rates; fund SEC 30-day yields from issuer fact sheets; tokenized-treasury yields as advertised by their issuers",
+    "note": "Offline starting point, NOT a quote. Every savings bond, ticker, fund name, issuer and tokenized product named here is real, but the rate levels are approximate round figures for 2026-08-01 chosen to sit sensibly against that day's Treasury curve. Structural facts — effective duration, average credit quality, expense ratio, purchase limits, investor eligibility — live in the INSTRUMENTS table in src/sources/bonds.js, not in this file, because they are constants rather than quotes. Tokenized-fund AUM figures are order-of-magnitude only. Refresh to replace the fund and tokenized rows with measured values.",
+    "breakeven": [
+      { "tenor": "5-year", "nominal": 3.80, "real": 1.55 },
+      { "tenor": "10-year", "nominal": 4.15, "real": 1.85 }
+    ],
+    "fields": {
+      "key": "matches an entry in the adapter INSTRUMENTS table, or the row is skipped",
+      "yield": "SEC 30-day yield for funds, advertised net yield for tokenized products, percent",
+      "fixedRate": "Series I fixed rate for the current issue window, percent, fixed for the life of the bond",
+      "semiannualInflation": "Series I semiannual inflation rate for the current window, percent (half the six-month CPI-U change)",
+      "statedRate": "Series EE announced coupon rate, percent — NOT the headline this adapter publishes",
+      "resetOn": "date the current savings-bond rate window began",
+      "tvl": "approximate assets under management, USD"
+    }
+  },
+  "items": [
+    { "key": "series-i",  "fixedRate": 1.20, "semiannualInflation": 1.30, "resetOn": "2026-05-01" },
+    { "key": "series-ee", "statedRate": 2.60, "resetOn": "2026-05-01" },
+
+    { "key": "IGSB", "yield": 4.30 },
+    { "key": "IGIB", "yield": 4.75 },
+    { "key": "USIG", "yield": 4.85 },
+    { "key": "VCLT", "yield": 5.65 },
+    { "key": "FLOT", "yield": 4.20 },
+    { "key": "FLRN", "yield": 4.15 },
+    { "key": "SPHY", "yield": 6.95 },
+    { "key": "HYLB", "yield": 6.90 },
+    { "key": "SJNK", "yield": 7.10 },
+    { "key": "ANGL", "yield": 6.20 },
+    { "key": "BKLN", "yield": 7.00 },
+
+    { "key": "VTES", "yield": 2.60 },
+    { "key": "SUB",  "yield": 2.65 },
+    { "key": "SHM",  "yield": 2.75 },
+    { "key": "TFI",  "yield": 3.35 },
+    { "key": "PZA",  "yield": 3.55 },
+    { "key": "MLN",  "yield": 3.75 },
+    { "key": "CMF",  "yield": 3.15 },
+    { "key": "NYF",  "yield": 3.25 },
+
+    { "key": "BUIDL", "yield": 3.60, "tvl": 2200000000 },
+    { "key": "BENJI", "yield": 3.55, "tvl": 700000000 },
+    { "key": "USDY",  "yield": 3.45, "tvl": 600000000 },
+    { "key": "OUSG",  "yield": 3.55, "tvl": 600000000 },
+    { "key": "USYC",  "yield": 3.65, "tvl": 900000000 },
+    { "key": "USTB",  "yield": 3.60, "tvl": 600000000 },
+    { "key": "TBILL", "yield": 3.50, "tvl": 150000000 },
+    { "key": "IB01",  "yield": 3.60, "tvl": 200000000 },
+    { "key": "WTGXX", "yield": 3.45, "tvl": 200000000 }
+  ]
+}

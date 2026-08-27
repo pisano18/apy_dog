@@ -400,6 +400,7 @@ app.on('before-quit', () => { try { history.prune(); } catch { /* best effort */
  */
 async function runSmokeTest() {
   const errors = [];
+  const failuresLate = [];
   win.webContents.on('console-message', (_e, level, message) => {
     if (level >= 2) errors.push(message);
   });
@@ -447,7 +448,73 @@ async function runSmokeTest() {
     errors.push(`drawer check failed: ${err.message}`);
   }
 
-  const failures = [];
+  // Watch something first, so the watchlist pane is exercised with real content
+  // rather than its (correct, but uninformative) empty state.
+  try {
+    await win.webContents.executeJavaScript(
+      "document.querySelector('#tablewrap tbody tr .star[data-act=\"watch\"]').click(); true",
+    );
+    await new Promise((r) => setTimeout(r, 600));
+    report.watchCount = await win.webContents.executeJavaScript(
+      "document.querySelector('#watch-count').textContent",
+    );
+    if (report.watchCount !== '1') failuresLate.push(`starring a row did not update the watchlist (count = ${report.watchCount})`);
+  } catch (err) {
+    failuresLate.push(`watch toggle failed: ${err.message}`);
+  }
+
+  // Every other view, and a filter round trip. A pane that throws on render is
+  // invisible from the Find view alone, which is exactly how it ships broken.
+  for (const view of ['sources', 'settings', 'watch']) {
+    try {
+      await win.webContents.executeJavaScript(
+        `document.querySelector('.tab[data-view="${view}"]').click(); true`,
+      );
+      await new Promise((r) => setTimeout(r, 500));
+      const n = await win.webContents.executeJavaScript(
+        `document.querySelector('#view-${view}').innerHTML.length`,
+      );
+      report[`${view}Html`] = n;
+      if (n < 400) failuresLate.push(`${view} pane rendered almost nothing (${n} chars)`);
+      const img = await win.webContents.capturePage();
+      fs.writeFileSync(path.join(outDir, `smoke-${view}.png`), img.toPNG());
+    } catch (err) {
+      failuresLate.push(`${view} pane failed: ${err.message}`);
+    }
+  }
+
+  // Filters must actually filter, and a preset must actually change the count.
+  try {
+    await win.webContents.executeJavaScript(
+      "document.querySelector('.tab[data-view=\"find\"]').click(); true",
+    );
+    await new Promise((r) => setTimeout(r, 400));
+    const before = await win.webContents.executeJavaScript("document.querySelectorAll('#tablewrap tbody tr').length");
+    await win.webContents.executeJavaScript(
+      "document.querySelector('.preset[data-val=\"safe\"]').click(); true",
+    );
+    await new Promise((r) => setTimeout(r, 700));
+    const after = await win.webContents.executeJavaScript("document.querySelectorAll('#tablewrap tbody tr').length");
+    report.rowsBeforeFilter = before;
+    report.rowsAfterSafePreset = after;
+    if (!(after > 0 && after < before)) {
+      failuresLate.push(`the "Safe & liquid" preset did not narrow the list (${before} -> ${after})`);
+    }
+  } catch (err) {
+    failuresLate.push(`filter round trip failed: ${err.message}`);
+  }
+
+  // Dark theme has to render too; it is the default look for most people.
+  try {
+    await win.webContents.executeJavaScript("document.documentElement.dataset.theme='dark'; true");
+    await new Promise((r) => setTimeout(r, 350));
+    const img = await win.webContents.capturePage();
+    fs.writeFileSync(path.join(outDir, 'smoke-dark.png'), img.toPNG());
+  } catch (err) {
+    failuresLate.push(`dark theme render failed: ${err.message}`);
+  }
+
+  const failures = [...failuresLate];
   if (!report.rows) failures.push('no table rows rendered');
   if (!report.headers) failures.push('no table headers rendered');
   if (!report.sidebarGroups) failures.push('no filter groups rendered');
