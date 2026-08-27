@@ -222,6 +222,11 @@ function normalize(raw, ctx = {}) {
     // Downsampled closes for the row sparkline and the detail chart. Kept short
     // on purpose: a chart needs shape, not every tick, and holding full history
     // for a thousand rows is how an Electron app starts feeling slow.
+    // True when the rate is knowable but the dollar size is not, because it
+    // depends on something the app was never told — a salary, a plan document,
+    // how much there is to harvest. Such a row ranks on its rate and prints no
+    // dollar figures at all, rather than dollar figures computed from a guess.
+    dollarsUnknown: raw.dollarsUnknown === true,
     series: Array.isArray(raw.series) ? raw.series.filter(Number.isFinite).slice(-180) : null,
     // 'measured' = recorded closes. 'illustrative' = a shape drawn to agree
     // with the statistics beside it. Default to illustrative when a source

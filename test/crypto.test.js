@@ -781,3 +781,18 @@ test('the seed spans the whole reach scale and places the majors correctly', () 
   // Far enough down the ranking that only the people on that chain follow it.
   assert.ok(['niche', 'obscure'].includes(bySym(rows, 'INJ').reach));
 });
+
+test('a chart states whether it was recorded or drawn', () => {
+  // On screen a drawn curve and a recorded price history are the same picture,
+  // so the difference has to travel on the row.
+  assert.equal(bySym(parse(MARKETS).opportunities, 'BTC').seriesBasis, 'measured');
+  assert.equal(bySym(parse(MARKETS).opportunities, 'AR').seriesBasis, null, 'no chart, no claim about one');
+
+  const rows = snapshotRows();
+  assert.equal(rows.find((o) => o.symbol === 'SOL').seriesBasis, 'measured', 'a real sparkline is a measurement');
+  assert.equal(rows.find((o) => o.symbol === 'LINK').seriesBasis, 'illustrative');
+  assert.equal(rows.find((o) => o.symbol === 'LTC').seriesBasis, null);
+  for (const o of seed().opportunities) {
+    assert.equal(o.seriesBasis, 'illustrative', `${o.symbol} presents a bundled shape as recorded prices`);
+  }
+});

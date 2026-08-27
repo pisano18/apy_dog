@@ -30,6 +30,17 @@ const { catastrophicRisk, lossAversionWeight } = require('./tail');
  *      principal.
  */
 
+/**
+ * What a capped or one-off offer is ranked against when the reader has not said
+ * how much they are working with.
+ *
+ * Round, ordinary, and large enough that the cap on a typical bonus actually
+ * bites — which is the whole point, because it is the cap that turns "122% a
+ * year" back into "$300 once". Every row ranked on it says so on its face; the
+ * moment a real amount is set, that amount replaces this everywhere.
+ */
+const REFERENCE_AMOUNT = 10000;
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const fmtMoney = (v) => `$${Math.round(v).toLocaleString()}`;
 
@@ -77,6 +88,15 @@ function scoreOne(o, opts = {}) {
     amount = null,
   } = opts;
   const hasBudget = Number.isFinite(amount) && amount > 0;
+  // What to rank a capped or one-off offer against when nobody has said how
+  // much they have. Leaving them on the raw annualised rate was the honest-
+  // looking choice and the wrong one: a $300 opening bonus annualises to 122%,
+  // so the default view became a wall of three-figure promotions sitting above
+  // every real investment — exactly the ranking the blending was built to stop,
+  // reappearing whenever the budget box was left empty, which is always at
+  // first run. So a stated, visible reference is used instead, and every row
+  // ranked on it says so. A named assumption beats a hidden one.
+  const basisAmount = hasBudget ? amount : REFERENCE_AMOUNT;
 
   const withRf = { ...o, __riskFree: riskFree, __amount: hasBudget ? amount : null };
   const risk = scoreRisk(withRf);
@@ -105,9 +125,9 @@ function scoreOne(o, opts = {}) {
   // year, with anything the cap excludes earning the risk-free rate. The
   // headline APY is still shown, because it is a real fact about the product —
   // it is just not the number that decides which row is better for you.
-  const cap = Number.isFinite(o.maxInvestment) && o.maxInvestment > 0 ? o.maxInvestment : amount;
-  const deployable = hasBudget ? Math.max(0, Math.min(amount, cap)) : null;
-  const share = hasBudget && amount > 0 ? deployable / amount : 1;
+  const cap = Number.isFinite(o.maxInvestment) && o.maxInvestment > 0 ? o.maxInvestment : basisAmount;
+  const deployable = Math.max(0, Math.min(basisAmount, cap));
+  const share = basisAmount > 0 ? deployable / basisAmount : 1;
   const holdDays = Number.isFinite(o.term?.days) && o.term.days > 0 ? o.term.days : 365;
 
   // Can this person actually take the offer? A brokerage bonus tier requiring
@@ -118,40 +138,59 @@ function scoreOne(o, opts = {}) {
   const affordable = !hasBudget ? null
     : (!Number.isFinite(o.minInvestment) || o.minInvestment <= amount);
 
-  let blended = chosenRaw;
-  let blendNote = null;
-  if (!hasBudget) {
-    // No budget: rank on the headline. A one-off bonus is still marked one-off
-    // and still carries its cap, so the reader can see why 122% is not a rate,
-    // but nothing is invented on their behalf.
-    blended = chosenRaw;
-    blendNote = o.oneTime
-      ? 'A one-off payment, not a rate. Set an amount in Settings to see what it is worth on your money.'
-      : (Number.isFinite(o.maxInvestment)
-        ? `Capped at ${fmtMoney(o.maxInvestment)}. Set an amount in Settings to see the blended figure.`
-        : null);
-  } else if (affordable === false) {
-    // Not reachable, so it contributes nothing over what you would otherwise do.
-    blended = riskFree;
-    blendNote = `Needs ${fmtMoney(o.minInvestment)} to enter, which is more than the ${fmtMoney(amount)} you are deploying.`;
-  } else if (Number.isFinite(chosenRaw) && amount > 0 && (share < 0.999 || o.oneTime)) {
-    let periodReturnPct;
-    if (o.oneTime) {
-      // Un-annualise: recover the single payment the annual figure was derived
-      // from, because that payment is all you ever get.
-      const yearsHeld = Math.min(holdDays, 365) / 365;
-      periodReturnPct = (Math.pow(1 + chosenRaw / 100, yearsHeld) - 1) * 100;
-    } else {
-      periodReturnPct = chosenRaw;
-    }
-    const idleAfter = o.oneTime ? Math.max(0, 1 - Math.min(holdDays, 365) / 365) : 0;
-    const dollars = deployable * (periodReturnPct / 100)
+  const yearsHeld = Math.min(holdDays, 365) / 365;
+
+  /**
+   * One annualised rate, turned into what it is worth over the coming year on
+   * the money it can actually be taken on.
+   *
+   * Applied to every rate the row reports — gross, after tax, after inflation,
+   * tax-equivalent — and not just the one the ranking happens to use. Blending
+   * only the ranking figure was worse than blending none of them: the yield
+   * column read 4.03% and the after-tax column beside it still read 380%, so
+   * the table contradicted itself and the sort disagreed with both.
+   */
+  const blend = (rate) => {
+    if (!Number.isFinite(rate)) return rate;
+    if (hasBudget && affordable === false) return riskFree;
+    if (share >= 0.999 && !o.oneTime) return rate;
+    const periodPct = o.oneTime ? (Math.pow(1 + rate / 100, yearsHeld) - 1) * 100 : rate;
+    const idleAfter = o.oneTime ? Math.max(0, 1 - yearsHeld) : 0;
+    const dollars = deployable * (periodPct / 100)
       + deployable * (riskFree / 100) * idleAfter
-      + (amount - deployable) * (riskFree / 100);
-    blended = (dollars / amount) * 100;
-    blendNote = o.oneTime
-      ? `A one-off payment. On ${fmtMoney(amount)}, with the rest at ${riskFree.toFixed(2)}%, year one works out to ${blended.toFixed(2)}%.`
-      : `Capped at ${fmtMoney(cap)}. On ${fmtMoney(amount)}, with the rest at ${riskFree.toFixed(2)}%, that blends to ${blended.toFixed(2)}%.`;
+      + (basisAmount - deployable) * (riskFree / 100);
+    return (dollars / basisAmount) * 100;
+  };
+
+  // The single payment a one-off actually makes, recovered by un-annualising.
+  // This is the number the offer is really about: "$300", not "122% a year".
+  const grossPeriodPct = o.oneTime && Number.isFinite(gross)
+    ? (Math.pow(1 + gross / 100, yearsHeld) - 1) * 100
+    : gross;
+  const oneTimeDollars = o.oneTime && !o.dollarsUnknown && Number.isFinite(grossPeriodPct)
+    ? deployable * (grossPeriodPct / 100)
+    : null;
+
+  const blended = blend(chosenRaw);
+  const blendedGross = blend(gross);
+  const blendedAfterTax = blend(tax.afterTaxApy);
+  const blendedAfterTaxReal = blend(tax.afterTaxRealApy);
+  const blendedTaxEquivalent = blend(tax.taxEquivalentYield);
+
+  let blendNote = null;
+  if (hasBudget && affordable === false) {
+    blendNote = `Needs ${fmtMoney(o.minInvestment)} to enter, which is more than the ${fmtMoney(amount)} you are deploying.`;
+  } else if (Number.isFinite(chosenRaw) && (share < 0.999 || o.oneTime)) {
+    const on = hasBudget ? fmtMoney(amount) : `a reference ${fmtMoney(REFERENCE_AMOUNT)}`;
+    const tail = hasBudget ? '' : ' Set your own amount in Settings and every figure here is recomputed on it.';
+    blendNote = o.dollarsUnknown
+      ? 'The rate is exact. The dollars are not — the cap is a share of your pay, which this app has never been '
+        + 'told — so no dollar figure is shown for this one. Multiply the rate by your own numbers.'
+      : o.oneTime
+        ? `A one-off payment of about ${fmtMoney(oneTimeDollars)}, not a rate. On ${on}, with the rest at `
+          + `${riskFree.toFixed(2)}%, year one works out to ${blended.toFixed(2)}%.${tail}`
+        : `Capped at ${fmtMoney(cap)}. On ${on}, with the rest at ${riskFree.toFixed(2)}%, that blends to `
+          + `${blended.toFixed(2)}%.${tail}`;
   }
 
   const chosen = blended;
@@ -217,11 +256,11 @@ function scoreOne(o, opts = {}) {
   // Computed on the blended figure so a capped or one-off offer reports what it
   // would really put in your pocket rather than a rate applied to money it will
   // not accept.
-  const yearOne = hasBudget && Number.isFinite(blended) ? amount * (blended / 100) : null;
-  const fiveYear = !hasBudget ? null
+  const yearOne = Number.isFinite(blended) && !o.dollarsUnknown ? basisAmount * (blended / 100) : null;
+  const fiveYear = o.dollarsUnknown ? null
     : o.oneTime
       ? yearOne   // it does not repeat, so five years is not five times
-      : (Number.isFinite(blended) ? amount * (Math.pow(1 + blended / 100, 5) - 1) : null);
+      : (Number.isFinite(blended) ? basisAmount * (Math.pow(1 + blended / 100, 5) - 1) : null);
 
   // --- headline 0..100 --------------------------------------------------------
   // Map CE onto a display scale. -5% CE -> 0, riskFree -> 50, +20% CE -> ~95.
@@ -236,9 +275,25 @@ function scoreOne(o, opts = {}) {
     basisYield: Number.isFinite(chosen) ? Math.round(chosen * 1000) / 1000 : null,
     headlineYield: Number.isFinite(chosenRaw) ? Math.round(chosenRaw * 1000) / 1000 : null,
     blendedYield: Number.isFinite(blended) ? Math.round(blended * 1000) / 1000 : null,
+    // Every reported rate, blended the same way, so no two columns on the same
+    // row can tell different stories about the same offer.
+    blendedGross: Number.isFinite(blendedGross) ? Math.round(blendedGross * 1000) / 1000 : null,
+    blendedAfterTax: Number.isFinite(blendedAfterTax) ? Math.round(blendedAfterTax * 1000) / 1000 : null,
+    blendedAfterTaxReal: Number.isFinite(blendedAfterTaxReal) ? Math.round(blendedAfterTaxReal * 1000) / 1000 : null,
+    blendedTaxEquivalent: Number.isFinite(blendedTaxEquivalent) ? Math.round(blendedTaxEquivalent * 1000) / 1000 : null,
+    // True when the blend actually changed something, so the UI knows to show
+    // the raw rate as context rather than pretending it never existed.
+    blendApplied: Number.isFinite(blended) && Number.isFinite(chosenRaw)
+      && Math.abs(blended - chosenRaw) > 0.005,
     blendNote,
     affordable,
     hasBudget,
+    // The amount every dollar figure on this row was computed on, so the UI can
+    // label them rather than presenting a reference as though it were the
+    // reader's own money.
+    basisAmount: o.dollarsUnknown ? null : basisAmount,
+    oneTimeDollars: Number.isFinite(oneTimeDollars) ? Math.round(oneTimeDollars) : null,
+    dollarsUnknown: !!o.dollarsUnknown,
     deployable: deployable === null ? null : Math.round(deployable),
     oneTime: !!o.oneTime,
     basis,
@@ -285,10 +340,17 @@ function scoreAll(list, opts = {}) {
 /** Sort comparators the UI exposes. */
 const SORTERS = {
   dogScore: (a, b) => (b.scores?.dogScore ?? -1e9) - (a.scores?.dogScore ?? -1e9),
-  apy: (a, b) => (b.apy?.total ?? b.expected?.annualReturn ?? -1e9) - (a.apy?.total ?? a.expected?.annualReturn ?? -1e9),
-  afterTax: (a, b) => (b.tax?.afterTaxApy ?? -1e9) - (a.tax?.afterTaxApy ?? -1e9),
-  taxEquivalent: (a, b) => (b.tax?.taxEquivalentYield ?? -1e9) - (a.tax?.taxEquivalentYield ?? -1e9),
-  afterTaxReal: (a, b) => (b.tax?.afterTaxRealApy ?? -1e9) - (a.tax?.afterTaxRealApy ?? -1e9),
+  // Rate sorts use the blended figures. Sorting by the raw annualised rate put
+  // a $300 opening bonus above every real investment in the app, which is the
+  // one ordering nobody wants and the reason the blending exists at all.
+  apy: (a, b) => (b.scores?.blendedGross ?? b.apy?.total ?? b.expected?.annualReturn ?? -1e9)
+    - (a.scores?.blendedGross ?? a.apy?.total ?? a.expected?.annualReturn ?? -1e9),
+  afterTax: (a, b) => (b.scores?.blendedAfterTax ?? b.tax?.afterTaxApy ?? -1e9)
+    - (a.scores?.blendedAfterTax ?? a.tax?.afterTaxApy ?? -1e9),
+  taxEquivalent: (a, b) => (b.scores?.blendedTaxEquivalent ?? b.tax?.taxEquivalentYield ?? -1e9)
+    - (a.scores?.blendedTaxEquivalent ?? a.tax?.taxEquivalentYield ?? -1e9),
+  afterTaxReal: (a, b) => (b.scores?.blendedAfterTaxReal ?? b.tax?.afterTaxRealApy ?? -1e9)
+    - (a.scores?.blendedAfterTaxReal ?? a.tax?.afterTaxRealApy ?? -1e9),
   certaintyEquivalent: (a, b) => (b.scores?.certaintyEquivalent ?? -1e9) - (a.scores?.certaintyEquivalent ?? -1e9),
   sharpe: (a, b) => (b.scores?.sharpe ?? -1e9) - (a.scores?.sharpe ?? -1e9),
   risk: (a, b) => (a.risk?.score ?? 1e9) - (b.risk?.score ?? 1e9),
@@ -300,4 +362,5 @@ const SORTERS = {
   name: (a, b) => String(a.name).localeCompare(String(b.name)),
 };
 
-module.exports = { scoreOne, scoreAll, riskAversion, SORTERS, BASIS };
+module.exports = {
+  REFERENCE_AMOUNT, scoreOne, scoreAll, riskAversion, SORTERS, BASIS };

@@ -113,7 +113,16 @@ async function runQuery() {
     const ctx = renderCtx();
     $('#tablewrap').innerHTML = window.R.table(S.rows, ctx);
     $('#filterbar').innerHTML = window.R.filterBar(S.query, ctx);
-    $('#res-desc').innerHTML = `<b>${res.total.toLocaleString()}</b> of ${(res.facets?.total ?? 0).toLocaleString()}`;
+    // A dollar figure computed on a reference amount must never be mistaken for
+    // one computed on the reader's own money, so the asterisk that marks them
+    // gets a legend rather than being left to guess at.
+    const usingReference = !S.boot.settings?.budget
+      && S.rows.some((o) => Number.isFinite(o.scores?.incomeYear1) && !o.scores?.hasBudget);
+    $('#res-desc').innerHTML = `<b>${res.total.toLocaleString()}</b> of ${(res.facets?.total ?? 0).toLocaleString()}`
+      + (usingReference
+        ? ` <span class="reflegend">· dollar figures marked <b>*</b> are on a reference $10,000 —
+            <a href="#" data-act="goto-view" data-val="settings">set your own amount</a></span>`
+        : '');
     const bs = res.facets?.bySection || {};
     $('#n-income').textContent = (bs.income ?? 0).toLocaleString();
     $('#n-movement').textContent = (bs.movement ?? 0).toLocaleString();

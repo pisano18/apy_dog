@@ -631,6 +631,18 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
   display: block; font-size: 9.5px; font-weight: 600; color: var(--warn); margin-top: 1px;
 }
 
+.bignum .item.lead .v { color: var(--brand); }
+.bignum .item.lead .k { color: var(--brand-dim); }
+.blendnote {
+  margin-top: 10px; font-size: 11.5px; line-height: 1.55; color: var(--text-dim);
+  background: var(--panel-2); border-left: 2px solid var(--brand-dim); border-radius: 0 6px 6px 0; padding: 8px 10px;
+}
+.reflegend { color: var(--text-faint); font-size: 11px; }
+.reflegend a { color: var(--brand); text-decoration: none; }
+.reflegend a:hover { text-decoration: underline; }
+.oncepay { display: block; font-size: 9.5px; color: var(--text-faint); font-weight: 600; margin-top: 1px; }
+.refmark { color: var(--text-faint); font-weight: 500; }
+
 .countdown {
   font-family: var(--mono); font-size: 10.5px; font-weight: 650; padding: 1px 6px;
   border-radius: 4px; white-space: nowrap;

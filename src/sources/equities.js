@@ -987,6 +987,9 @@ function tidyYield(y) {
   return Math.round(y * 1000) / 1000;
 }
 
+/** Prices only. A zero or a negative close is a data error, not a low. */
+const priceSeries = (v) => (Array.isArray(v) ? v.filter((x) => Number.isFinite(x) && x > 0) : []);
+
 /**
  * Evenly-spaced thinning of a price series, oldest first, for the chart.
  *
@@ -999,9 +1002,6 @@ function tidyYield(y) {
  * omits them — if the holes were left in and skipped later, every gap would
  * shift the rest of the chart sideways against its own axis.
  */
-/** Prices only. A zero or a negative close is a data error, not a low. */
-const priceSeries = (v) => (Array.isArray(v) ? v.filter((x) => Number.isFinite(x) && x > 0) : []);
-
 function downsample(values, targetPoints = MAX_SERIES_POINTS) {
   if (!Array.isArray(values)) return [];
   const clean = values.filter((v) => Number.isFinite(v));
@@ -1070,10 +1070,10 @@ const SPECIALIST_GROUPS = new Set(['sector', 'factor', 'small_cap', 'volatility_
  */
 function reachFromDollarVolume(dv) {
   if (!Number.isFinite(dv) || dv <= 0) return null;
-  if (dv >= 2e9) return 'everyone';
-  if (dv >= 2e8) return 'common';
-  if (dv >= 1e7) return 'niche';
-  return 'obscure';
+  if (dv >= 1e9) return 'everyone';       // the index funds and the megacaps
+  if (dv >= 1e8) return 'common';         // an ordinary large listing
+  if (dv >= 5e6) return 'niche';          // tradeable, but nobody is talking about it
+  return 'obscure';                       // a real order moves this market
 }
 
 /**

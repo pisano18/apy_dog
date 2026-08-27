@@ -12,6 +12,7 @@ const C = require('../src/core/constants');
 const T = require('../src/core/tracks');
 const { EVENT_INFO } = require('../src/core/catalyst');
 const { applyQuery } = require('../src/core/filters');
+const { REFERENCE_AMOUNT } = require('../src/core/score');
 
 /**
  * Cross-source audit.
@@ -405,5 +406,87 @@ describe('every row is actionable and honest', () => {
       assert.ok(o.series.every((n) => Number.isFinite(n) && n > 0),
         `${o.name} has a non-positive or non-finite point in its chart`);
     }
+  });
+  describe('a one-off never outranks a real investment on a rate it cannot repeat', () => {
+    test('no default ranking is led by annualised one-off promotions', () => {
+      // The bug this exists to stop: a $300 opening bonus on a $1,000 minimum
+      // held 120 days annualises to 122%, and a $50 one to 500%. Ranked on that
+      // number they sweep the top of every rate-sorted view and bury every real
+      // investment in the app. This has to hold with no budget set, because
+      // that is the state the app opens in.
+      for (const sortBy of ['dogScore', 'apy', 'afterTax']) {
+        const top = applyQuery(rows, { ...C.DEFAULT_QUERY, track: 'all', sortBy, limit: 10 });
+        for (const o of top) {
+          const shown = o.scores.blendedGross ?? o.apy?.total;
+          assert.ok(!Number.isFinite(shown) || shown <= 150,
+            `sorted by ${sortBy}, ${o.name} leads the app at ${shown}%`);
+        }
+      }
+    });
+
+    test('every rate on a blended row is blended, so no two columns disagree', () => {
+      // The yield column reading 4.03% while the after-tax column beside it
+      // read 380% was worse than either number alone.
+      const blendedRows = rows.filter((o) => o.scores.blendApplied);
+      assert.ok(blendedRows.length > 20, 'expected capped and one-off rows in the dataset');
+      for (const o of blendedRows) {
+        // A blend can legitimately sit ABOVE the row's own rate: a 3.7% account
+        // capped at $2,000 leaves the other $8,000 earning the risk-free rate,
+        // which is higher. What it can never do is exceed the better of the
+        // two, because that money has to be somewhere.
+        const ceiling = Math.max(o.tax?.grossApy ?? -Infinity, C.DEFAULT_SETTINGS?.riskFreeRate ?? 5) + 0.05;
+        for (const k of ['blendedGross', 'blendedAfterTax', 'blendedAfterTaxReal']) {
+          if (!Number.isFinite(o.scores[k])) continue;
+          assert.ok(o.scores[k] <= ceiling,
+            `${o.name}: ${k} of ${o.scores[k]}% beats both its own rate and cash`);
+        }
+        // Tax-equivalent is deliberately grossed UP to the ordinary-income
+        // benchmark, so it exceeds the row's own rate whenever the row is
+        // sheltered. What it must never do is fall below the after-tax figure
+        // it is derived from.
+        if (Number.isFinite(o.scores.blendedTaxEquivalent) && Number.isFinite(o.scores.blendedAfterTax)) {
+          assert.ok(o.scores.blendedTaxEquivalent >= o.scores.blendedAfterTax - 0.01,
+            `${o.name}: tax-equivalent ${o.scores.blendedTaxEquivalent}% is below its own after-tax ${o.scores.blendedAfterTax}%`);
+        }
+        // After tax can never beat gross on the same basis — including on a
+        // losing row, where tax must not be allowed to refund the loss.
+        if (Number.isFinite(o.scores.blendedGross) && Number.isFinite(o.scores.blendedAfterTax)) {
+          assert.ok(o.scores.blendedAfterTax <= o.scores.blendedGross + 0.01,
+            `${o.name} keeps more after tax (${o.scores.blendedAfterTax}%) than before it (${o.scores.blendedGross}%)`);
+        }
+      }
+    });
+
+    test('a row whose dollar size is unknowable prints no dollar figures', () => {
+      // An employer match is capped at a share of a salary this app never asks
+      // for. The rate is exact; every dollar figure derived from it would be
+      // invented.
+      const unknowable = rows.filter((o) => o.dollarsUnknown);
+      assert.ok(unknowable.length >= 5, 'expected salary-dependent rows');
+      for (const o of unknowable) {
+        assert.strictEqual(o.scores.incomeYear1, null, `${o.name} quotes year-one dollars it cannot know`);
+        assert.strictEqual(o.scores.income5yr, null, `${o.name} quotes five-year dollars it cannot know`);
+        assert.strictEqual(o.scores.oneTimeDollars, null, `${o.name} quotes a payment it cannot know`);
+        assert.ok(/pay|salary/i.test(o.notes || ''), `${o.name} does not explain why it shows no dollars`);
+      }
+    });
+
+    test('dollar figures computed on the reference amount are marked as such', () => {
+      // Every dollar figure in the app is computed on exactly one number: the
+      // amount the reader set, or the stated reference when they set none. A
+      // third, undeclared denominator creeping in is how a figure stops meaning
+      // anything.
+      const withDollars = rows.filter((o) => Number.isFinite(o.scores.incomeYear1));
+      assert.ok(withDollars.length > 100, 'expected dollar figures in the dataset');
+      for (const o of withDollars) {
+        const expected = o.scores.hasBudget ? o.scores.basisAmount : REFERENCE_AMOUNT;
+        assert.ok(Number.isFinite(expected) && expected > 0,
+          `${o.name} reports dollars against no stated amount at all`);
+        assert.strictEqual(o.scores.basisAmount, expected,
+          `${o.name} reports dollars on an amount that is neither the budget nor the stated reference`);
+        assert.ok(Math.abs(o.scores.incomeYear1 - expected * (o.scores.blendedYield / 100)) < 1,
+          `${o.name}: year-one dollars do not follow from its own rate and basis`);
+      }
+    });
   });
 });

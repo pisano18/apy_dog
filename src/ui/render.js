@@ -148,8 +148,59 @@ function nameCell(o, classes) {
   </div>`;
 }
 
+/**
+ * Dollars in year one.
+ *
+ * With no budget set these are computed on a stated reference amount, and the
+ * cell says so on hover rather than presenting a reference as the reader's own
+ * money. Rows whose size depends on a salary the app was never told print
+ * nothing at all, because the rate is the only honest figure they have.
+ */
+function incomeCell(o, ctx) {
+  const s = o.scores || {};
+  if (s.dollarsUnknown) {
+    return '<td class="num" style="color:var(--text-faint)" title="The rate is exact; the dollars depend on your pay, '
+      + 'which this app does not ask for. Multiply the rate by your own numbers.">rate only</td>';
+  }
+  if (!Number.isFinite(s.incomeYear1)) return '<td class="num" style="color:var(--text-faint)">—</td>';
+  const on = Number.isFinite(s.basisAmount) ? window.F.money(s.basisAmount, { dp: 0 }) : null;
+  const ref = !s.hasBudget && on;
+  const title = ref
+    ? `On a reference ${on}, because no amount is set. Set yours in Settings and every dollar figure here is recomputed on it.`
+    : (on ? `On the ${on} you set.` : '');
+  return `<td class="num" style="color:${ref ? 'var(--text-dim)' : 'var(--pos)'}" title="${esc(title)}">`
+    + `${window.F.money(s.incomeYear1, { dp: 0 })}${ref ? '<span class="refmark">*</span>' : ''}</td>`;
+}
+
 function apyCell(o) {
   const spec = o.yieldKind === 'expected';
+  // A one-off does not have a yield. Showing its annualised rate as the
+  // headline is what put "500.0%" above every real investment in the app: it is
+  // arithmetically true, it is what the offer would pay if you could take it
+  // four times a year, and you cannot. The number that decides the row's place
+  // in the ranking is what it is worth spread over the money it can be taken
+  // on, so that is the number the column shows, with the single payment beneath
+  // it and the raw rate on hover.
+  if (o.scores?.blendApplied && Number.isFinite(o.scores.blendedGross)) {
+    const b = o.scores.blendedGross;
+    const once = o.scores.oneTimeDollars;
+    const raw = o.apy?.total;
+    const t = o.oneTime
+      ? `Pays ${Number.isFinite(once) ? window.F.money(once, { dp: 0 }) : 'once'} once. `
+        + (Number.isFinite(raw) ? `That annualises to ${window.F.pct(raw, 1)} over the qualifying period, ` : '')
+        + 'but you collect it a single time — spread over '
+        + `${Number.isFinite(o.scores.basisAmount) ? window.F.money(o.scores.basisAmount, { dp: 0 }) : 'the amount shown'}`
+        + `${o.scores.hasBudget ? '' : ' (a reference amount, since none is set)'} it is worth ${window.F.pct(b, 2)} in year one.`
+      : `Pays ${Number.isFinite(raw) ? window.F.pct(raw, 2) : 'its rate'} but only on `
+        + `${Number.isFinite(o.maxInvestment) ? window.F.money(o.maxInvestment, { dp: 0 }) : 'a capped balance'}. `
+        + `Across ${Number.isFinite(o.scores.basisAmount) ? window.F.money(o.scores.basisAmount, { dp: 0 }) : 'the amount shown'}`
+        + `${o.scores.hasBudget ? '' : ' (a reference amount, since none is set)'}, with the rest at the risk-free rate, `
+        + `it comes to ${window.F.pct(b, 2)}.`;
+    const foot = o.oneTime && Number.isFinite(once) ? `${window.F.money(once, { dp: 0 })} once`
+      : Number.isFinite(raw) ? `${window.F.pct(raw, 2)} on the cap` : '';
+    return `<td class="num" title="${esc(t)}"><span class="apy ${b >= 8 ? 'hi' : 'mid'}">${window.F.pct(b, 2)}</span>`
+      + `${foot ? `<span class="oncepay">${esc(foot)}</span>` : ''}</td>`;
+  }
   const v = spec ? o.expected?.annualReturn : o.apy?.total;
   if (!Number.isFinite(v)) return '<td class="num" style="color:var(--text-faint)">—</td>';
   const cls = spec ? 'spec' : v >= 8 ? 'hi' : 'mid';
@@ -179,7 +230,7 @@ R.INCOME_COLUMNS = [
   { key: 'name', label: 'Opportunity', sort: 'name' },
   { key: 'apy', label: 'Yield', sort: 'apy', num: true },
   { key: 'aftertax', label: 'After tax', sort: 'afterTax', num: true },
-  { key: 'income', label: 'Income yr 1', sort: null, num: true },
+  { key: 'income', label: 'Income yr 1', sort: null, num: true, basisLabel: true },
   { key: 'grade', label: 'Safety', sort: 'grade' },
   { key: 'axes', label: 'Principal · Payout · Exit', sort: null },
   { key: 'term', label: 'Committed', sort: 'term' },
@@ -207,8 +258,8 @@ function incomeRow(o, ctx) {
     <td><span class="star ${ctx.watched ? 'on' : ''}" data-act="watch" data-id="${esc(o.id)}">${ctx.watched ? '★' : '☆'}</span></td>
     <td>${nameCell(o, ctx.classes)}</td>
     ${apyCell(o)}
-    <td class="num" title="After your tax settings">${window.F.pct(o.tax?.afterTaxApy, 2)} ${trend(ctx.change)}</td>
-    <td class="num" style="color:var(--pos)">${Number.isFinite(o.scores?.incomeYear1) ? window.F.money(o.scores.incomeYear1, { dp: 0 }) : '—'}</td>
+    <td class="num" title="After your tax settings${o.scores?.blendApplied ? ', on the same blended basis as the yield beside it' : ''}">${window.F.pct(o.scores?.blendedAfterTax ?? o.tax?.afterTaxApy, 2)} ${trend(ctx.change)}</td>
+    ${incomeCell(o, ctx)}
     <td>${gradeChip(o.rating)}</td>
     <td><span style="display:inline-flex;gap:9px">${pips(a.principal?.value)}${pips(a.payout?.value)}${pips(a.exit?.value)}</span></td>
     <td>${esc(window.F.term(o))}</td>
@@ -707,14 +758,18 @@ R.drawer = (detail, ctx) => {
   ${hasIncome ? `<div class="dsection">
     <h4>What it pays</h4>
     <div class="bignum">
+      ${s.blendApplied ? `<div class="item lead"><div class="v">${window.F.pct(s.blendedGross, 2)}</div><div class="k">Worth to you, year one</div></div>` : ''}
       <div class="item"><div class="v">${window.F.pct(o.apy?.total, 2)}</div><div class="k">Headline</div></div>
-      <div class="item"><div class="v">${window.F.pct(o.tax?.afterTaxApy, 2)}</div><div class="k">After your tax</div></div>
-      <div class="item"><div class="v">${window.F.pct(o.tax?.taxEquivalentYield, 2)}</div><div class="k">Tax-equivalent</div></div>
-      <div class="item"><div class="v">${window.F.pct(o.tax?.afterTaxRealApy, 2)}</div><div class="k">After inflation</div></div>
+      <div class="item"><div class="v">${window.F.pct(s.blendApplied ? s.blendedAfterTax : o.tax?.afterTaxApy, 2)}</div><div class="k">After your tax</div></div>
+      <div class="item"><div class="v">${window.F.pct(s.blendApplied ? s.blendedTaxEquivalent : o.tax?.taxEquivalentYield, 2)}</div><div class="k">Tax-equivalent</div></div>
+      <div class="item"><div class="v">${window.F.pct(s.blendApplied ? s.blendedAfterTaxReal : o.tax?.afterTaxRealApy, 2)}</div><div class="k">After inflation</div></div>
     </div>
+    ${s.blendNote && !s.dollarsUnknown ? `<div class="blendnote">${esc(s.blendNote)}</div>` : ''}
     <div style="margin-top:12px;display:flex;gap:18px">
-      <div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--pos)">${window.F.money(s.incomeYear1, { dp: 0 })}</div><div style="font-size:10px;color:var(--text-faint)">on ${window.F.money(ctx.budget)}, year 1</div></div>
-      <div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--pos)">${window.F.money(s.income5yr, { dp: 0 })}</div><div style="font-size:10px;color:var(--text-faint)">over 5 years</div></div>
+      ${s.dollarsUnknown
+    ? `<div style="grid-column:1/-1"><div style="font-size:12.5px;line-height:1.5;color:var(--text-dim)">The rate above is exact. The dollars are not — the cap is a share of your pay, which this app has never been told, so it shows none rather than inventing one. Multiply the rate by your own numbers.</div></div>`
+    : `<div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--pos)">${window.F.money(s.incomeYear1, { dp: 0 })}</div><div style="font-size:10px;color:var(--text-faint)">on ${window.F.money(s.basisAmount ?? ctx.budget)}, year 1${s.hasBudget ? '' : ' (reference)'}</div></div>
+      <div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--pos)">${window.F.money(s.income5yr, { dp: 0 })}</div><div style="font-size:10px;color:var(--text-faint)">over 5 years</div></div>`}
     </div>
   </div>` : ''}
 

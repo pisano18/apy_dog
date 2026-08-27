@@ -866,6 +866,12 @@ function buildRow(item, { dataAsOf, schema, C, profile, nowMs }) {
 
     minInvestment,
     maxInvestment: Number.isFinite(maxInvestment) ? maxInvestment : null,
+    // The rate is exact; the dollars are not, because the cap is a share of a
+    // salary this app has never been told. Saying so in the notes was not
+    // enough once the ranker started quoting dollar figures — the flag stops it
+    // printing "$10,000 once" beside a sentence explaining that the amount is
+    // unknowable.
+    dollarsUnknown: item.salaryBased === true,
     liquidity,
 
     risk: {

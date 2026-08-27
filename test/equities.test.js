@@ -753,3 +753,18 @@ test('the chart endpoint yields a dollar volume, and the batch endpoint honestly
     adapter.parseSpark(SPARK).get('SCHD'), { schema, C, now: NOW });
   assert.equal(fromBatch.volume, null, 'the batch feed carries no volume and must not claim one');
 });
+
+test('a chart states whether it was recorded or drawn', () => {
+  // On screen a drawn curve and a recorded price history are the same picture,
+  // so the difference has to travel on the row.
+  const live = adapter.buildMeasured({ symbol: 'VOO', name: 'Vanguard S&P 500 ETF', group: 'core_index' },
+    adapter.parseSpark(SPARK).get('VOO'), { schema, C, now: NOW });
+  assert.equal(live.seriesBasis, 'measured', 'closes we fetched are closes we fetched');
+
+  for (const o of seedResult().opportunities.filter((x) => x.measured !== false)) {
+    assert.equal(o.seriesBasis, 'illustrative', `${o.symbol} presents a bundled shape as recorded prices`);
+  }
+  // No chart, no claim about one.
+  const [rec] = adapter.parseTickerIndex(SEC_EXCHANGE).records;
+  assert.equal(adapter.buildIndexRow(rec, { schema, C }).seriesBasis, null);
+});

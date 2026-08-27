@@ -141,12 +141,24 @@ function applyTax(o, profile) {
     return { grossApy: null, afterTaxApy: null, taxEquivalentYield: null, effectiveTaxRate: rate, parts, sheltered: !!sheltered, deferred: !!deferred, realApy: null, afterTaxRealApy: null };
   }
 
-  const afterTax = gross * (1 - rate / 100);
+  // Tax takes a share of a gain. It does not refund a share of a loss — not on
+  // a credit card annual fee, not on a promotional cost, not on anything an
+  // ordinary person holds outside a brokerage account. Applying the haircut to
+  // a negative return shrinks it, which quietly reports a losing row as less
+  // bad after tax than before it. Rows whose whole point IS a deduction carry
+  // that deduction as a positive benefit already.
+  const afterTax = gross >= 0 ? gross * (1 - rate / 100) : gross;
 
   // Tax-equivalent yield uses the FULLY taxable ordinary rate as the benchmark,
   // so every row is expressed in "ordinary income dollars".
   const benchmark = effectiveRate(C.TAX_TREATMENT.ORDINARY, p).rate;
-  const tey = benchmark >= 100 ? null : afterTax / (1 - benchmark / 100);
+  // Grossing up only makes sense for money you keep. On a losing row there is
+  // nothing to gross up, and dividing by (1 - rate) makes the loss look larger
+  // than it is: a cost you cannot deduct is exactly that cost in ordinary-income
+  // terms, no more.
+  const tey = benchmark >= 100 ? null
+    : afterTax < 0 ? afterTax
+      : afterTax / (1 - benchmark / 100);
 
   const infl = Number.isFinite(p.inflation) ? p.inflation : 0;
   // Real return is multiplicative, not subtractive: (1+r)/(1+i) - 1.
