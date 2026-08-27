@@ -191,6 +191,13 @@ function normalize(raw, ctx = {}) {
     movementStats: raw.movementStats && typeof raw.movementStats === 'object' ? raw.movementStats : null,
     events: arr(raw.events),
 
+    // Whether anything on this row was actually measured. A source that indexes
+    // a universe far too large to price on every refresh (every US-listed
+    // ticker, say) emits identity-only rows so the thing is findable; those must
+    // never be mistaken for rows we looked at. Absent means measured, which is
+    // what every single-tier source produces.
+    measured: raw.measured === undefined || raw.measured === null ? true : !!raw.measured,
+
     // Fund descriptors — these decide whether a big distribution is real income
     rocShare: num(raw.rocShare),                      // fraction that is return of capital
     navPremium: num(raw.navPremium),                  // percent above/below NAV
@@ -307,8 +314,15 @@ function validate(o) {
   if (!Object.values(C.ASSET_CLASS).includes(o.assetClass)) problems.push(`bad assetClass "${o.assetClass}"`);
   if (!Object.values(C.YIELD_KIND).includes(o.yieldKind)) problems.push(`bad yieldKind "${o.yieldKind}"`);
   if (!Object.values(C.LIQUIDITY).includes(o.liquidity)) problems.push(`bad liquidity "${o.liquidity}"`);
+  // A movement row can legitimately have no rate at all, and forcing one on it
+  // is how a screener starts inventing numbers. A growth stock's entire return
+  // is price; an index-tier row was never measured. Both answer "what is this
+  // paying?" with "nothing" and "we have not looked", and those are different
+  // from an income row that lost its headline figure — which is what this check
+  // exists to catch.
   const headline = o.apy?.total ?? o.expected?.annualReturn;
-  if (!Number.isFinite(headline)) problems.push('no headline rate or expected return');
+  const ratelessByDesign = o.track === 'movement' && (o.measured === false || !!o.movementStats);
+  if (!Number.isFinite(headline) && !ratelessByDesign) problems.push('no headline rate or expected return');
   if (Number.isFinite(o.apy?.total) && (o.apy.total < -100 || o.apy.total > 100000)) {
     problems.push(`implausible apy ${o.apy.total}`);
   }

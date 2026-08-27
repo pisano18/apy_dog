@@ -132,7 +132,10 @@ function makeEvent(raw, now = Date.now()) {
   if (!info) return null;
 
   const t = typeof raw.date === 'number' ? raw.date : Date.parse(raw.date);
-  if (!Number.isFinite(t)) return null;
+  // Date only spans +/-8.64e15 ms. A feed handing us seconds where we expect
+  // milliseconds (or the reverse) sails past isFinite and then throws
+  // RangeError out of toISOString, which has taken down three adapters here.
+  if (!Number.isFinite(t) || Math.abs(t) > 8.64e15) return null;
 
   const daysAway = (t - now) / DAY;
   return {

@@ -65,9 +65,9 @@ function rangePosition(closes, { window = 252 } = {}) {
 
 /** Percent below the trailing high. Positive means below. */
 function drawdownFromHigh(closes, { window = 252 } = {}) {
-  if (!Array.isArray(closes) || closes.length < 5) return null;
-  const src = closes.slice(-window).filter(Number.isFinite);
-  if (src.length < 5) return null;
+  if (!Array.isArray(closes) || closes.length < 2) return null;
+  const src = closes.slice(-window).filter((v) => Number.isFinite(v) && v > 0);
+  if (src.length < 2) return null;
   const hi = Math.max(...src);
   const last = src[src.length - 1];
   if (!(hi > 0)) return null;

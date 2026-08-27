@@ -96,13 +96,23 @@ function payoutAxis(o) {
   else if (kind === C.YIELD_KIND.FORWARD) { v = 2.5; why = 'Annualised from one recent payment'; }
   else { v = 2; why = 'Floats freely and can fall at any time'; }
 
-  // Specific, known ways a payout breaks.
-  if (flags.includes(C.TRAP_FLAGS.REWARD_DOMINANT)) { v -= 1.5; why = 'Mostly token emissions, which get cut'; }
-  if (flags.includes(C.TRAP_FLAGS.UNSUSTAINABLE_PAYOUT)) { v -= 1.5; why = 'Earnings do not cover the distribution'; }
-  if (flags.includes(C.TRAP_FLAGS.RETURN_OF_CAPITAL)) { v -= 1; why = 'Much of the payout is your own capital returned'; }
-  if (flags.includes(C.TRAP_FLAGS.TEASER_RATE)) { v -= 1.5; why = 'Promotional rate that reverts'; }
-  if (flags.includes(C.TRAP_FLAGS.APY_SPIKE)) { v -= 1; why = 'Currently spiking well above its own average'; }
-  if (flags.includes(C.TRAP_FLAGS.CAPPED_BALANCE)) { v -= 0.5; why = 'Top rate only applies to a small balance'; }
+  // Specific, known ways a payout breaks. Each is collected with its weight so
+  // the reason SHOWN is the most serious one, not whichever happened to be
+  // evaluated last.
+  const hits = [
+    [C.TRAP_FLAGS.REWARD_DOMINANT, 1.5, 'Mostly token emissions, which get cut'],
+    [C.TRAP_FLAGS.UNSUSTAINABLE_PAYOUT, 1.5, 'Earnings do not cover the distribution'],
+    [C.TRAP_FLAGS.TEASER_RATE, 1.5, 'Promotional rate that reverts'],
+    [C.TRAP_FLAGS.RETURN_OF_CAPITAL, 1, 'Much of the payout is your own capital returned'],
+    [C.TRAP_FLAGS.APY_SPIKE, 1, 'Currently spiking well above its own average'],
+    [C.TRAP_FLAGS.CAPPED_BALANCE, 0.5, 'Top rate only applies to a small balance'],
+  ].filter(([flag]) => flags.includes(flag));
+
+  for (const [, penalty] of hits) v -= penalty;
+  if (hits.length) {
+    const worst = hits.slice().sort((a, b) => b[1] - a[1])[0];
+    why = hits.length > 1 ? `${worst[2]} (and ${hits.length - 1} more)` : worst[2];
+  }
 
   return { value: pip(v), why };
 }
