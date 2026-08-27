@@ -572,6 +572,35 @@ function renderSettings() {
       </div>
     </section>
 
+    <section><h3>Watching while you are away</h3>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.55;margin:0 0 12px">A deal that closes on Friday
+        is worth nothing to someone who opens the app on Saturday. With these on, APY Dog keeps a tray icon after
+        you close the window, re-checks deadlines every fifteen minutes against the clock rather than the feeds,
+        and tells you once — not every scan.</p>
+      <div class="grid2">
+        <div class="field"><label class="check"><input type="checkbox" id="s-background" ${st.runInBackground !== false ? 'checked' : ''} /> Keep watching after I close the window</label>
+          <span style="font-size:10.5px;color:var(--text-faint)">Quit from the tray icon to stop it completely.</span></div>
+        <div class="field"><label class="check"><input type="checkbox" id="s-login" ${st.startAtLogin ? 'checked' : ''} /> Start when I log in</label>
+          <span style="font-size:10.5px;color:var(--text-faint)">Starts hidden in the tray.</span></div>
+        <div class="field"><label class="check"><input type="checkbox" id="s-notify" ${st.notify !== false ? 'checked' : ''} /> Desktop notifications</label></div>
+        <div class="field"><label>Warn me this many days before a watched window closes (0 = off)</label>
+          <input type="number" id="s-closing" value="${st.watchClosingDays ?? 7}" step="1" min="0" max="90" /></div>
+        <div class="field"><label>Tell me about new deals worth at least ($, 0 = off)</label>
+          <input type="number" id="s-newdeal" value="${st.watchNewDealsWorth ?? 200}" step="50" min="0" /></div>
+      </div>
+    </section>
+
+    <section><h3>The app itself</h3>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.55;margin:0 0 12px">Separate from the data,
+        which refreshes on its own every time this runs. This is the code — the source list, the maths, the
+        warnings. A screener frozen at whatever shipped goes quietly stale while looking exactly as authoritative
+        as the day it was built.</p>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <button class="btn" data-act="check-updates">Check for updates</button>
+        <span id="update-status" style="font-size:11.5px;color:var(--text-faint)">Running v${esc(S.boot.version)}.</span>
+      </div>
+    </section>
+
     <section><h3>Appearance</h3>
       <div class="grid2"><div class="field"><label>Theme</label>
         <select id="s-theme">${opt('system', st.theme, 'Match system')}${opt('dark', st.theme, 'Dark')}${opt('light', st.theme, 'Light')}</select></div></div>
@@ -826,6 +855,17 @@ function wire() {
     if (act === 'open-user-rates') { await window.apy.openUserRates(); return toast('Opened', 'Edit, save, then refresh.'); }
     if (act === 'clear-cache') { const n = await window.apy.clearCache(); toast('Cache cleared', `${n} files`); return renderSources(); }
     if (act === 'reset-settings') { S.boot.settings = await window.apy.resetSettings(); applyTheme(); renderSettings(); return toast('Settings reset'); }
+    if (act === 'check-updates') {
+      const el = $('#update-status');
+      if (el) el.textContent = 'Checking…';
+      const r = await window.apy.checkUpdates();
+      if (!el) return;
+      if (!r?.ok) el.textContent = `Could not check: ${r?.error || 'no answer from the update server'}.`;
+      else if (r.newer || (r.version && r.version !== S.boot.version)) el.innerHTML = `<b style="color:var(--brand)">v${esc(r.version)} is available.</b> Downloading in the background — it installs next time you quit.`;
+      else el.textContent = `v${esc(S.boot.version)} is the latest version.`;
+      return;
+    }
+    if (act === 'install-update') { await window.apy.installUpdate(); return; }
     if (act === 'rm-alert') { await window.apy.removeAlert(id); S.boot.alerts = await window.apy.alerts(); return renderWatchlist().catch(() => {}); }
     if (act === 'source-toggle') {
       const all = S.boot.sources.map((s) => s.id);
@@ -857,6 +897,11 @@ function wire() {
       's-launch': () => ({ refreshOnLaunch: $('#s-launch').checked }),
       's-offline': () => ({ offlineMode: $('#s-offline').checked }),
       's-theme': (v) => ({ theme: v }),
+      's-background': () => ({ runInBackground: $('#s-background').checked }),
+      's-login': () => ({ startAtLogin: $('#s-login').checked }),
+      's-notify': () => ({ notify: $('#s-notify').checked }),
+      's-closing': (v) => ({ watchClosingDays: Number(v) }),
+      's-newdeal': (v) => ({ watchNewDealsWorth: Number(v) }),
     };
     const fn = map[el.id];
     if (!fn) return;
@@ -904,6 +949,21 @@ function wire() {
       txt.textContent = `${evt.label}: ${evt.count} found`;
     } else if (evt.type === 'log') txt.textContent = `${evt.source}: ${evt.message}`;
     else if (evt.type === 'error') toast('Scan error', evt.message, 'err');
+  });
+
+  window.apy.onUpdateAvailable(({ version, url }) => {
+    notice(`<b>APY Dog ${esc(version)} is available.</b> You are running ${esc(S.boot.version)}.`,
+      'Get it', () => window.apy.openExternal(url));
+  });
+  window.apy.onUpdateReady(({ version }) => {
+    notice(`<b>APY Dog ${esc(version || 'update')} is downloaded.</b> It installs the next time you quit.`,
+      'Restart now', () => window.apy.installUpdate());
+  });
+  // Clicking a desktop notification should land on the thing it was about.
+  window.apy.onNavOpen(({ id }) => {
+    if (!id) return;
+    switchView('find');
+    openDetail(id);
   });
 
   window.apy.onDataUpdated(async (payload) => {

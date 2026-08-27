@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, shell, dialog, Notification, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, Notification, nativeTheme, Tray, Menu, nativeImage } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -58,6 +58,9 @@ let dataset = { opportunities: [], health: [], meta: null };
 let refreshing = false;
 let refreshAbort = null;
 let autoTimer = null;
+let deadlineTimer = null;
+let tray = null;
+let quitting = false;
 
 const userDataDir = () => app.getPath('userData');
 
@@ -155,15 +158,8 @@ async function doRefresh({ offline = false, only = null } = {}) {
       try { history.record(result.opportunities); } catch (e) { console.warn('[history]', e.message); }
     }
 
-    let fired = [];
-    try { fired = store.evaluateAlerts(result.opportunities); } catch (e) { console.warn('[alerts]', e.message); }
-    if (fired.length && Notification.isSupported()) {
-      const top = fired.slice(0, 3);
-      new Notification({
-        title: fired.length === 1 ? 'APY Dog found something' : `APY Dog: ${fired.length} alerts`,
-        body: top.map((f) => f.message).join('\n'),
-      }).show();
-    }
+    const fired = runAlerts();
+    if (tray) refreshTrayMenu();
 
     send('data:updated', {
       meta: result.meta,
@@ -227,6 +223,65 @@ function dueSources() {
     .filter((a) => (enabled === null || enabled === undefined ? a.defaultEnabled !== false : enabled.includes(a.id)))
     .filter((a) => now - (lastFetched.get(a.id) ?? 0) >= cadenceFor(a))
     .map((a) => a.id);
+}
+
+/**
+ * Run every alert rule against the current dataset and say something if
+ * anything fired.
+ *
+ * Split out of the refresh path because the most important rule does not depend
+ * on the feeds at all. A window closing is a function of the clock: nothing in
+ * the data changes on the morning a deal expires, so a check that only runs
+ * when a source returns fresh rows will reliably miss the one day it mattered.
+ */
+function runAlerts() {
+  if (!dataset?.opportunities?.length) return [];
+  let fired = [];
+  try {
+    fired = store.evaluateAlerts(dataset.opportunities, { settings: store.settings });
+  } catch (e) {
+    console.warn('[alerts]', e.message);
+    return [];
+  }
+  if (!fired.length) return fired;
+
+  if (store.settings.notify !== false && Notification.isSupported()) {
+    const urgent = fired.some((f) => f.urgency === 'critical');
+    const top = fired.slice(0, 3);
+    const n = new Notification({
+      title: fired.length === 1 ? 'APY Dog' : `APY Dog — ${fired.length} things to look at`,
+      body: top.map((f) => f.message).join('\n')
+        + (fired.length > top.length ? `\n…and ${fired.length - top.length} more` : ''),
+      urgency: urgent ? 'critical' : 'normal',
+    });
+    // A notification you cannot act on is just a distraction. Clicking it opens
+    // the app on the row it is about.
+    n.on('click', () => {
+      showWindow();
+      const id = fired[0]?.opportunity?.id;
+      if (id) send('nav:open', { id });
+    });
+    n.show();
+  }
+  return fired;
+}
+
+/** Bring the window back, creating it if the user closed it to the tray. */
+function showWindow() {
+  if (!win || win.isDestroyed()) { createWindow(); return; }
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+}
+
+function rescheduleDeadlineWatch() {
+  if (deadlineTimer) clearInterval(deadlineTimer);
+  // Every fifteen minutes is far more often than a day boundary needs and far
+  // cheaper than a refresh: it re-reads the clock against rows already in
+  // memory and fetches nothing.
+  deadlineTimer = setInterval(() => {
+    try { runAlerts(); } catch (e) { console.warn('[deadline]', e.message); }
+  }, 15 * 60000);
 }
 
 function rescheduleAuto() {
@@ -467,8 +522,28 @@ function registerIpc() {
     const after = JSON.stringify({ t: next.tax, a: next.riskAppetite, b: next.rankingBasis, h: next.horizonDays, m: next.budget });
     // Only the scoring inputs need a re-score; a theme change does not.
     if (before !== after) rescore();
-    if (patch.autoRefreshMinutes !== undefined) rescheduleAuto();
+    if (patch.autoRefreshMinutes !== undefined || patch.liveUpdates !== undefined) rescheduleAuto();
+    if (patch.startAtLogin !== undefined) syncLoginItem();
+    if (patch.runInBackground !== undefined) {
+      if (next.runInBackground) setupTray();
+      else if (tray) { tray.destroy(); tray = null; }
+    }
+    // A shorter deadline window has to take effect now, not at the next scan:
+    // the whole point of the setting is the day it fires.
+    if (patch.watchClosingDays !== undefined || patch.watchNewDealsWorth !== undefined) {
+      try { runAlerts(); } catch { /* best effort */ }
+    }
     return next;
+  });
+
+  handle('app:checkUpdates', () => checkForUpdates({ interactive: false }));
+  handle('app:installUpdate', () => {
+    try {
+      const { autoUpdater } = require('electron-updater');
+      quitting = true;
+      autoUpdater.quitAndInstall();
+      return true;
+    } catch { return false; }
   });
   handle('settings:reset', () => { const s = store.resetSettings(); rescore(); rescheduleAuto(); return s; });
 
@@ -532,6 +607,143 @@ function registerIpc() {
   });
 }
 
+/**
+ * Updating the app itself.
+ *
+ * Distinct from updating the data, which happens on its own cadence every time
+ * the app runs. This is the code, and it matters more than it sounds: a screener
+ * whose source list is frozen at whatever shipped is a screener that goes quietly
+ * stale while looking exactly as authoritative as the day it was built.
+ *
+ * electron-updater does the real work where a signed build exists. Where it does
+ * not — a dev checkout, an unsigned Linux build, a platform with no feed — the
+ * fallback still answers the only question that matters: is there something
+ * newer than what you are running.
+ */
+async function checkForUpdates({ interactive = false } = {}) {
+  let updater = null;
+  try { ({ autoUpdater: updater } = require('electron-updater')); } catch { /* fall through */ }
+
+  if (updater && app.isPackaged) {
+    updater.autoDownload = true;
+    updater.autoInstallOnAppQuit = true;
+    updater.removeAllListeners();
+    updater.on('update-downloaded', (info) => {
+      send('update:ready', { version: info?.version || null });
+      if (tray) refreshTrayMenu();
+    });
+    updater.on('error', (e) => {
+      console.warn('[update]', e?.message || e);
+      if (interactive) dialog.showMessageBox({ type: 'warning', message: 'Could not check for updates', detail: String(e?.message || e) });
+    });
+    try {
+      const res = await updater.checkForUpdates();
+      const v = res?.updateInfo?.version;
+      if (interactive && v && v === app.getVersion()) {
+        dialog.showMessageBox({ type: 'info', message: `APY Dog ${v} is the latest version.` });
+      }
+      return { ok: true, version: v || null, channel: 'auto' };
+    } catch (e) {
+      return { ok: false, error: String(e?.message || e) };
+    }
+  }
+
+  // Dependency-free fallback: ask GitHub what the newest release is.
+  try {
+    const { getJSON } = require('../src/core/http');
+    const rel = await getJSON('https://api.github.com/repos/pisano18/apy_dog/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' }, timeout: 8000, retries: 0,
+    });
+    const latest = String(rel?.tag_name || '').replace(/^v/, '');
+    const current = app.getVersion();
+    const newer = latest && compareVersions(latest, current) > 0;
+    if (newer) {
+      send('update:available', { version: latest, url: rel.html_url });
+      if (interactive) {
+        const { response } = await dialog.showMessageBox({
+          type: 'info',
+          message: `APY Dog ${latest} is available.`,
+          detail: `You are running ${current}.`,
+          buttons: ['Open the release page', 'Later'],
+          defaultId: 0,
+        });
+        if (response === 0) shell.openExternal(rel.html_url);
+      }
+    } else if (interactive) {
+      dialog.showMessageBox({ type: 'info', message: `APY Dog ${current} is the latest version.` });
+    }
+    return { ok: true, version: latest || null, newer, channel: 'github' };
+  } catch (e) {
+    if (interactive) {
+      dialog.showMessageBox({ type: 'warning', message: 'Could not check for updates', detail: String(e?.message || e) });
+    }
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+/** Numeric-segment version compare. Returns >0 when a is newer than b. */
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
+  }
+  return 0;
+}
+
+/**
+ * The tray presence.
+ *
+ * The point is not the icon. It is that quitting and closing stop being the
+ * same action, so the deadline watch survives the window being shut — which is
+ * the only state in which it is any use.
+ */
+function setupTray() {
+  if (tray || !store.settings.runInBackground) return;
+  try {
+    const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png'))
+      .resize({ width: 18, height: 18 });
+    icon.setTemplateImage(process.platform === 'darwin');
+    tray = new Tray(icon);
+    tray.setToolTip('APY Dog');
+    refreshTrayMenu();
+    tray.on('click', showWindow);
+  } catch (e) {
+    console.warn('[tray]', e.message);
+  }
+}
+
+function refreshTrayMenu() {
+  if (!tray) return;
+  const m = dataset?.meta || {};
+  const closing = (dataset?.opportunities || [])
+    .filter((o) => Number.isFinite(o.daysLeft) && o.daysLeft >= 0 && o.daysLeft <= 7).length;
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: closing ? `${closing} closing within a week` : 'Nothing closing this week', enabled: false },
+    { label: `${m.total ?? dataset?.opportunities?.length ?? 0} opportunities tracked`, enabled: false },
+    { type: 'separator' },
+    { label: 'Open APY Dog', click: showWindow },
+    { label: 'Refresh now', click: () => { if (!refreshing) doRefresh().catch(() => {}); } },
+    { label: 'Check for updates', click: () => checkForUpdates({ interactive: true }) },
+    { type: 'separator' },
+    { label: 'Quit', click: () => { quitting = true; app.quit(); } },
+  ]));
+}
+
+/** Ask the OS to start us at login, if the user asked for that. */
+function syncLoginItem() {
+  if (process.platform === 'linux') return;   // handled by the distro, not us
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: !!store.settings.startAtLogin,
+      openAsHidden: true,
+      args: ['--hidden'],
+    });
+  } catch (e) {
+    console.warn('[login item]', e.message);
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 app.whenReady().then(async () => {
@@ -539,6 +751,11 @@ app.whenReady().then(async () => {
   registerIpc();
   createWindow();
   rescheduleAuto();
+  if (!isSmoke) {
+    rescheduleDeadlineWatch();
+    setupTray();
+    syncLoginItem();
+  }
 
   // Show bundled data immediately so the window is never empty, then go to the
   // network. An instantly-useful window that improves beats a spinner.
@@ -552,8 +769,18 @@ app.whenReady().then(async () => {
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('before-quit', () => { try { history.prune(); } catch { /* best effort */ } });
+app.on('window-all-closed', () => {
+  // Closing the window is not quitting when the app is meant to be watching a
+  // deadline for you. A scanner that only runs while you are looking at it
+  // cannot tell you about the thing that closes while you are at work.
+  if (isSmoke || !store?.settings?.runInBackground) {
+    if (process.platform !== 'darwin') app.quit();
+  }
+});
+app.on('before-quit', () => {
+  quitting = true;
+  try { history.prune(); } catch { /* best effort */ }
+});
 
 /**
  * Headless self-check: wait for the renderer, assert it actually rendered rows,

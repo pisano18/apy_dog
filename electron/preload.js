@@ -63,6 +63,12 @@ contextBridge.exposeInMainWorld('apy', {
   exportJSON: (q) => invoke('export:json', q),
   openUserRates: () => invoke('userRates:open'),
 
+  checkUpdates: () => invoke('app:checkUpdates'),
+  installUpdate: () => invoke('app:installUpdate'),
+
   onProgress: (cb) => on('refresh:progress', cb),
   onDataUpdated: (cb) => on('data:updated', cb),
+  onUpdateAvailable: (cb) => on('update:available', cb),
+  onUpdateReady: (cb) => on('update:ready', cb),
+  onNavOpen: (cb) => on('nav:open', cb),
 });

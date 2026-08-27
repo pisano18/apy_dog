@@ -57,6 +57,16 @@
         "deb"
       ],
       "category": "Office"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "pisano18",
+        "repo": "apy_dog"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }
