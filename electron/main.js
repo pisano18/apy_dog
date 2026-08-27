@@ -199,7 +199,7 @@ function rescore() {
     taxProfile: store.settings.tax || {},
     basis: store.settings.rankingBasis || 'afterTax',
     horizonDays: store.settings.horizonDays ?? null,
-    amount: store.settings.budget ?? 10000,
+    amount: Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null,
   }).map((o) => ({
     ...o,
     rating: rate(o),

@@ -28,7 +28,9 @@ const DEFAULT_SETTINGS = {
   riskAppetite: 45,             // 0..100, drives the certainty-equivalent maths
   rankingBasis: 'afterTax',     // gross | afterTax | afterTaxReal
   horizonDays: null,            // when they want the money back
-  budget: 10000,                // deployed amount, for dollar figures
+  // null until the user says otherwise: the app shows rates and no dollar
+  // figures rather than quietly assuming a number on their behalf.
+  budget: null,
   movementHorizonDays: 30,      // window the expected-move bands are computed over
 
   // --- sources -------------------------------------------------------------

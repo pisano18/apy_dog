@@ -1,6 +1,7 @@
 'use strict';
 
 const C = require('./constants');
+const K = require('./opportunity-kinds');
 
 /**
  * The canonical Opportunity record.
@@ -165,6 +166,10 @@ function normalize(raw, ctx = {}) {
     // Which question this row answers: "what pays me" or "what's about to move".
     // Some things honestly answer both and are not forced into one.
     track: str(raw.track) || inferTrack(raw),
+    // Coarser than asset class, and the axis the interface navigates by. A
+    // savings account and a $1,500 referral bonus are both income and belong in
+    // completely different places.
+    section: str(raw.section) || inferSection(raw),
     chain: str(raw.chain),
     region: str(raw.region) || 'US',
     currency: str(raw.currency) || 'USD',
@@ -203,6 +208,21 @@ function normalize(raw, ctx = {}) {
     // never be mistaken for rows we looked at. Absent means measured, which is
     // what every single-tier source produces.
     measured: raw.measured === undefined || raw.measured === null ? true : !!raw.measured,
+
+    // --- findability ---------------------------------------------------------
+    // Windows close, work varies, and some things are known to five people. All
+    // three decide whether a row is worth someone's afternoon, and none of them
+    // are visible from a percentage.
+    expiresAt: str(raw.expiresAt),
+    startsAt: str(raw.startsAt),
+    effort: str(raw.effort) || inferEffort(raw),
+    reach: str(raw.reach) || 'common',
+    // What you would actually buy. Filled by core/vehicles.js after scoring.
+    vehicles: arr(raw.vehicles),
+    // Downsampled closes for the row sparkline and the detail chart. Kept short
+    // on purpose: a chart needs shape, not every tick, and holding full history
+    // for a thousand rows is how an Electron app starts feeling slow.
+    series: Array.isArray(raw.series) ? raw.series.filter(Number.isFinite).slice(-180) : null,
 
     // A return you can only collect once. An opening bonus annualises to a huge
     // number and is still a single fixed payment, so ranking it as a rate puts
@@ -243,6 +263,15 @@ function normalize(raw, ctx = {}) {
   };
 
   if (out.confidence === null) out.confidence = defaultConfidence(out);
+
+  // Derived rather than stored: a cached "12 days left" is wrong tomorrow.
+  const expiryMs = out.expiresAt ? Date.parse(out.expiresAt) : NaN;
+  out.daysLeft = Number.isFinite(expiryMs) ? Math.round((expiryMs - Date.now()) / C.DAY) : null;
+  const startMs = out.startsAt ? Date.parse(out.startsAt) : NaN;
+  out.daysUntilOpen = Number.isFinite(startMs) ? Math.round((startMs - Date.now()) / C.DAY) : null;
+  out.notYetOpen = Number.isFinite(out.daysUntilOpen) && out.daysUntilOpen > 0;
+  out.expired = Number.isFinite(out.daysLeft) && out.daysLeft < 0;
+
   return out;
 }
 
@@ -276,6 +305,35 @@ function inferTrack(raw) {
     return 'movement';
   }
   return 'movement';
+}
+
+/**
+ * Which section this belongs in.
+ *
+ * Deals are the interesting case: a sign-up bonus is technically income at an
+ * enormous rate, and putting it in the income list buries every savings account
+ * under three-figure numbers. It is a different kind of thing and gets its own
+ * shelf.
+ */
+function inferSection(raw) {
+  if (raw.oneTime || inferOneTime(raw)) return K.SECTION.DEALS;
+  if (raw.source === 'bonuses' || raw.source === 'deals') return K.SECTION.DEALS;
+  const track = raw.track || inferTrack(raw);
+  if (track === 'movement') return K.SECTION.MOVEMENT;
+  return K.SECTION.INCOME;
+}
+
+/**
+ * How much work it takes, guessed from what the requirements actually say. A
+ * source that knows better sets it explicitly.
+ */
+function inferEffort(raw) {
+  const reqs = (Array.isArray(raw.requirements) ? raw.requirements.join(' ') : '').toLowerCase();
+  if (!reqs) return 'passive';
+  if (/refer|friend|invite|sign up.*(other|someone)/.test(reqs)) return 'social';
+  if (/direct deposit|debit transaction|minimum balance|qualifying activit|maintain/.test(reqs)) return 'hoops';
+  if (/transfer|membership|eligib|new customer|open an account/.test(reqs)) return 'light';
+  return 'passive';
 }
 
 function inferTermKind(raw, days, maturity) {
@@ -363,7 +421,7 @@ function headlineRate(o) {
 }
 
 module.exports = {
-  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination, inferTrack, inferOneTime,
+  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination, inferTrack, inferOneTime, inferSection, inferEffort,
   aprToApy, apyToApr, discountToApy, annualize,
   _helpers: { num, str, bool, clamp, arr },
 };

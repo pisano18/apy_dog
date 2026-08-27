@@ -22,6 +22,15 @@ const DEFAULT_QUERY = {
   // 'movement' each also include rows tagged 'both', because a REIT genuinely
   // belongs in either view and hiding it from one would be wrong.
   track: 'all',                 // 'all' | 'income' | 'movement'
+  // The primary navigation axis. Sections keep 250 crypto tickers from burying
+  // a bank offer worth $1,500.
+  sections: [],                 // income | movement | deals
+  effortMax: null,              // passive | light | hoops | social | ongoing
+  reaches: [],                  // everyone | common | niche | obscure
+  expiringWithinDays: null,     // only things that close soon
+  hideExpired: true,
+  includeNotYetOpen: true,
+  vehicleKeys: [],              // only rows playable a particular way
 
   text: '',                     // free text over name/symbol/provider/chain/notes
   assetClasses: [],             // [] = all
@@ -143,6 +152,20 @@ function matches(o, q, unknownPasses) {
   if (!inSet(q.denominations, o.denomination)) return false;
   if (q.riskTiers?.length && !q.riskTiers.includes(o.risk?.tier)) return false;
   if (q.grades?.length && !q.grades.includes(o.rating?.grade)) return false;
+  if (q.sections?.length && !q.sections.includes(o.section)) return false;
+  if (q.reaches?.length && !q.reaches.includes(o.reach)) return false;
+  if (q.vehicleKeys?.length && !(o.vehicles || []).some((v) => q.vehicleKeys.includes(v.key))) return false;
+  if (q.hideExpired && o.expired) return false;
+  if (!q.includeNotYetOpen && o.notYetOpen) return false;
+  if (has(q.expiringWithinDays)) {
+    if (!Number.isFinite(o.daysLeft) || o.daysLeft < 0 || o.daysLeft > q.expiringWithinDays) return false;
+  }
+  if (has(q.effortMax)) {
+    const order = ['passive', 'light', 'hoops', 'social', 'ongoing'];
+    const want = order.indexOf(q.effortMax);
+    const got = order.indexOf(o.effort || 'passive');
+    if (want >= 0 && got > want) return false;
+  }
   if (q.setups?.length && !q.setups.includes(o.movement?.setup)) return false;
   if (q.severities?.length && !q.severities.includes(o.movement?.severity)) return false;
   if (q.heatTiers?.length && !q.heatTiers.includes(o.movement?.heatTier)) return false;
@@ -276,6 +299,15 @@ function applyQuery(list, query = {}) {
   // are unknown, and letting them tie at zero buries the measured ones.
   const rank = (o, v) => (o.movement?.unmeasured ? -1e9 : (v ?? -1e8));
   const MOVEMENT_SORTERS = {
+    closingSoon: (a, b) => (Number.isFinite(a.daysLeft) ? a.daysLeft : 1e9) - (Number.isFinite(b.daysLeft) ? b.daysLeft : 1e9),
+    leastEffort: (a, b) => {
+      const order = ['passive', 'light', 'hoops', 'social', 'ongoing'];
+      return order.indexOf(a.effort || 'passive') - order.indexOf(b.effort || 'passive');
+    },
+    obscurity: (a, b) => {
+      const order = ['obscure', 'niche', 'common', 'everyone'];
+      return order.indexOf(a.reach || 'common') - order.indexOf(b.reach || 'common');
+    },
     heat: (a, b) => rank(b, b.movement?.heat) - rank(a, a.movement?.heat),
     soonest: (a, b) => (a.movement?.catalyst?.event?.daysAway ?? 1e9) - (b.movement?.catalyst?.event?.daysAway ?? 1e9),
     biggestMove: (a, b) => rank(b, b.movement?.move?.typical) - rank(a, a.movement?.move?.typical),
@@ -322,6 +354,12 @@ function facets(list, query = {}) {
       byEventKind[e.kind] = (byEventKind[e.kind] || 0) + 1;
     }
   }
+  const bySection = {};
+  for (const k of ['income', 'movement', 'deals']) bySection[k] = count({ sections: [k] });
+  const byEffort = {};
+  for (const k of ['passive', 'light', 'hoops', 'social', 'ongoing']) byEffort[k] = count({ effortMax: k });
+  const byReach = {};
+  for (const k of ['everyone', 'common', 'niche', 'obscure']) byReach[k] = count({ reaches: [k] });
   const byDenomination = {};
   for (const d of ['usd', 'stable', 'crypto']) byDenomination[d] = count({ denominations: [d] });
   const bySource = {};
@@ -333,6 +371,7 @@ function facets(list, query = {}) {
 
   return {
     byAssetClass, bySource, byTier, byChain, byDenomination, byGrade, bySetup, byTrack, byEventKind,
+    bySection, byEffort, byReach,
     total: list.length,
     matching: applyQuery(list, query).length,
     trapsHidden: q.hideTraps ? list.filter((o) => o.scores?.traps?.verdict === 'likely_trap').length : 0,

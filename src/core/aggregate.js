@@ -8,6 +8,7 @@ const { scoreAll } = require('./score');
 const { peerMedians } = require('./traps');
 const { rate } = require('./rating');
 const { readMovement } = require('./movement');
+const { vehiclesFor, outOfReach } = require('./vehicles');
 const T = require('./tracks');
 
 /**
@@ -98,10 +99,18 @@ async function runSource(adapter, ctx) {
  * across independent sources is itself evidence, so it raises confidence.
  */
 function dedupe(list) {
+  // What counts as "the same thing" depends on the instrument, and getting this
+  // wrong in either direction is bad. Ten USDC lending pools on ten protocols
+  // are ten genuinely different opportunities paying different rates; the same
+  // bond ETF listed by two sources is one instrument described twice.
+  //
+  // The dividing line is whether a ticker identifies the tradeable thing. For a
+  // listed security it does. For a DeFi position the pool does, not the token
+  // it happens to hold, so those key on their own id and stay separate.
+  const POOLED = ['crypto_lending', 'crypto_lp', 'crypto_staking'];
   const keyOf = (o) => {
-    if (o.symbol && ['etf', 'cef', 'reit', 'bdc', 'preferred', 'dividend_equity', 'corp_bond', 'muni_bond'].includes(o.assetClass)) {
-      return `sym:${o.symbol.toUpperCase()}`;
-    }
+    const listed = o.symbol && !POOLED.includes(o.assetClass) && o.source !== 'defillama';
+    if (listed) return `sym:${o.symbol.toUpperCase()}`;
     if (o.assetClass === 'govt_bond' && o.subType && Number.isFinite(o.term?.days)) {
       return `gov:${o.subType}:${Math.round(o.term.days)}`;
     }
@@ -114,7 +123,14 @@ function dedupe(list) {
     const cur = best.get(k);
     if (!cur) { best.set(k, o); continue; }
     merged += 1;
-    const winner = (o.confidence ?? 0) > (cur.confidence ?? 0) || (!o.seed && cur.seed) ? o : cur;
+    // Prefer the row that actually knows more. Confidence alone would let an
+    // unmeasured index entry displace a measured one with a full price series.
+    const richness = (x) => (x.movementStats ? 4 : 0) + (Array.isArray(x.series) && x.series.length ? 2 : 0)
+      + (Number.isFinite(x.price) ? 1 : 0) + (x.measured === false ? -4 : 0) + (x.seed ? -1 : 0);
+    const rO = richness(o); const rCur = richness(cur);
+    const winner = rO !== rCur
+      ? (rO > rCur ? o : cur)
+      : ((o.confidence ?? 0) > (cur.confidence ?? 0) ? o : cur);
     const loser = winner === o ? cur : o;
     // Replace rather than mutate: these objects belong to their adapter, and a
     // confidence bump applied in place would compound if this ever ran twice.
@@ -219,7 +235,7 @@ async function aggregate(adapters, opts = {}) {
     taxProfile: settings.tax || {},
     basis: settings.rankingBasis || 'afterTax',
     horizonDays: settings.horizonDays ?? null,
-    amount: settings.budget ?? 10000,
+    amount: Number.isFinite(settings.budget) && settings.budget > 0 ? settings.budget : null,
   });
 
   // --- attach events, rate, and read movement -------------------------------
@@ -252,11 +268,19 @@ async function aggregate(adapters, opts = {}) {
 
     const withEvents = { ...o, events: own2 };
     const rating = rate(withEvents);
+    const budget = Number.isFinite(settings.budget) && settings.budget > 0 ? settings.budget : null;
+    const vehicles = vehiclesFor(withEvents, { budget });
     const movement = withEvents.track === T.TRACK.INCOME
       ? null
       : readMovement(withEvents, { events: own2, now, horizonDays: settings.movementHorizonDays ?? 30 });
 
-    return { ...withEvents, rating, movement };
+    return {
+      ...withEvents,
+      rating,
+      movement,
+      vehicles,
+      vehiclesOutOfReach: outOfReach(vehicles).length,
+    };
   });
 
   const health = results.map((r) => ({
@@ -290,6 +314,12 @@ async function aggregate(adapters, opts = {}) {
       riskFree,
       riskFreeSource,
       total: enriched.length,
+      bySection: {
+        income: enriched.filter((o) => o.section === 'income').length,
+        movement: enriched.filter((o) => o.section === 'movement').length,
+        deals: enriched.filter((o) => o.section === 'deals').length,
+      },
+      expiringSoon: enriched.filter((o) => Number.isFinite(o.daysLeft) && o.daysLeft >= 0 && o.daysLeft <= 14).length,
       byTrack: {
         income: enriched.filter((o) => o.track === T.TRACK.INCOME).length,
         movement: enriched.filter((o) => o.track === T.TRACK.MOVEMENT).length,

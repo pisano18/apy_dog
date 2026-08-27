@@ -70,10 +70,15 @@ function scoreOne(o, opts = {}) {
     basis = BASIS.AFTER_TAX,
     horizonDays = null,
     peerMedian = null,
-    amount = 10000,
+    // null means the user has not said how much they are working with. In that
+    // mode the app shows rates and says nothing about dollars, because a dollar
+    // figure computed from a number nobody supplied is a fabrication wearing a
+    // currency symbol.
+    amount = null,
   } = opts;
+  const hasBudget = Number.isFinite(amount) && amount > 0;
 
-  const withRf = { ...o, __riskFree: riskFree, __amount: amount };
+  const withRf = { ...o, __riskFree: riskFree, __amount: hasBudget ? amount : null };
   const risk = scoreRisk(withRf);
   const tail = catastrophicRisk(withRf);
   const traps = detectTraps(o, { peerMedian });
@@ -101,18 +106,31 @@ function scoreOne(o, opts = {}) {
   // headline APY is still shown, because it is a real fact about the product —
   // it is just not the number that decides which row is better for you.
   const cap = Number.isFinite(o.maxInvestment) && o.maxInvestment > 0 ? o.maxInvestment : amount;
-  const deployable = Math.max(0, Math.min(amount, cap));
-  const share = amount > 0 ? deployable / amount : 1;
+  const deployable = hasBudget ? Math.max(0, Math.min(amount, cap)) : null;
+  const share = hasBudget && amount > 0 ? deployable / amount : 1;
   const holdDays = Number.isFinite(o.term?.days) && o.term.days > 0 ? o.term.days : 365;
 
   // Can this person actually take the offer? A brokerage bonus tier requiring
   // $250,000 is a real product and completely irrelevant to someone deploying
   // $10,000 — ranking it among their options is worse than not listing it.
-  const affordable = !Number.isFinite(o.minInvestment) || amount <= 0 || o.minInvestment <= amount;
+  // Without a stated budget there is nothing to compare against, so the question
+  // does not arise and the answer is null rather than a guess.
+  const affordable = !hasBudget ? null
+    : (!Number.isFinite(o.minInvestment) || o.minInvestment <= amount);
 
   let blended = chosenRaw;
   let blendNote = null;
-  if (!affordable) {
+  if (!hasBudget) {
+    // No budget: rank on the headline. A one-off bonus is still marked one-off
+    // and still carries its cap, so the reader can see why 122% is not a rate,
+    // but nothing is invented on their behalf.
+    blended = chosenRaw;
+    blendNote = o.oneTime
+      ? 'A one-off payment, not a rate. Set an amount in Settings to see what it is worth on your money.'
+      : (Number.isFinite(o.maxInvestment)
+        ? `Capped at ${fmtMoney(o.maxInvestment)}. Set an amount in Settings to see the blended figure.`
+        : null);
+  } else if (affordable === false) {
     // Not reachable, so it contributes nothing over what you would otherwise do.
     blended = riskFree;
     blendNote = `Needs ${fmtMoney(o.minInvestment)} to enter, which is more than the ${fmtMoney(amount)} you are deploying.`;
@@ -199,10 +217,11 @@ function scoreOne(o, opts = {}) {
   // Computed on the blended figure so a capped or one-off offer reports what it
   // would really put in your pocket rather than a rate applied to money it will
   // not accept.
-  const yearOne = Number.isFinite(blended) ? amount * (blended / 100) : null;
-  const fiveYear = o.oneTime
-    ? yearOne   // it does not repeat, so five years is not five times
-    : (Number.isFinite(blended) ? amount * (Math.pow(1 + blended / 100, 5) - 1) : null);
+  const yearOne = hasBudget && Number.isFinite(blended) ? amount * (blended / 100) : null;
+  const fiveYear = !hasBudget ? null
+    : o.oneTime
+      ? yearOne   // it does not repeat, so five years is not five times
+      : (Number.isFinite(blended) ? amount * (Math.pow(1 + blended / 100, 5) - 1) : null);
 
   // --- headline 0..100 --------------------------------------------------------
   // Map CE onto a display scale. -5% CE -> 0, riskFree -> 50, +20% CE -> ~95.
@@ -219,7 +238,8 @@ function scoreOne(o, opts = {}) {
     blendedYield: Number.isFinite(blended) ? Math.round(blended * 1000) / 1000 : null,
     blendNote,
     affordable,
-    deployable: Math.round(deployable),
+    hasBudget,
+    deployable: deployable === null ? null : Math.round(deployable),
     oneTime: !!o.oneTime,
     basis,
     sharpe: sharpe === null ? null : Math.round(sharpe * 100) / 100,
