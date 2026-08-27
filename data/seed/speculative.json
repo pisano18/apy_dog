@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "source": "speculative",
+    "dataAsOf": "2026-08-01",
+    "origin": "Yahoo Finance chart endpoint (v8/finance/chart, range=2y&interval=1d) — adjusted daily closes",
+    "note": "Offline starting point, NOT a quote and NOT a yield. Every ticker and company name here is real. The prices, volatilities, momentum and drawdown figures are approximate round figures for 2026-08-01, hand-set to be plainly reasonable rather than precise, and they are the model's INPUTS — the expected-return band you see in the app is computed from them by the same code that runs on refresh. Refresh to replace every input with a measured one.",
+    "fields": {
+      "symbol": "ticker; must exist in the UNIVERSE in src/sources/speculative.js or the row is skipped",
+      "price": "share price in USD, also the minimum investment",
+      "volatility": "annualised stdev of daily log returns, percent — sets the width of the band",
+      "momentum12_1": "twelve-month return excluding the most recent month, percent",
+      "drawdownFromHigh": "current percent below the trailing 52-week high, always negative or zero",
+      "maxDrawdown": "deepest peak-to-trough fall over the two-year window, percent — a risk input, not a model input"
+    }
+  },
+  "items": [
+    { "symbol": "NKE",  "price": 72,   "volatility": 32, "momentum12_1": -18, "drawdownFromHigh": -35, "maxDrawdown": 55 },
+    { "symbol": "PFE",  "price": 26,   "volatility": 24, "momentum12_1": -8,  "drawdownFromHigh": -30, "maxDrawdown": 50 },
+    { "symbol": "INTC", "price": 24,   "volatility": 48, "momentum12_1": 10,  "drawdownFromHigh": -55, "maxDrawdown": 70 },
+    { "symbol": "DIS",  "price": 105,  "volatility": 27, "momentum12_1": -5,  "drawdownFromHigh": -22, "maxDrawdown": 45 },
+    { "symbol": "PYPL", "price": 68,   "volatility": 36, "momentum12_1": -12, "drawdownFromHigh": -40, "maxDrawdown": 60 },
+
+    { "symbol": "NVDA", "price": 180,  "volatility": 48, "momentum12_1": 35,  "drawdownFromHigh": -8,  "maxDrawdown": 40 },
+    { "symbol": "AMD",  "price": 165,  "volatility": 52, "momentum12_1": 40,  "drawdownFromHigh": -12, "maxDrawdown": 60 },
+    { "symbol": "PLTR", "price": 145,  "volatility": 62, "momentum12_1": 85,  "drawdownFromHigh": -15, "maxDrawdown": 45 },
+    { "symbol": "CRWD", "price": 420,  "volatility": 42, "momentum12_1": 25,  "drawdownFromHigh": -10, "maxDrawdown": 45 },
+    { "symbol": "SHOP", "price": 130,  "volatility": 48, "momentum12_1": 20,  "drawdownFromHigh": -18, "maxDrawdown": 55 },
+
+    { "symbol": "AVUV", "price": 105,  "volatility": 22, "momentum12_1": 6,   "drawdownFromHigh": -9,  "maxDrawdown": 25 },
+    { "symbol": "VBR",  "price": 205,  "volatility": 20, "momentum12_1": 5,   "drawdownFromHigh": -8,  "maxDrawdown": 24 },
+    { "symbol": "IJS",  "price": 115,  "volatility": 22, "momentum12_1": 4,   "drawdownFromHigh": -10, "maxDrawdown": 26 },
+
+    { "symbol": "SMH",  "price": 320,  "volatility": 34, "momentum12_1": 30,  "drawdownFromHigh": -9,  "maxDrawdown": 35 },
+    { "symbol": "XBI",  "price": 100,  "volatility": 30, "momentum12_1": 12,  "drawdownFromHigh": -20, "maxDrawdown": 40 },
+    { "symbol": "ARKK", "price": 80,   "volatility": 45, "momentum12_1": 22,  "drawdownFromHigh": -30, "maxDrawdown": 65 },
+    { "symbol": "URA",  "price": 48,   "volatility": 40, "momentum12_1": 28,  "drawdownFromHigh": -14, "maxDrawdown": 45 },
+    { "symbol": "KWEB", "price": 40,   "volatility": 36, "momentum12_1": 15,  "drawdownFromHigh": -45, "maxDrawdown": 70 },
+
+    { "symbol": "GLD",  "price": 380,  "volatility": 15, "momentum12_1": 18,  "drawdownFromHigh": -5,  "maxDrawdown": 18 },
+    { "symbol": "SLV",  "price": 42,   "volatility": 28, "momentum12_1": 22,  "drawdownFromHigh": -10, "maxDrawdown": 30 },
+    { "symbol": "GDX",  "price": 68,   "volatility": 36, "momentum12_1": 40,  "drawdownFromHigh": -8,  "maxDrawdown": 40 },
+    { "symbol": "DBC",  "price": 24,   "volatility": 15, "momentum12_1": 2,   "drawdownFromHigh": -12, "maxDrawdown": 25 },
+
+    { "symbol": "IBIT", "price": 62,   "volatility": 48, "momentum12_1": 25,  "drawdownFromHigh": -18, "maxDrawdown": 45 },
+    { "symbol": "COIN", "price": 300,  "volatility": 68, "momentum12_1": 30,  "drawdownFromHigh": -25, "maxDrawdown": 65 },
+    { "symbol": "MSTR", "price": 340,  "volatility": 82, "momentum12_1": 15,  "drawdownFromHigh": -40, "maxDrawdown": 70 }
+  ]
+}

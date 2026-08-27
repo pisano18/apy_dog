@@ -278,8 +278,9 @@ test('maps a covered-call ETF onto the canonical vocabulary', () => {
   // The price filter and the "can I afford one share" question both read these.
   assert.equal(o.price, 58.40);
   assert.equal(o.minInvestment, 58.40);
-  close(o.apy.total, (4.63 / 58.40) * 100);
-  close(o.apy.forward, ((0.45 * 12) / 58.40) * 100);
+  // Rates are rounded to four decimals in the schema, so compare at that precision.
+  close(o.apy.total, (4.63 / 58.40) * 100, 1e-4);
+  close(o.apy.forward, ((0.45 * 12) / 58.40) * 100, 1e-4);
   assert.ok(o.risk.volatility > 0 && o.risk.maxDrawdown > 0);
   assert.match(o.accessNotes, /commission free/i);
   assert.equal(o.seed, false);

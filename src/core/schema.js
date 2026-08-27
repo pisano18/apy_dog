@@ -22,6 +22,10 @@ const str = (v) => (v === null || v === undefined ? null : String(v).trim() || n
 const bool = (v, d = false) => (typeof v === 'boolean' ? v : v === undefined || v === null ? d : !!v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const arr = (v) => (Array.isArray(v) ? v.filter((x) => x !== null && x !== undefined) : []);
+const rate = (v) => {
+  const n = num(v);
+  return n === null ? null : Math.round(n * 1e4) / 1e4;
+};
 
 /**
  * APY from APR given a compounding frequency. DeFi quotes both and the
@@ -73,12 +77,15 @@ function normalize(raw, ctx = {}) {
   // --- headline rate -------------------------------------------------------
   const apyIn = raw.apy && typeof raw.apy === 'object' ? raw.apy : { total: raw.apy };
   const apy = { ...EMPTY_APY };
-  for (const k of Object.keys(EMPTY_APY)) apy[k] = num(apyIn[k]);
+  // Round to four decimals. Nothing about a rate is meaningful past 0.0001%, and
+  // an unrounded float (a 20-year doubling works out to 3.5264923841377582%)
+  // leaks straight into the table and the CSV export.
+  for (const k of Object.keys(EMPTY_APY)) apy[k] = rate(apyIn[k]);
   if (apy.total === null && (apy.base !== null || apy.reward !== null)) {
-    apy.total = (apy.base || 0) + (apy.reward || 0);
+    apy.total = rate((apy.base || 0) + (apy.reward || 0));
   }
   if (apy.base === null && apy.total !== null && apy.reward !== null) {
-    apy.base = apy.total - apy.reward;
+    apy.base = rate(apy.total - apy.reward);
   }
 
   // --- term ----------------------------------------------------------------
@@ -122,11 +129,11 @@ function normalize(raw, ctx = {}) {
   // --- expected return (speculative track) ---------------------------------
   const expIn = raw.expected && typeof raw.expected === 'object' ? raw.expected : null;
   const expected = expIn ? {
-    annualReturn: num(expIn.annualReturn),
-    p10: num(expIn.p10),
-    p50: num(expIn.p50),
-    p90: num(expIn.p90),
-    probabilityOfLoss: num(expIn.probabilityOfLoss),
+    annualReturn: rate(expIn.annualReturn),
+    p10: rate(expIn.p10),
+    p50: rate(expIn.p50),
+    p90: rate(expIn.p90),
+    probabilityOfLoss: num(expIn.probabilityOfLoss) === null ? null : Math.round(num(expIn.probabilityOfLoss) * 1e4) / 1e4,
     horizonDays: num(expIn.horizonDays) || 365,
     basis: arr(expIn.basis),
     thesis: str(expIn.thesis),
