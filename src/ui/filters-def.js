@@ -176,6 +176,12 @@
       format: (q) => `$${Number(q.minInvestmentMax).toLocaleString()} or less to enter`,
     },
     {
+      key: 'affordableOnly', type: 'bool', keys: ['affordableOnly'], group: G.MONEY,
+      label: 'Only what I can actually enter',
+      description: 'Hides anything whose entry minimum is more than the amount you are deploying.',
+      format: () => 'on',
+    },
+    {
       key: 'price', type: 'range', keys: ['priceMin', 'priceMax'], group: G.MONEY,
       label: 'Share price', unit: '$',
       description: 'Per-share or per-unit price. Only applies to things that have one.',

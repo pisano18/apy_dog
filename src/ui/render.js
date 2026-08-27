@@ -82,6 +82,8 @@ function badges(o) {
     o.yieldKind === 'expected' ? '<span class="badge spec" title="A modelled estimate, not a yield">estimate</span>' : '',
     o.subType === 'tips' ? '<span class="badge real" title="A REAL (inflation-adjusted) yield, not nominal">real</span>' : '',
     ['fdic', 'ncua', 'us_gov'].includes(o.risk?.insurance) ? `<span class="badge ins" title="${window.F.insurance(o.risk.insurance)}">insured</span>` : '',
+    o.scores?.affordable === false ? `<span class="badge snap" title="Needs ${esc(window.F.money(o.minInvestment))} to enter, more than the amount you set in Settings.">out of reach</span>` : '',
+    o.oneTime ? '<span class="badge cryp" title="A one-off payment, not a recurring rate. The ranking uses what it is worth on your budget over one year.">one-off</span>' : '',
     o.denomination === 'crypto' ? `<span class="badge cryp" title="Principal and yield are in ${esc(o.symbol || 'a volatile crypto asset')}, not dollars.">in ${esc((o.symbol || 'crypto').split('-')[0])}</span>` : '',
   ].filter(Boolean).join('');
 }

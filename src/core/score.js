@@ -31,6 +31,7 @@ const { catastrophicRisk, lossAversionWeight } = require('./tail');
  */
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const fmtMoney = (v) => `$${Math.round(v).toLocaleString()}`;
 
 /**
  * Risk-aversion coefficient A from a 0..100 appetite slider.
@@ -79,9 +80,63 @@ function scoreOne(o, opts = {}) {
   const tax = applyTax(o, taxProfile);
 
   const gross = tax.grossApy;
-  const chosen = basis === BASIS.GROSS ? tax.grossApy
+  const chosenRaw = basis === BASIS.GROSS ? tax.grossApy
     : basis === BASIS.AFTER_TAX_REAL ? tax.afterTaxRealApy
       : tax.afterTaxApy;
+
+  // --- what this is actually worth on the money you have --------------------
+  //
+  // Two facts break a naive rate comparison, and both are common:
+  //
+  //   Caps.     A 6.17% account capped at $1,000 does not pay 6.17% on $10,000.
+  //             It pays 6.17% on a tenth of it, and the rest earns whatever else
+  //             you can find.
+  //   One-offs. An opening bonus of $300 on $1,000 held 120 days annualises to
+  //             122%, which is arithmetically true and completely misleading:
+  //             you collect it once. Ranked as a rate it buries every real
+  //             savings account under a wall of three-figure numbers.
+  //
+  // So the ranking uses the blended return on the whole budget over the coming
+  // year, with anything the cap excludes earning the risk-free rate. The
+  // headline APY is still shown, because it is a real fact about the product —
+  // it is just not the number that decides which row is better for you.
+  const cap = Number.isFinite(o.maxInvestment) && o.maxInvestment > 0 ? o.maxInvestment : amount;
+  const deployable = Math.max(0, Math.min(amount, cap));
+  const share = amount > 0 ? deployable / amount : 1;
+  const holdDays = Number.isFinite(o.term?.days) && o.term.days > 0 ? o.term.days : 365;
+
+  // Can this person actually take the offer? A brokerage bonus tier requiring
+  // $250,000 is a real product and completely irrelevant to someone deploying
+  // $10,000 — ranking it among their options is worse than not listing it.
+  const affordable = !Number.isFinite(o.minInvestment) || amount <= 0 || o.minInvestment <= amount;
+
+  let blended = chosenRaw;
+  let blendNote = null;
+  if (!affordable) {
+    // Not reachable, so it contributes nothing over what you would otherwise do.
+    blended = riskFree;
+    blendNote = `Needs ${fmtMoney(o.minInvestment)} to enter, which is more than the ${fmtMoney(amount)} you are deploying.`;
+  } else if (Number.isFinite(chosenRaw) && amount > 0 && (share < 0.999 || o.oneTime)) {
+    let periodReturnPct;
+    if (o.oneTime) {
+      // Un-annualise: recover the single payment the annual figure was derived
+      // from, because that payment is all you ever get.
+      const yearsHeld = Math.min(holdDays, 365) / 365;
+      periodReturnPct = (Math.pow(1 + chosenRaw / 100, yearsHeld) - 1) * 100;
+    } else {
+      periodReturnPct = chosenRaw;
+    }
+    const idleAfter = o.oneTime ? Math.max(0, 1 - Math.min(holdDays, 365) / 365) : 0;
+    const dollars = deployable * (periodReturnPct / 100)
+      + deployable * (riskFree / 100) * idleAfter
+      + (amount - deployable) * (riskFree / 100);
+    blended = (dollars / amount) * 100;
+    blendNote = o.oneTime
+      ? `A one-off payment. On ${fmtMoney(amount)}, with the rest at ${riskFree.toFixed(2)}%, year one works out to ${blended.toFixed(2)}%.`
+      : `Capped at ${fmtMoney(cap)}. On ${fmtMoney(amount)}, with the rest at ${riskFree.toFixed(2)}%, that blends to ${blended.toFixed(2)}%.`;
+  }
+
+  const chosen = blended;
 
   const vol = risk.volatilityUsed;
   const confidence = clamp(o.confidence ?? 0.5, 0, 1);
@@ -141,9 +196,13 @@ function scoreOne(o, opts = {}) {
     : null;
 
   // --- dollars, because percentages hide magnitude --------------------------
-  const yearOne = Number.isFinite(tax.afterTaxApy) ? amount * (tax.afterTaxApy / 100) : null;
-  const fiveYear = Number.isFinite(tax.afterTaxApy)
-    ? amount * (Math.pow(1 + tax.afterTaxApy / 100, 5) - 1) : null;
+  // Computed on the blended figure so a capped or one-off offer reports what it
+  // would really put in your pocket rather than a rate applied to money it will
+  // not accept.
+  const yearOne = Number.isFinite(blended) ? amount * (blended / 100) : null;
+  const fiveYear = o.oneTime
+    ? yearOne   // it does not repeat, so five years is not five times
+    : (Number.isFinite(blended) ? amount * (Math.pow(1 + blended / 100, 5) - 1) : null);
 
   // --- headline 0..100 --------------------------------------------------------
   // Map CE onto a display scale. -5% CE -> 0, riskFree -> 50, +20% CE -> ~95.
@@ -156,6 +215,12 @@ function scoreOne(o, opts = {}) {
     certaintyEquivalent: ce === null ? null : Math.round(ce * 1000) / 1000,
     adjustedYield: mu === null ? null : Math.round(mu * 1000) / 1000,
     basisYield: Number.isFinite(chosen) ? Math.round(chosen * 1000) / 1000 : null,
+    headlineYield: Number.isFinite(chosenRaw) ? Math.round(chosenRaw * 1000) / 1000 : null,
+    blendedYield: Number.isFinite(blended) ? Math.round(blended * 1000) / 1000 : null,
+    blendNote,
+    affordable,
+    deployable: Math.round(deployable),
+    oneTime: !!o.oneTime,
     basis,
     sharpe: sharpe === null ? null : Math.round(sharpe * 100) / 100,
     riskAversionUsed: Math.round(A * 100) / 100,

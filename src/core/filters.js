@@ -41,6 +41,7 @@ const DEFAULT_QUERY = {
   priceMin: null,               // per-share/unit price
   priceMax: null,
   minInvestmentMax: null,       // "I only have $X to put in"
+  affordableOnly: false,        // hide anything whose entry minimum exceeds the budget
   budget: null,                 // amount being deployed; also drives income figures
 
   maxRisk: null,                // 0..100
@@ -185,6 +186,7 @@ function matches(o, q, unknownPasses) {
     if (has(q.priceMin) && o.price < q.priceMin) return false;
     if (has(q.priceMax) && o.price > q.priceMax) return false;
   }
+  if (q.affordableOnly && o.scores?.affordable === false) return false;
   if (has(q.minInvestmentMax)) {
     // Keep rows whose entry ticket you can actually afford. Unknown minimum is
     // treated as affordable, because most things have no minimum at all.

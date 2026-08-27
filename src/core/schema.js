@@ -128,7 +128,13 @@ function normalize(raw, ctx = {}) {
     insuredLimit: num(riskIn.insuredLimit),
     creditRating: str(riskIn.creditRating),
     volatility: num(riskIn.volatility),              // annualised stdev, percent
-    maxDrawdown: num(riskIn.maxDrawdown),
+    // A drawdown is measured from a peak, so it cannot exceed 100%: losing
+    // everything is the worst available outcome. A larger figure means the
+    // source computed a cumulative decline or a ratio, not a drawdown.
+    maxDrawdown: (() => {
+      const d = num(riskIn.maxDrawdown);
+      return d === null ? null : Math.max(0, Math.min(100, d));
+    })(),
     auditCount: num(riskIn.auditCount),
     ageDays: num(riskIn.ageDays),
     leverage: num(riskIn.leverage),
@@ -197,6 +203,11 @@ function normalize(raw, ctx = {}) {
     // never be mistaken for rows we looked at. Absent means measured, which is
     // what every single-tier source produces.
     measured: raw.measured === undefined || raw.measured === null ? true : !!raw.measured,
+
+    // A return you can only collect once. An opening bonus annualises to a huge
+    // number and is still a single fixed payment, so ranking it as a rate puts
+    // 240% at the top of a list of savings accounts.
+    oneTime: bool(raw.oneTime, inferOneTime(raw)),
 
     // Fund descriptors — these decide whether a big distribution is real income
     rocShare: num(raw.rocShare),                      // fraction that is return of capital
@@ -276,6 +287,21 @@ function inferTermKind(raw, days, maturity) {
   return 'duration';
 }
 
+/**
+ * Is this a one-off payment rather than a rate?
+ *
+ * Adapters can say so explicitly. Failing that, the two reliable tells are a
+ * sub-type that names itself a bonus or match, and a requirement line stating
+ * the offer does not repeat — both of which the sources already write for
+ * honesty reasons.
+ */
+function inferOneTime(raw) {
+  if (/bonus|_match|referral/i.test(raw.subType || '')) return true;
+  const reqs = Array.isArray(raw.requirements) ? raw.requirements.join(' ') : '';
+  if (/one-time|one time|does not repeat|not repeat|once only/i.test(reqs)) return true;
+  return false;
+}
+
 /** USD unless the position is in a volatile crypto asset. */
 function inferDenomination(raw) {
   const cls = raw.assetClass;
@@ -337,7 +363,7 @@ function headlineRate(o) {
 }
 
 module.exports = {
-  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination, inferTrack,
+  normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination, inferTrack, inferOneTime,
   aprToApy, apyToApr, discountToApy, annualize,
   _helpers: { num, str, bool, clamp, arr },
 };
