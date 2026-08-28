@@ -525,3 +525,56 @@ describe('the sweep chooses on evidence, not on the prettiest number', () => {
     assert.strictEqual(falseValidations, 0, 'selecting on the interval let noise through');
   });
 });
+
+/**
+ * A measured zero and a never-measured detector are different facts.
+ *
+ * The backtest can only measure the four price-shape detectors. Squeeze,
+ * catalyst and unlock need short interest, an event calendar and an unlock
+ * schedule, none of which a run over historical closes has any way to
+ * reconstruct, so a calibration file never mentions them. `pressureFrom`
+ * skipped every key the weights object did not contain — so the moment a
+ * calibration existed, the three mechanically-grounded detectors stopped
+ * counting entirely and a textbook squeeze read 0. Measuring four detectors
+ * switched off the other three.
+ */
+describe('calibration does not silence what it could not measure', () => {
+  const S = require('../src/core/signals');
+  const ALL = ['coil', 'quiet_accumulation', 'range_compression', 'extension', 'squeeze', 'catalyst', 'unlock'];
+  const REAL_CALIBRATION = { coil: 0, range_compression: 0, quiet_accumulation: 0, extension: 0.31 };
+  const only = (key, strength = 0.9) => ALL.map((k) => ({ key: k, fired: k === key, strength: k === key ? strength : 0 }));
+
+  test('a firing squeeze still registers under a real calibration', () => {
+    const p = S.pressureFrom(only('squeeze'), REAL_CALIBRATION);
+    assert.ok(p > 40, `a textbook squeeze reads ${p} under a calibration that never measured squeezes`);
+  });
+
+  test('the same for a dated catalyst and a token unlock', () => {
+    for (const key of ['catalyst', 'unlock']) {
+      assert.ok(S.pressureFrom(only(key), REAL_CALIBRATION) > 20, `${key} was silenced by calibration`);
+    }
+  });
+
+  test('but a detector measured as worthless stays worthless', () => {
+    // coil is in the file at 0 — measured, failed, and given zero weight on
+    // purpose. That must not be mistaken for "not mentioned".
+    assert.strictEqual(S.pressureFrom(only('coil'), REAL_CALIBRATION), 0,
+      'a detector that failed its own backtest is contributing again');
+    assert.strictEqual(S.pressureFrom(only('range_compression'), REAL_CALIBRATION), 0);
+  });
+
+  test('and the reading says which detectors are still a guess', () => {
+    const closes = Array.from({ length: 200 }, (_, i) => 100 * (1 + 0.001 * Math.sin(i / 7)));
+    const read = S.readSignals({ closes, volumes: [], highs: [], lows: [] }, closes.length - 1,
+      { weights: REAL_CALIBRATION });
+    assert.deepStrictEqual([...read.onPriors].sort(), ['catalyst', 'squeeze', 'unlock'],
+      'the reading does not disclose which detectors were never measured');
+  });
+
+  test('with no calibration at all, everything is a guess and says so', () => {
+    const closes = Array.from({ length: 200 }, (_, i) => 100 * (1 + 0.001 * Math.sin(i / 7)));
+    const read = S.readSignals({ closes, volumes: [], highs: [], lows: [] }, closes.length - 1, {});
+    assert.strictEqual(read.calibrated, false);
+    assert.strictEqual(read.onPriors.length, read.signals.length);
+  });
+});

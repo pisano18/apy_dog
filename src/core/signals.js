@@ -521,7 +521,20 @@ function pressureFrom(signals, weights = PRIOR_WEIGHTS) {
   let num = 0;
   let den = 0;
   for (const s of signals) {
-    const w = weights[s.key];
+    // A measured zero and an absent key are not the same fact.
+    //
+    // The backtest can only measure the four price-shape detectors — squeeze,
+    // catalyst and unlock need short interest, an event calendar and an unlock
+    // schedule, none of which a run over historical closes has any way to
+    // reconstruct — so a calibration file never mentions them. Skipping every
+    // key it does not mention meant that the moment a calibration existed, the
+    // three mechanically-grounded detectors stopped counting entirely and a
+    // textbook squeeze read 0. That is the opposite of what measuring was for.
+    //
+    // Measured as worthless stays worthless: `coil: 0` is in the file and
+    // `finite(0)` is true, so it contributes nothing, which is exactly right.
+    // Never measured falls back to its prior, and readSignals says how many did.
+    const w = finite(weights[s.key]) ? weights[s.key] : PRIOR_WEIGHTS[s.key];
     if (!finite(w)) continue;
     den += w;
     if (s.fired) num += w * s.strength;
@@ -559,12 +572,20 @@ function leanFrom(signals) {
 function readSignals(bars, i, ctx = {}) {
   const signals = detectAt(bars, i, ctx);
   const fired = signals.filter((s) => s.fired);
+  const weights = ctx.weights || PRIOR_WEIGHTS;
+  // Which detectors are still running on a guess. A reading built partly from
+  // priors is not the same claim as one built entirely from measurement, and the
+  // difference belongs on screen rather than buried in a weights object.
+  const onPriors = ctx.weights
+    ? signals.map((s) => s.key).filter((k) => !finite(weights[k]) && finite(PRIOR_WEIGHTS[k]))
+    : signals.map((s) => s.key);
   return {
     signals,
     fired,
-    pressure: pressureFrom(signals, ctx.weights || PRIOR_WEIGHTS),
+    pressure: pressureFrom(signals, weights),
     lean: leanFrom(signals),
     calibrated: !!ctx.weights,
+    onPriors,
     missing: [...new Set(signals.flatMap((s) => s.inputsMissing || []))],
   };
 }

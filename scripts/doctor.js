@@ -210,4 +210,12 @@ async function main() {
   process.exit(okHist > 0 ? 0 : 1);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// Only when run. Requiring this file must define functions and do nothing
+// else: the scripts test loads every script to catch an identifier that was
+// deleted with its use left behind, and without this guard that load fired a
+// real hundred-symbol fetch — `npm test` quietly ran a live backtest. The
+// guard test was written for exactly this and its pattern accepted a bare
+// top-level `main()`, so it passed on the thing it existed to prevent.
+if (require.main === module) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}

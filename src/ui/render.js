@@ -916,6 +916,11 @@ R.signalsView = (d) => {
         Base rate ${(cal.baseRate * 100).toFixed(1)}% across ${cal.bars} independent observations.
         Validated: ${cal.validated.length ? cal.validated.map((k) => esc(SIGNAL_LABELS[k] || k)).join(', ') : '<i>none — see the table below</i>'}.
         ${cal.failed.length ? `Failed and given zero weight: ${cal.failed.map((k) => esc(SIGNAL_LABELS[k] || k)).join(', ')}.` : ''}
+        ${(d.onPriors || []).length ? `<div class="calline"><b>Still on a guess:</b>
+          ${d.onPriors.map((k) => esc(SIGNAL_LABELS[k] || k)).join(', ')}. A backtest over historical closes cannot
+          reconstruct short interest, an event calendar or an unlock schedule, so these have never been measured
+          either way and carry the weight they were given by hand. They are not part of what the number above
+          verifies.</div>` : ''}
         <span class="calwhen">Run ${window.F.ago(cal.generatedAt)}</span>
       </div>`
     : `<div class="calbanner warn">

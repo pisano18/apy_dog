@@ -189,12 +189,20 @@ function signalsPayload(dataset, calibration = null) {
           key: f.key, strength: f.strength, value: f.value ?? null, evidence: f.evidence || [],
         })),
         missing: o.signals.missing || [],
+        onPriors: o.signals.onPriors || [],
         expected: o.movement?.expected || null,
         catalyst: o.movement?.catalyst?.event || null,
       }));
 
     return {
       rows: ranked,
+      // Detectors the backtest has no way to measure, so they are still running
+      // on their prior weight even though a calibration exists. Squeeze,
+      // catalyst and unlock need short interest, an event calendar and an
+      // unlock schedule — none of which a run over historical closes can
+      // reconstruct — so the file never mentions them, and a reader deserves to
+      // know which half of the reading was measured.
+      onPriors: [...new Set(readable.flatMap((o) => o.signals.onPriors || []))],
       calibration: cal ? {
         generatedAt: cal.generatedAt,
         universe: (cal.universe || []).length,

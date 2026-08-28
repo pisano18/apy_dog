@@ -808,6 +808,10 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
   padding: 1px 6px; border-radius: 4px;
 }
 .calbanner .calwhen { display: block; margin-top: 5px; font-size: 10.5px; color: var(--text-faint); }
+/* A measured reading and a half-measured one are different claims, so the
+   part that is still a guess is set apart rather than run into the sentence
+   announcing the measurement. */
+.calbanner .calline { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); color: var(--text-dim); }
 .sigmeta { font-size: 11.5px; color: var(--text-faint); margin-bottom: 12px; }
 .siggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px; }
 .sigcard {

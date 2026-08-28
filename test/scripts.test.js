@@ -89,10 +89,16 @@ describe('importing a script does nothing', () => {
       // network diagnostic and writing files into the repo as a side effect of
       // being loaded. Every script needs the guard.
       const src = fs.readFileSync(path.join(ROOT, 'scripts', f), 'utf8');
-      const guarded = /require\.main === module/.test(src)
-        || /^main\(\)\.catch/m.test(src)
-        || /^main\(\);?$/m.test(src);
-      assert.ok(guarded, `${f} has no entry-point guard, so requiring it runs it`);
+      // `require.main === module` and nothing else. The two alternatives this
+      // used to accept — a bare top-level `main()` and `main().catch(...)` —
+      // ARE the unguarded case, so the test passed on precisely what it was
+      // written to catch, and backtest.js and doctor.js both ran their whole
+      // job on import for as long as it did.
+      assert.ok(/require\.main === module/.test(src),
+        `${f} has no entry-point guard, so requiring it runs it`);
+      const unguarded = src.split('\n').filter((l) => /^\s*main\(\)/.test(l) && !/^\s{2,}/.test(l));
+      assert.deepStrictEqual(unguarded, [],
+        `${f} calls main() at the top level: ${unguarded.join(' / ')}`);
     });
   }
 });
