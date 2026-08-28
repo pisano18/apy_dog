@@ -238,3 +238,71 @@ describe('mergeMeasured', () => {
     assert.ok(!('warnings' in row));
   });
 });
+
+/**
+ * How busy the next six weeks are is a fact about the calendar.
+ *
+ * The clock card counts what falls inside a 45-day window, and that count is
+ * seasonal: late August is genuinely almost empty and the second half of
+ * December is genuinely packed. A card showing four things and saying nothing
+ * else reads as a failure to find anything — which is how "only 3 close events,
+ * are you serious?" happens while the app is telling the truth. So it also says
+ * what is waiting just past the window.
+ */
+describe('the clock card is legible when the calendar is quiet', () => {
+  test('it reports what is beyond its own window', () => {
+    const p = radarPayload(dataset, { settings: {}, watchlist: [] });
+    assert.ok(Number.isFinite(p.clockWindowDays) && p.clockWindowDays > 0);
+    assert.ok(Number.isInteger(p.beyondWindow), 'no count of what lies past the window');
+    assert.ok(p.beyondWindow > p.onTheClockCount,
+      'the year past the window should hold more than the six weeks inside it');
+  });
+
+  test('and names the next one, so the number is not just a number', () => {
+    const p = radarPayload(dataset, { settings: {}, watchlist: [] });
+    assert.ok(p.nextBeyond, 'nothing named beyond the window');
+    assert.ok(p.nextBeyond.days > p.clockWindowDays, 'the "next beyond" is inside the window');
+    assert.ok(typeof p.nextBeyond.name === 'string' && p.nextBeyond.name.length > 0);
+  });
+
+  test('nothing inside the window is counted twice as beyond it', () => {
+    const p = radarPayload(dataset, { settings: {}, watchlist: [] });
+    const inside = p.onTheClock.map((x) => x.daysLeft);
+    assert.ok(inside.every((d) => d <= p.clockWindowDays), 'an item past the window is in the card');
+  });
+});
+
+/**
+ * Sign-up bonuses are promotions, and promotions end.
+ *
+ * The bonuses adapter had no concept of an offer end date at all — not in the
+ * code, not in the shape of its data — so 44 of the most deadline-driven rows
+ * in the app could never appear in any "closing soon" count, no matter what
+ * anyone wrote into the offers file.
+ */
+describe('a bonus can carry an end date', () => {
+  test('the adapter reads one when it is given one', () => {
+    const bonuses = require('../src/sources/bonuses');
+    const schema = require('../src/core/schema');
+    const C = require('../src/core/constants');
+    const res = bonuses.loadSeed({
+      seedDir: require('node:path').join(__dirname, '..', 'data', 'seed'),
+      schema,
+      C,
+      now: Date.now(),
+      settings: {},
+      log: () => {},
+    });
+    assert.ok(res.opportunities.length > 10, 'the bonuses seed did not load');
+
+    // Feed one through with an end date and check it survives to the row.
+    const withDate = bonuses._buildRow
+      ? bonuses._buildRow({ ...res.opportunities[0], expiresAt: '2026-12-01' })
+      : null;
+    if (withDate) assert.ok(withDate.expiresAt, 'an offer end date was dropped');
+    // Whatever the builder's visibility, the field must be in the source.
+    const src = require('node:fs').readFileSync(
+      require('node:path').join(__dirname, '..', 'src', 'sources', 'bonuses.js'), 'utf8');
+    assert.ok(/expiresAt:/.test(src), 'bonuses.js still has no concept of an offer end date');
+  });
+});

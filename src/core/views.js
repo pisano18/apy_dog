@@ -127,11 +127,33 @@ function radarPayload(dataset, { settings = {}, watchlist = [] } = {}) {
       })
       .slice(0, 40);
 
+    /**
+     * What is on the clock just past the window, so a quiet card is legible as
+     * a quiet month rather than a broken app.
+     *
+     * The count in any 45-day window is seasonal: in late August almost nothing
+     * closes, and in the second half of December almost everything does. A card
+     * that shows four items and says nothing else reads as a failure to find
+     * anything — which is exactly how "only 3 close events, are you serious?"
+     * happens when the app is telling the truth.
+     */
+    const CLOCK_WINDOW = 45;
+    const beyond = [
+      ...rows.filter((o) => Number.isFinite(o.daysLeft) && o.daysLeft > CLOCK_WINDOW && o.daysLeft <= 365)
+        .map((o) => ({ days: o.daysLeft, name: o.name })),
+      ...(dataset.events || [])
+        .filter((e) => Number.isFinite(e.daysAway) && e.daysAway > CLOCK_WINDOW && e.daysAway <= 365)
+        .map((e) => ({ days: e.daysAway, name: e.title || e.label })),
+    ].sort((a, b) => a.days - b.days);
+
     return {
       budget,
       meta: dataset.meta,
       onTheClock,
       onTheClockCount: onTheClock.length,
+      clockWindowDays: CLOCK_WINDOW,
+      beyondWindow: beyond.length,
+      nextBeyond: beyond[0] ? { days: Math.round(beyond[0].days), name: beyond[0].name } : null,
       weekEvents,
       weekEventCount: upcoming.length,
       groups: {

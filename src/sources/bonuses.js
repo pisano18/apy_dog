@@ -462,6 +462,17 @@ function buildRow(item, { dataAsOf, schema, C }) {
     accessNotes,
     requirements,
 
+    // When the offer itself stops being available, which is not the same thing
+    // as the holding period. A sign-up bonus is a promotion: it has an end date,
+    // it gets pulled, and the day it closes is the day it most needs to be on
+    // screen. Nothing here could carry one — the field was not read, so even a
+    // date written into the offers file was dropped — and 44 of the most
+    // deadline-driven rows in the app were absent from every "closing soon"
+    // count. It stays null when nobody has published one, because inventing a
+    // deadline is worse than admitting there is no date.
+    expiresAt: isoDay(item.expiresAt ?? item.offerEndsAt, null),
+    startsAt: isoDay(item.startsAt, null),
+
     dataAsOf: isoDay(item.dataAsOf, dataAsOf),
     live: false,
     seed: item.origin !== 'user',

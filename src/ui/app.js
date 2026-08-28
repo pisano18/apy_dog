@@ -372,6 +372,15 @@ async function renderRadar() {
     count: d.onTheClockCount || 0,
     query: { expiringWithinDays: 45, sortBy: 'closingSoon', hideTraps: false },
     emptyText: 'Nothing with a published deadline in the next six weeks.',
+    // How busy the next six weeks are is a fact about the calendar, not about
+    // how hard the app looked. Late August is genuinely empty and the second
+    // half of December is genuinely packed, and a card showing four things with
+    // no other context reads as a failure to find anything.
+    footNote: d.beyondWindow
+      ? `${d.beyondWindow.toLocaleString()} more dated ${d.beyondWindow === 1 ? 'thing' : 'things'} `
+        + `beyond ${d.clockWindowDays} days${d.nextBeyond ? `, the next in ${d.nextBeyond.days} — ${d.nextBeyond.name}` : ''}. `
+        + 'See the Calendar for all of them.'
+      : null,
   }));
   // Built from the calendar rather than from rows, because most of what is
   // scheduled in a week belongs to no ticker.

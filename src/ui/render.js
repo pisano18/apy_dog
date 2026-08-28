@@ -622,7 +622,7 @@ function radarEventItem(e) {
   </li>`;
 }
 
-function radarCard({ icon, title, blurb, rows, items, count, query, view, valueFn, subFn, emptyText }) {
+function radarCard({ icon, title, blurb, rows, items, count, query, view, valueFn, subFn, emptyText, footNote }) {
   const body = items != null ? items : (rows || []).map((o) => radarItem(o, valueFn, subFn));
   const more = view
     ? `<button class="more" data-act="goto-view" data-val="${esc(view)}">see all →</button>`
@@ -638,6 +638,7 @@ function radarCard({ icon, title, blurb, rows, items, count, query, view, valueF
     <ul>${body.length
     ? body.join('')
     : `<li class="empty3">${esc(emptyText || 'Nothing here right now.')}</li>`}</ul>
+    ${footNote ? `<div class="rfoot">${esc(footNote)}</div>` : ''}
   </section>`;
 }
 

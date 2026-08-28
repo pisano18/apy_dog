@@ -41,7 +41,10 @@
         "The $24,500 cap is on YOUR deferrals for the year, not on the match; the plan may also cap the match separately",
         "Highly compensated employees can have deferrals refunded if the plan fails its annual nondiscrimination testing"
       ],
-      "notes": "This is the largest guaranteed return an ordinary person can access, and it is not close. A 50% return, in cash, on the day the money lands, with no market risk on the match itself — nothing else in this app pays anything like it, and no screener will ever show it to you because there is nothing to buy. Not taking the full match is the most expensive routine financial mistake there is."
+      "notes": "This is the largest guaranteed return an ordinary person can access, and it is not close. A 50% return, in cash, on the day the money lands, with no market risk on the match itself — nothing else in this app pays anything like it, and no screener will ever show it to you because there is nothing to buy. Not taking the full match is the most expensive routine financial mistake there is.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "employer-401k-match-100-on-3",
@@ -67,7 +70,10 @@
         "Vesting schedule applies unless the plan is a safe-harbor design, in which case employer contributions vest immediately",
         "A dollar-for-dollar formula usually stops at a low percentage of pay; beyond it the marginal return is zero"
       ],
-      "notes": "A 100% return means the money doubles the instant it arrives. Even if the fund you buy inside the plan then falls 30%, you are still up 40% on the year against not contributing at all, which is the arithmetic people miss when they say they are waiting for a better market."
+      "notes": "A 100% return means the money doubles the instant it arrives. Even if the fund you buy inside the plan then falls 30%, you are still up 40% on the year against not contributing at all, which is the arithmetic people miss when they say they are waiting for a better market.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "employer-401k-safe-harbor-basic-match",
@@ -93,7 +99,10 @@
         "Safe-harbor employer contributions are 100% vested immediately, which removes the forfeiture risk that applies to ordinary matches",
         "The blended 80% figure is the whole match divided by the whole 5% deferral; the first 3% is matched at 100% and the next 2% at 50%"
       ],
-      "notes": "Worth knowing as a shape rather than a number: matching formulas taper, so the marginal return on your sixth percent of pay is usually zero while the return on your first is 100%. Deferral decisions should be made against the marginal rate, not the average."
+      "notes": "Worth knowing as a shape rather than a number: matching formulas taper, so the marginal return on your sixth percent of pay is usually zero while the return on your first is 100%. Deferral decisions should be made against the marginal rate, not the average.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "employer-401k-front-load-true-up-gap",
@@ -174,7 +183,10 @@
         "Non-governmental 457(b) plans (some hospitals and charities) are unsecured claims against the employer's general assets and can be lost in a bankruptcy",
         "Each plan has its own investment menu and its own fees, which can be poor in 403(b) annuity products"
       ],
-      "notes": "Teachers, nurses and city employees can shelter roughly double what a private-sector colleague can, and most of them have never been told. The value shown is the deduction on the second limit at your marginal rate."
+      "notes": "Teachers, nurses and city employees can shelter roughly double what a private-sector colleague can, and most of them have never been told. The value shown is the deduction on the second limit at your marginal rate.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "457b-no-early-withdrawal-penalty",
@@ -253,7 +265,10 @@
         "The plan must be established by the end of the tax year for employee deferrals, though employer contributions can be funded later",
         "Once plan assets pass roughly $250,000 an annual Form 5500-EZ is required"
       ],
-      "notes": "Someone with a modest freelance income alongside a salaried job can often shelter the whole side income here. The value shown is the deduction at your marginal rate; the money is taxed as ordinary income on the way out."
+      "notes": "Someone with a modest freelance income alongside a salaried job can often shelter the whole side income here. The value shown is the deduction at your marginal rate; the money is taxed as ordinary income on the way out.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "hsa-contribution-deduction",
@@ -278,7 +293,10 @@
         "Those 55 and over can add roughly $1,000 more, but each spouse's catch-up must go into their own account",
         "Family coverage roughly doubles the limit to about $8,750 — the row is priced at the individual cap"
       ],
-      "notes": "Deductible going in, growth untaxed, and withdrawals untaxed for qualified medical expenses. No other account does all three, which is why it beats both a 401(k) and a Roth for any dollar you will eventually spend on healthcare — and everyone eventually does."
+      "notes": "Deductible going in, growth untaxed, and withdrawals untaxed for qualified medical expenses. No other account does all three, which is why it beats both a 401(k) and a Roth for any dollar you will eventually spend on healthcare — and everyone eventually does.",
+      "window": {
+        "type": "filing_deadline"
+      }
     },
     {
       "id": "hsa-payroll-fica-avoidance",
@@ -444,7 +462,10 @@
         "Form 8606 must be filed for the non-deductible contribution or you will be taxed twice on the same money",
         "This is a widely used technique with no explicit statutory blessing, and legislation to close it has been proposed repeatedly"
       ],
-      "notes": "Describing this as available to everyone would be simply wrong in both directions: it is useless below the phase-out and often unusable above it if you have a rollover IRA sitting there. Check the pro-rata position before the first step, not after."
+      "notes": "Describing this as available to everyone would be simply wrong in both directions: it is useless below the phase-out and often unusable above it if you have a rollover IRA sitting there. Check the pro-rata position before the first step, not after.",
+      "window": {
+        "type": "filing_deadline"
+      }
     },
     {
       "id": "mega-backdoor-roth",
@@ -1191,7 +1212,10 @@
         "A state deduction is usually still capped at its normal annual figure, so superfunding does not multiply it",
         "The gift is irrevocable — this is a gift, and you cannot take it back"
       ],
-      "notes": "The value shown is the annual tax drag avoided on an assumed 6% return; the real benefit is the extra years of compounding, which a single-year rate understates badly."
+      "notes": "The value shown is the annual tax drag avoided on an assumed 6% return; the real benefit is the extra years of compounding, which a single-year rate understates badly.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "health-fsa",
@@ -1472,7 +1496,10 @@
       ],
       "notes": "This row is worth exactly as much as the loss it protects, which is why it has no rate of its own. The commonest way people lose a harvest is not a deliberate repurchase but an automatic one: reinvested dividends inside the 30-day window disallow a proportional part of the loss, and nothing warns you. The disallowed loss is added to the basis of the replacement shares rather than destroyed, so it is deferred rather than lost — but deferred to a year you did not choose.",
       "confidence": 0.85,
-      "uncappedNote": "There is no cap because this is not a contribution — it is a rule about timing. It is worth exactly as much as the loss it stops you forfeiting, which depends entirely on how large that loss was."
+      "uncappedNote": "There is no cap because this is not a contribution — it is a rule about timing. It is worth exactly as much as the loss it stops you forfeiting, which depends entirely on how large that loss was.",
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "asset-location",
@@ -1523,7 +1550,10 @@
       ],
       "notes": "Roughly a fifth of net self-employment earnings, deductible, with far less paperwork than a solo 401(k) — no plan document, no annual filing at small balances. A solo 401(k) usually allows a larger contribution at modest income because of its employee deferral, so compare the two before choosing. The deadline flexibility is the real advantage: it is one of the very few moves that still works in April for the year that has already finished.",
       "confidence": 0.8,
-      "maxInvestment": 70000
+      "maxInvestment": 70000,
+      "window": {
+        "type": "filing_deadline"
+      }
     },
     {
       "id": "hsa-catch-up-55",
@@ -1548,7 +1578,10 @@
         "Enrolled in a qualifying high-deductible health plan"
       ],
       "notes": "The HSA is the only account that is deductible going in, untaxed while it grows, and untaxed coming out for medical costs. The catch-up adds a further slice of that space every year from 55, and unlike the 401(k) catch-up almost nobody uses it. The two-spouse detail matters: a married couple can make two catch-up contributions only if there are two HSAs, and opening the second one in December does not recover the years it did not exist.",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "window": {
+        "type": "filing_deadline"
+      }
     },
     {
       "id": "student-loan-interest-deduction",
@@ -1573,7 +1606,10 @@
         "Not filing separately"
       ],
       "notes": "Small in absolute terms and almost free to claim, which is a combination that makes it worth listing. It phases out over an income range and disappears entirely for married filing separately. If somebody else can claim you as a dependent, you cannot take it.",
-      "confidence": 0.85
+      "confidence": 0.85,
+      "window": {
+        "type": "year_end"
+      }
     },
     {
       "id": "ibond-purchase-timing",
@@ -1601,7 +1637,10 @@
       ],
       "notes": "A small, certain, purely mechanical edge — close to a free extra month of interest for choosing one date over another a few days later. The figure here is the value of that month at recent composite rates, not a yield on the bond itself. It is listed because it is exactly the kind of thing that is obvious once known and invisible until then.",
       "confidence": 0.75,
-      "maxInvestment": 10000
+      "maxInvestment": 10000,
+      "window": {
+        "type": "year_end"
+      }
     }
   ]
 }
