@@ -69,6 +69,11 @@ const DEFAULT_SETTINGS = {
   // fact the app cannot derive and refuses to guess.
   planFacts: {},
 
+  // --- first run ------------------------------------------------------------
+  // Null rather than false: false would mean "they went through it and set
+  // nothing", which is a different state from "they have never seen it".
+  onboardedAt: null,
+
   // --- safety rails --------------------------------------------------------
   acknowledgedDisclaimer: false,
 };

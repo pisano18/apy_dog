@@ -1054,6 +1054,127 @@ R.expectations = (e) => {
   </div>`;
 };
 
+
+/* ═════════════════════════════════════════════════════════════ onboarding ══ */
+
+/**
+ * First run.
+ *
+ * Four questions, all skippable, chosen because each one materially changes
+ * what the app shows rather than because a form felt like the done thing. Tax
+ * bracket in particular reorders the entire income list — a Treasury and a
+ * savings account swap places depending on the state you live in — so an app
+ * that never asks is quietly showing everyone the answer for somebody else.
+ *
+ * The amount is offered and explicitly not required. Most people opening this
+ * for the first time do not have a number in mind, and demanding one before
+ * showing anything is how a tool loses someone in the first thirty seconds.
+ */
+R.ONBOARD_STEPS = ['welcome', 'money', 'tax', 'appetite', 'done'];
+
+R.onboard = (step, draft, ctx) => {
+  const i = Math.max(0, R.ONBOARD_STEPS.indexOf(step));
+  const dots = R.ONBOARD_STEPS.map((k, n) =>
+    `<i class="${n === i ? 'on' : n < i ? 'past' : ''}"></i>`).join('');
+
+  const shell = (title, body, { back = true, next = 'Continue', skip = true } = {}) => `
+    <div class="obcard">
+      <div class="obdots">${dots}</div>
+      <h2>${title}</h2>
+      ${body}
+      <div class="obnav">
+        ${back && i > 0 ? '<button class="btn ghost" data-act="ob-back">Back</button>' : '<span></span>'}
+        <span class="spacer"></span>
+        ${skip ? '<button class="btn ghost" data-act="ob-skip">Skip setup</button>' : ''}
+        <button class="btn primary" data-act="ob-next">${esc(next)}</button>
+      </div>
+    </div>`;
+
+  if (step === 'welcome') {
+    return shell('Before you start', `
+      <p class="oblead">This finds places to put money and things that are about to move, and it is blunt about
+        which of those it can actually know.</p>
+      <ul class="oblist">
+        <li><b>It will not tell you which way anything is going.</b> Direction is not forecastable and anything
+          claiming otherwise is selling something. What it can do is spot the conditions that come before a large
+          move, and say how confident it is.</li>
+        <li><b>Nothing leaves your machine.</b> No account, no telemetry. Your tax bracket and amount live in a
+          file on this computer.</li>
+        <li><b>Every number can be wrong.</b> Rates come from public feeds and go stale. Verify with the provider
+          before moving money.</li>
+      </ul>
+      <p class="obnote">Four short questions. All of them skippable, all changeable later in Settings.</p>`,
+    { back: false, next: 'Start' });
+  }
+
+  if (step === 'money') {
+    return shell('How much are you working with?', `
+      <p class="oblead">Optional. Without it you get rates; with it you get dollars, and offers with a cap get
+        ranked on what they are actually worth to you rather than on a headline they cannot pay on your money.</p>
+      <div class="obfield">
+        <span class="amtwrap big"><i>$</i><input id="ob-amount" type="text" inputmode="numeric"
+          placeholder="leave empty for rates" value="${draft.budget ? Number(draft.budget).toLocaleString() : ''}" /></span>
+      </div>
+      <p class="obnote">You can change this any time from the box above the list. There is no wrong answer here,
+        including no answer.</p>`);
+  }
+
+  if (step === 'tax') {
+    const states = Object.keys(ctx.constants.STATE_TOP_RATES || {}).sort();
+    const opt = (v, cur, label) => `<option value="${esc(v)}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(label)}</option>`;
+    return shell('Where are you taxed?', `
+      <p class="oblead">This one genuinely reorders the list. A Treasury escapes state tax and a savings account
+        does not, so in a high-tax state a lower headline rate can be the better deal — and an app that never asks
+        is showing you somebody else's answer.</p>
+      <div class="obgrid">
+        <label>State
+          <select id="ob-state">${states.map((v) =>
+    opt(v, draft.state, `${v} — ${ctx.constants.STATE_TOP_RATES[v]}%`)).join('')}</select></label>
+        <label>Federal bracket
+          <select id="ob-fed">${(ctx.constants.FEDERAL_ORDINARY_BRACKETS || []).map((b) =>
+    opt(b, draft.federalOrdinary, `${b}%`)).join('')}</select></label>
+        <label>Account this is for
+          <select id="ob-account">
+            ${opt('taxable', draft.accountType, 'A normal taxable account')}
+            ${opt('traditional', draft.accountType, 'Traditional IRA or 401(k)')}
+            ${opt('roth', draft.accountType, 'Roth')}
+          </select></label>
+      </div>
+      <p class="obnote">Not sure of your bracket? The default is the one most people are in. It is a starting
+        point, not a commitment.</p>`);
+  }
+
+  if (step === 'appetite') {
+    return shell('How much can go wrong?', `
+      <p class="oblead">This sets how hard the ranking punishes uncertainty. It is not a personality test — it
+        changes which row comes first, and the difference is large.</p>
+      <div class="obchoices">
+        ${[
+    { v: 15, t: 'I cannot lose this', d: 'Insured deposits and government paper first. Almost nothing that can fall.' },
+    { v: 45, t: 'Careful', d: 'Mostly safe, some things that can wobble if they pay properly for it.' },
+    { v: 70, t: 'Comfortable with a bad year', d: 'Funds and credit that can drop meaningfully and usually recover.' },
+    { v: 92, t: 'Swing for the fences', d: 'Everything, including things that can go to zero. You accept that.' },
+  ].map((c) => `<button class="obchoice ${draft.riskAppetite === c.v ? 'on' : ''}" data-act="ob-appetite" data-val="${c.v}">
+          <b>${esc(c.t)}</b><span>${esc(c.d)}</span>
+        </button>`).join('')}
+      </div>`);
+  }
+
+  return shell('That is the setup', `
+    <p class="oblead">Four things worth knowing, and then you are done.</p>
+    <ul class="oblist">
+      <li><b>Learn</b> explains every term in the app in plain English. Anywhere you see a
+        <span class="helpq" style="pointer-events:none">?</span>, it opens the same explanation in place.</li>
+      <li><b>Signals</b> is what is showing the conditions that come before a large move. It says
+        "uncalibrated" until you have measured it against real history, and it means it.</li>
+      <li><b>Plan</b> turns the list into an order of operations, which is a different question from what pays most.</li>
+      <li><b>Search anything</b> with ${esc(ctx.platform === 'darwin' ? '⌘K' : 'Ctrl+K')} — there are thousands of
+        rows and the fastest way to a specific one is to type its name.</li>
+    </ul>
+    <p class="obnote">Hit <b>Refresh</b> when you are in: everything starts from bundled data until you do.</p>`,
+  { next: 'Open it', skip: false });
+};
+
 R.kindLabel = kindLabel;
 R.radarEventItem = radarEventItem;
 

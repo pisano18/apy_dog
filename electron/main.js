@@ -884,9 +884,43 @@ async function runSmokeTest() {
 
   await new Promise((r) => setTimeout(r, 3500));
 
+
   // The app lands on Radar now. Check the digest first, then move to Browse for
   // everything that exercises the table.
   let report = {};
+  // First run puts onboarding in front of everything. Walk it, because a smoke
+  // test that only ever sees the post-setup app would never notice the setup
+  // being broken — which is the one screen every new user is guaranteed to hit.
+  try {
+    const shown = await win.webContents.executeJavaScript(
+      "!document.querySelector('#onboard').classList.contains('hidden')",
+    );
+    report.onboardShown = shown;
+    if (shown) {
+      try { fs.mkdirSync(path.join(__dirname, '..', 'build'), { recursive: true }); } catch { /* exists */ }
+      fs.writeFileSync(path.join(__dirname, '..', 'build', 'smoke-onboard.png'),
+        (await win.webContents.capturePage()).toPNG());
+      report.onboardSteps = 0;
+      for (let n = 0; n < 8; n += 1) {
+        const open = await win.webContents.executeJavaScript(
+          "!document.querySelector('#onboard').classList.contains('hidden')",
+        );
+        if (!open) break;
+        report.onboardSteps += 1;
+        await win.webContents.executeJavaScript(
+          "document.querySelector('#onboard [data-act=\"ob-next\"]').click(); true",
+        );
+        await new Promise((r) => setTimeout(r, 260));
+      }
+      report.onboardDismissed = await win.webContents.executeJavaScript(
+        "document.querySelector('#onboard').classList.contains('hidden')",
+      );
+    }
+  } catch (err) {
+    errors.push(`onboarding failed: ${err.message}`);
+  }
+  await new Promise((r) => setTimeout(r, 600));
+
   try {
     report.radarCards = await win.webContents.executeJavaScript("document.querySelectorAll('#view-radar .rcard').length");
     report.radarItems = await win.webContents.executeJavaScript("document.querySelectorAll('#view-radar .ritem').length");

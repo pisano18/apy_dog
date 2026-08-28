@@ -390,6 +390,72 @@ async function renderRadar() {
   $('#view-radar').innerHTML = window.R.radar({ cards, meta: d.meta, budget: d.budget }, renderCtx());
 }
 
+/* ------------------------------------------------------------- onboarding - */
+
+/**
+ * First run.
+ *
+ * Draft state is held here and written once at the end, so backing out of a
+ * step does not leave half a configuration behind, and skipping writes nothing
+ * at all beyond the fact that they have seen it.
+ */
+function startOnboarding() {
+  const t = S.boot.settings.tax || {};
+  S.ob = {
+    step: 'welcome',
+    draft: {
+      budget: S.boot.settings.budget ?? null,
+      state: t.state ?? 'TX',
+      federalOrdinary: t.federalOrdinary ?? 24,
+      accountType: t.accountType ?? 'taxable',
+      riskAppetite: S.boot.settings.riskAppetite ?? 45,
+    },
+  };
+  renderOnboard();
+}
+
+function renderOnboard() {
+  const el = $('#onboard');
+  if (!S.ob) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = window.R.onboard(S.ob.step, S.ob.draft, {
+    constants: S.boot.constants,
+    platform: S.boot.platform,
+  });
+  el.querySelector('#ob-amount')?.focus();
+}
+
+/** Pull whatever the current step is showing into the draft before moving on. */
+function captureOnboardStep() {
+  const d = S.ob.draft;
+  const amt = $('#ob-amount');
+  if (amt) {
+    const t = amt.value.trim().toLowerCase().replace(/[$,\s]/g, '');
+    const mult = t.endsWith('k') ? 1e3 : t.endsWith('m') ? 1e6 : 1;
+    const n = parseFloat(mult === 1 ? t : t.slice(0, -1));
+    d.budget = Number.isFinite(n) && n > 0 ? Math.round(n * mult) : null;
+  }
+  if ($('#ob-state')) d.state = $('#ob-state').value;
+  if ($('#ob-fed')) d.federalOrdinary = Number($('#ob-fed').value);
+  if ($('#ob-account')) d.accountType = $('#ob-account').value;
+}
+
+async function finishOnboarding({ save = true } = {}) {
+  const d = S.ob?.draft || {};
+  const patch = { onboardedAt: new Date().toISOString(), acknowledgedDisclaimer: true };
+  if (save) {
+    patch.budget = d.budget ?? null;
+    patch.riskAppetite = d.riskAppetite;
+    patch.tax = { state: d.state, stateRate: null, federalOrdinary: d.federalOrdinary, accountType: d.accountType };
+  }
+  S.boot.settings = await window.apy.updateSettings(patch);
+  S.ob = null;
+  $('#onboard').classList.add('hidden');
+  syncAmountBox();
+  await runQuery();
+  renderRadar().catch(() => {});
+}
+
 /* ---------------------------------------------------------------- signals - */
 
 /**
@@ -1137,6 +1203,25 @@ function wire() {
     if (act === 'open-user-rates') { await window.apy.openUserRates(); return toast('Opened', 'Edit, save, then refresh.'); }
     if (act === 'clear-cache') { const n = await window.apy.clearCache(); toast('Cache cleared', `${n} files`); return renderSources(); }
     if (act === 'reset-settings') { S.boot.settings = await window.apy.resetSettings(); applyTheme(); renderSettings(); return toast('Settings reset'); }
+    if (act === 'ob-next') {
+      captureOnboardStep();
+      const steps = window.R.ONBOARD_STEPS;
+      const i = steps.indexOf(S.ob.step);
+      if (i >= steps.length - 1) return finishOnboarding({ save: true });
+      S.ob.step = steps[i + 1];
+      return renderOnboard();
+    }
+    if (act === 'ob-back') {
+      captureOnboardStep();
+      const steps = window.R.ONBOARD_STEPS;
+      S.ob.step = steps[Math.max(0, steps.indexOf(S.ob.step) - 1)];
+      return renderOnboard();
+    }
+    if (act === 'ob-skip') return finishOnboarding({ save: false });
+    if (act === 'ob-appetite') {
+      S.ob.draft.riskAppetite = Number(b.dataset.val);
+      return renderOnboard();
+    }
     if (act === 'help') { e.preventDefault(); e.stopPropagation(); return showHelp(b.dataset.key, b); }
     if (act === 'help-close') { e.preventDefault(); return hideHelp(); }
     if (act === 'check-updates') {
@@ -1402,6 +1487,7 @@ async function main() {
   await runQuery();
   switchView('radar');
 
+  if (!S.boot.settings.onboardedAt) { startOnboarding(); return; }
   if (!S.boot.settings.acknowledgedDisclaimer) {
     notice('<b>APY Dog finds and ranks — it does not give advice.</b> Nothing here predicts direction. Verify every number before moving money.',
       'Got it', async () => {
