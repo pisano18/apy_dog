@@ -13,7 +13,85 @@ APY Dog is built around the other three:
 | **◈ Movement** | Things whose return is price. What is about to move, and how hard. Never given a fake expected return. |
 | **★ Deals** | Bounded money — sign-up bonuses, referrals, employer matches, tax elections. Often the highest return per dollar in the app, and always capped. |
 | **▣ Calendar** | Dated things that move all of the above. |
+| **◉ Signals** | What is showing the conditions that come before a large move — with the evidence, and with its own hit rate measured against the base rate. |
 | **▶ Plan** | What to do first, second, third — with your money and your patience as the constraints. |
+| **? Learn** | Every term in the app, in plain English, reachable from wherever the jargon is. |
+
+---
+
+## Signals: what is about to move, and how anyone would know
+
+Direction is not forecastable to any useful degree. Magnitude is a different question — volatility clusters and
+mean-reverts, one of the most replicated findings in finance — so unusual quiet genuinely says something about the
+size of what comes next while saying nothing about which way.
+
+Seven detectors, each reporting evidence you can argue with rather than a number you have to trust: compression,
+quiet accumulation, tight range, extension, squeeze mechanics, catalyst proximity, unlock overhang. Only the two
+that are **mechanically** directional get a directional opinion — forced buying by short sellers, and scheduled
+token supply. Everything else reads `no direction`, on purpose.
+
+```
+78  Example Corp EXMP   D     12.4% would be a normal move · Earnings in 6 days   ▲ leans up
+    Compression      ████████░░  Trading at 31% of its own normal volatility.
+    Squeeze          ███████░░░  48% of the free float is sold short.
+```
+
+### The harness matters more than the detectors
+
+Without it this is a horoscope. A signal that fires before a large move 40% of the time is worth nothing if large
+moves happen 40% of the time anyway, so everything is scored against the **base rate** and nothing is reported
+without it. Validation requires the *lower bound* of the confidence interval to clear the base rate, a minimum
+sample, and survival on a chronological holdout the weight-fitting never saw.
+
+Building it turned up three things that had made the numbers wrong, each of which is the standard way a backtest
+invents an edge that is not there:
+
+| Problem | What it did | Fix |
+|---|---|---|
+| **Overlapping windows** | Forward windows shared 20 of 21 days, so the interval was computed on ~20x more "observations" than there were independent ones. Compression validated on **4 of 12 baskets of pure random walks**. | Score on non-overlapping strides |
+| **Multiple comparisons** | Seven detectors at 95% throws a false positive about a third of the time — and it is the false one you believe | Bonferroni correction |
+| **The threshold itself** | A fixed 15% bar put the base rate at 43%, so "large move" meant "volatile instrument" — which every volatility detector answers trivially and correctly while telling you nothing | A multiple of each instrument's *own* baseline, computed point-in-time |
+
+After all three: **zero false validations across twenty independent noise baskets**, while compression still
+validates at 1.5x lift out-of-sample on planted regime-switching data — and the detector that was never planted is
+honestly reported as failed. Lookahead is prevented structurally and tested by poisoning every bar after the
+evaluation point.
+
+```bash
+npm run backtest            # 5y of real daily history, out of sample
+npm run backtest --years 10 --horizon 42
+```
+
+Until you run that, the app says **uncalibrated** at the top of the Signals view, every time, and means it: the
+ordering is meaningful and the number is not. Once you have, it shows the measured hit rate, base rate, lift and
+sample size per detector — and gives failing detectors **zero weight** rather than keeping them because they
+sounded plausible.
+
+It also refuses to read a signal off a chart that was drawn rather than recorded. With that guard removed, the top
+of the ranking is stablecoins — a drawn low-volatility curve looks like perfect compression.
+
+---
+
+## What to actually expect
+
+Every other figure in the app is a single number, and a single number is a poor description of an uncertain
+outcome. Each row now carries a band, with the bad end weighted properly, because that is the end that decides
+whether you can hold on.
+
+```
+A good year                                    +7.2%      +$1,800
+Typical                                        +4.3%      +$1,075
+A bad year                                     −9.3%      −$2,325
+The bad case that is not supposed to happen   −27.3%      −$6,825
+```
+
+It also names **which kind** of uncertainty applies, because conflating them is how people get hurt. A savings
+account's uncertainty is in the *rate* — the bad case is earning less than you hoped. A fund's is in the
+*principal* — the bad case is having less money than you started with. Putting both in a column headed "yield" is
+what makes them look comparable.
+
+Where an outcome genuinely cannot be bounded — a pool that can be drained, an issuer that can vanish — it says the
+tail is not a percentile of a distribution and to size the position assuming zero.
 
 ---
 
@@ -204,6 +282,26 @@ does not pay four fifths of it.
 
 ---
 
+## You should not need to already know the vocabulary
+
+44 entries covering every term the app puts on screen, with one rule: explain it without using another piece of
+jargon, and if you need a second term, that term gets its own entry. Each has a plain answer, why it is on screen
+at all, and **the catch** — what people get wrong about it, which is usually the part that actually helps.
+
+> **Duration** — Roughly how much a bond falls if interest rates rise by 1%.
+> *Why it is here.* A duration of 16 means a 1% rate rise costs about 16% of the price — on something usually
+> called safe.
+> *The catch.* It is not the same as years to maturity. A 30-year bond has a duration nearer 16 than 30.
+
+Clicking the `?` beside any column header opens the same explanation in place. A help page you have to go and find
+is a help page nobody reads.
+
+First run asks four short questions, all skippable. Tax is the one that matters: a Treasury escapes state tax and a
+savings account does not, so in a high-tax state a lower headline rate is genuinely the better deal, and an app
+that never asks is showing everyone the answer for one person.
+
+---
+
 ## Filters
 
 Every filter is declared once as data, so the interface is a bar of removable pills rather than a permanent wall
@@ -253,7 +351,8 @@ npm run probe       # which upstream feeds are reachable, and still the right sh
 
 ## What it will not do
 
-**It will not make you rich, and nothing that says otherwise is telling the truth.** What it does is narrower and
+**It will not tell you which way anything is going, and it will not make you rich.** Nothing that says otherwise
+is telling the truth. What it does is narrower and
 real: it finds bounded, time-limited money that no screener lists, tells you before the window shuts rather than
 after, puts the moves in the order that actually matters, and is honest about the size of each one. A $300 bonus
 is $300. A 100% employer match on 3% of your pay is worth exactly 3% of your pay. Those add up to a materially
@@ -299,11 +398,12 @@ are frequently targeted to individual customers. The offer on your own screen is
 ```
 electron/          main process (network, disk, IPC, per-source refresh cadence) + sandboxed preload bridge
 src/core/          schema · opportunity-kinds · tracks · rating · risk · tail · tax · traps · score
-                   plan · vehicles · catalyst · movement · filters · aggregate · history · store · export
+                   signals · backtest · synthetic · calibration · expectations · plan · vehicles
+                   catalyst · movement · filters · aggregate · history · store · export
 src/sources/       one adapter per feed, auto-discovered, contract in _contract.js
 src/ui/            index.html · styles.css · format.js · filters-def.js · render.js · app.js
 data/seed/         bundled offline snapshots
-scripts/           scan.js (headless) · probe.js (feed diagnostics) · make-icon.js
+scripts/           scan.js (headless) · backtest.js (real-history validation) · probe.js · make-icon.js
 test/              node --test
 ```
 
@@ -311,8 +411,14 @@ Adding a data source is one file in `src/sources/` satisfying `_contract.js`. Ad
 `src/ui/filters-def.js`.
 
 ```bash
-npm test          # unit tests + cross-source audit invariants over the real bundled dataset
+npm test          # unit tests, cross-source audit invariants, and the statistical null tests
 npm run smoke     # boots the real app headlessly, exercises every view, screenshots each
+npm run backtest  # validates the signal engine against real price history
 ```
+
+The test that matters most is the **null**: twenty independent baskets of pure random walks, asserting the harness
+reports no edge. Data with no structure by construction is the only place you can be certain what the right answer
+is, and a harness that finds an edge there would make every other number it produces worthless. It has already
+failed once and caught a real bug.
 
 MIT.
