@@ -964,11 +964,31 @@ R.signalsView = (d) => {
 
     ${banner}
 
-    ${c.readable === 0 ? `<div class="infobox" style="margin-top:14px">
+    ${c.readable === 0 ? `<div class="infobox err" style="margin-top:14px">
       <b>No row has recorded price history yet.</b> ${c.unreadable} rows carry a chart drawn from their own
-      statistics rather than real closes, and a compression signal read off a curve that was generated from a
-      volatility number would just be that number handed back as evidence. Hit <b>Refresh</b> to fetch real
-      history, then come back. ${window.helpChip ? window.helpChip('illustrative') : ''}
+      statistics rather than real closes, and a compression signal read off a curve generated from a volatility
+      number would just be that number handed back as evidence.
+      ${window.helpChip ? window.helpChip('illustrative') : ''}
+      ${(() => {
+    const g = d.diagnosis;
+    if (!g) return '';
+    if (!g.everScanned || g.offline) {
+      return '<div class="diagline">Nothing has been fetched yet this session. Press <b>Refresh</b> in the '
+            + 'top right and wait for it to finish.</div>';
+    }
+    const rows = (g.sources || []).map((sfc) => `<div class="diagline">
+          <b>${esc(sfc.label)}</b> — ${esc(sfc.status)}, ${sfc.rows} rows.
+          ${sfc.problem ? `<span class="diagerr">${esc(String(sfc.problem).slice(0, 200))}</span>`
+    : sfc.status === 'ok' ? 'Answered, but returned no usable price history for these rows.' : ''}
+        </div>`).join('');
+    return `<div class="diagbox">
+          <div class="diagline">A scan DID run${g.scannedAt ? ` ${esc(window.F.ago(g.scannedAt))}` : ''}, so
+            pressing Refresh again will not change this. Here is what the price sources actually did:</div>
+          ${rows}
+          <div class="diagline">Run <code>npm run doctor</code> in the project folder — it names the exact
+            HTTP status and what each provider said, which is what this needs to be fixed.</div>
+        </div>`;
+  })()}
     </div>` : `
       <div class="sigmeta">${c.firing} of ${c.readable} measured rows are firing at least one signal.
         ${c.unreadable ? `${c.unreadable} more have no recorded history yet and are excluded.` : ''}</div>

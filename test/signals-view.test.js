@@ -129,16 +129,54 @@ describe('it always says whether it has been checked', () => {
 });
 
 describe('the empty state explains itself rather than looking broken', () => {
-  test('nothing measured says why, and what to do', () => {
-    const html = R.signalsView({
-      counts: { total: 236, readable: 0, unreadable: 236, firing: 0 },
-      calibration: null,
-      rows: [],
-    });
+  const empty = (diagnosis) => R.signalsView({
+    counts: { total: 236, readable: 0, unreadable: 236, firing: 0 },
+    calibration: null,
+    rows: [],
+    diagnosis,
+  });
+
+  test('before any scan, it says to refresh', () => {
+    const html = empty({ everScanned: false, offline: true, sources: [] });
     assert.ok(html.includes('No row has recorded price history yet'));
     assert.ok(html.includes('236'));
     assert.ok(/Refresh/.test(html), 'must say what action fixes it');
     assert.strictEqual(count(html, /class="sigcard"/g), 0);
+  });
+
+  test('AFTER a scan it does not tell you to do the thing you already did', () => {
+    // "Hit Refresh" is useless advice to somebody who already refreshed, and
+    // that is exactly the state this landed in on a real machine.
+    const html = empty({
+      everScanned: true,
+      offline: false,
+      scannedAt: new Date().toISOString(),
+      sources: [
+        { id: 'equities', label: 'Equities & ETFs', status: 'failed', rows: 0, problem: 'HTTP 401 Invalid Cookie' },
+        { id: 'crypto', label: 'Crypto assets', status: 'ok', rows: 900, problem: null },
+      ],
+    });
+    assert.ok(/scan DID run/.test(html), 'must acknowledge a scan already happened');
+    assert.ok(html.includes('Equities &amp; ETFs') || html.includes('Equities & ETFs'));
+    assert.ok(html.includes('HTTP 401 Invalid Cookie'), 'the real provider error must reach the screen');
+    assert.ok(html.includes('npm run doctor'), 'must point at the tool that diagnoses it');
+  });
+
+  test('a source that answered but gave nothing usable is named as such', () => {
+    const html = empty({
+      everScanned: true,
+      offline: false,
+      sources: [{ id: 'equities', label: 'Equities & ETFs', status: 'ok', rows: 190, problem: null }],
+    });
+    assert.ok(/returned no usable price history/.test(html),
+      'a source that succeeded but delivered no history is the confusing case and must be called out');
+  });
+
+  test('it still renders with no diagnosis at all', () => {
+    const html = R.signalsView({
+      counts: { total: 5, readable: 0, unreadable: 5, firing: 0 }, calibration: null, rows: [],
+    });
+    assert.ok(html.includes('No row has recorded price history yet'));
   });
 });
 

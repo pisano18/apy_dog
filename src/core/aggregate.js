@@ -327,6 +327,10 @@ async function aggregate(adapters, opts = {}) {
             events: own2,
             horizonDays: settings.movementHorizonDays ?? 30,
             weights: calibration?.weights || null,
+            // The settings the backtest chose, so the app detects with the same
+            // configuration that was actually measured rather than the guesses
+            // the measurement rejected.
+            params: calibration?.chosenParams || null,
             shortPercentFloat: withEvents.shortPercentFloat,
             daysToCover: withEvents.daysToCover,
             borrowFeePct: withEvents.borrowFeePct,

@@ -362,3 +362,85 @@ describe('the quiet-period check the user asked for', () => {
       `coil fires on ${(coilFp.falsePositiveRate * 100).toFixed(0)}% of quiet bars — it fires on everything`);
   });
 });
+
+describe('fitting parameters instead of guessing them', () => {
+  test('the sweep finds no edge in noise, across ten baskets', () => {
+    // The sweep multiplies the number of chances to be fooled by the size of
+    // the grid, so it needs its own null. It has already earned it twice.
+    let falseValidations = 0;
+    let runs = 0;
+    for (let k = 0; k < 10; k += 1) {
+      const r = B.sweep(syn.randomBasket({ count: 26, n: 1800, seed: 5000 + k * 311 }),
+        { horizon: 21, outcome: 'vol_expansion' });
+      if (!r.ok) continue;
+      runs += 1;
+      falseValidations += r.validated.length;
+    }
+    assert.ok(runs >= 8, `only ${runs} sweeps completed`);
+    assert.strictEqual(falseValidations, 0, 'the parameter sweep found an edge in pure noise');
+  });
+
+  test('but still finds planted structure, and rejects what was not planted', () => {
+    const r = B.sweep(syn.regimeBasket({ count: 30, n: 2400, seed: 11 }),
+      { horizon: 21, outcome: 'vol_expansion' });
+    assert.ok(r.ok, r.reason);
+    assert.ok(r.validated.includes('coil'), `missed planted compression: ${JSON.stringify(r.validated)}`);
+    const qa = r.test.scores.find((x) => x.key === 'quiet_accumulation');
+    assert.ok(['failed', 'insufficient', 'unusable'].includes(qa.verdict),
+      `claimed an edge for a pattern never planted: ${qa.verdict}`);
+  });
+
+  test('the holdout is never the set the parameters were chosen on', () => {
+    const split = B.threeWaySplit(syn.randomBasket({ count: 4, n: 2000, seed: 1 }));
+    for (let i = 0; i < split.train.length; i += 1) {
+      const tr = split.train[i].closes;
+      const va = split.validate[i].closes;
+      const te = split.test[i].closes;
+      assert.ok(tr.length && va.length && te.length, 'a split came back empty');
+      // Chronological and disjoint: a random split would put bar i in train and
+      // bar i+1 — nearly the same observation — in test.
+      assert.strictEqual(tr.length + va.length + te.length,
+        split.train[i].closes.length + va.length + te.length);
+      assert.notStrictEqual(tr[tr.length - 1], te[0], 'train and test overlap');
+    }
+  });
+
+  test('the correction accounts for the whole grid, not just the detectors', () => {
+    const r = B.sweep(syn.regimeBasket({ count: 20, n: 2000, seed: 3 }), { horizon: 21, outcome: 'vol_expansion' });
+    assert.ok(r.ok);
+    const gridSize = Object.values(B.PARAM_GRID).reduce((n, v) => n + v.length, 0);
+    assert.strictEqual(r.configsTried, gridSize);
+    assert.ok(r.families > gridSize, 'the correction must cover configurations AND detectors');
+  });
+});
+
+describe('the outcome must not be the signal in disguise', () => {
+  test('forward volatility is compared to the long baseline, never to recent', () => {
+    // Dividing forward volatility by RECENT volatility is a tautology: every
+    // compression detector fires when recent volatility is low, so a low
+    // denominator guarantees a high ratio. With that definition the range
+    // detector "validated" on four of six baskets of pure random walks.
+    const src = require('node:fs').readFileSync(
+      require('node:path').join(__dirname, '..', 'src', 'core', 'backtest.js'), 'utf8');
+    const block = src.slice(src.indexOf("outcome === 'vol_expansion'"), src.indexOf('} else {'));
+    assert.ok(/windowAt\(closes, i, 121\)/.test(block),
+      'the expansion outcome must measure against the long baseline');
+    assert.ok(!/realisedVol\(S\.windowAt\(closes, i, 11\)\)/.test(block),
+      'recent volatility reappeared in the denominator');
+  });
+
+  test('a degenerate base rate is refused rather than reported', () => {
+    // Near zero, three lucky fires produce an enormous lift against a bar on
+    // the floor. That is not a finding and it looks exactly like one.
+    const obs = Array.from({ length: 400 }, (_, k) => ({
+      big: k < 2, signals: { coil: { fired: k < 4, strength: 1 } }, forward: 0, symbol: 'X', i: k,
+    }));
+    const rare = B.scoreSignal('coil', obs, 0.005);
+    assert.strictEqual(rare.verdict, 'unusable');
+    assert.match(rare.why, /too rare/);
+
+    const common = B.scoreSignal('coil', obs, 0.85);
+    assert.strictEqual(common.verdict, 'unusable');
+    assert.match(common.why, /too common/);
+  });
+});

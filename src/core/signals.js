@@ -126,7 +126,8 @@ function percentileRank(history, value) {
  * not persist — it is the single most reliable "something is coming" reading
  * available from price alone, and it says nothing whatsoever about direction.
  */
-function coil(closes, i, { recent = 10, baseline = 60 } = {}) {
+function coil(closes, i, opts = {}) {
+  const { recent = 10, baseline = 60, loose = 0.75, tight = 0.35 } = opts;
   const wr = windowAt(closes, i, recent + 1);
   const wb = windowAt(closes, i, baseline + 1);
   if (wr.length < recent || wb.length < Math.min(30, baseline)) {
@@ -138,9 +139,12 @@ function coil(closes, i, { recent = 10, baseline = 60 } = {}) {
     return { key: 'coil', fired: false, strength: 0, inputsMissing: ['volatility not computable'] };
   }
   const ratio = vr / vb;
-  // 0.75 is where compression starts being meaningful rather than noise; below
-  // 0.35 is a genuine coil. Linear in between, capped.
-  const strength = clamp((0.75 - ratio) / 0.4, 0, 1);
+  // `loose` is where compression starts counting, `tight` is a genuine coil.
+  // These were hand-picked at 0.75 and 0.35 with no data behind them, which is
+  // most of why the first real run came back failed. They are parameters now so
+  // the sweep can fit them and report what the data actually says.
+  const span = Math.max(0.05, loose - tight);
+  const strength = clamp((loose - ratio) / span, 0, 1);
   return {
     key: 'coil',
     fired: strength > 0.15,
@@ -162,7 +166,8 @@ function coil(closes, i, { recent = 10, baseline = 60 } = {}) {
  * deliberately conjunctive: volume alone is just a busy day, and volume WITH a
  * price move is the move itself rather than a warning of one.
  */
-function quietAccumulation(closes, volumes, i, { recent = 10, baseline = 60 } = {}) {
+function quietAccumulation(closes, volumes, i, opts = {}) {
+  const { recent = 10, baseline = 60, volFloor = 1.4, driftCap = 0.05 } = opts;
   const vr = windowAt(volumes, i, recent).filter(finite);
   const vb = windowAt(volumes, i, baseline).filter(finite);
   const pr = windowAt(closes, i, recent + 1);
@@ -177,8 +182,8 @@ function quietAccumulation(closes, volumes, i, { recent = 10, baseline = 60 } = 
   const volRatio = mr / mb;
   const drift = Math.abs(Math.log(pr[pr.length - 1] / pr[0]));
   // Volume up at least half again, price within ~4% over the window.
-  const volPart = clamp((volRatio - 1.4) / 1.6, 0, 1);
-  const quietPart = clamp((0.05 - drift) / 0.05, 0, 1);
+  const volPart = clamp((volRatio - volFloor) / Math.max(0.2, volFloor * 1.15), 0, 1);
+  const quietPart = clamp((driftCap - drift) / driftCap, 0, 1);
   const strength = volPart * quietPart;
   return {
     key: 'quiet_accumulation',
@@ -199,7 +204,8 @@ function quietAccumulation(closes, volumes, i, { recent = 10, baseline = 60 } = 
  * where closes are pinned but the intraday range is already widening. Where
  * highs and lows are unavailable it degrades to close-to-close and says so.
  */
-function rangeCompression(highs, lows, closes, i, { recent = 7, baseline = 60 } = {}) {
+function rangeCompression(highs, lows, closes, i, opts = {}) {
+  const { recent = 7, baseline = 60, pctCut = 0.25 } = opts;
   const h = windowAt(highs, i, recent);
   const l = windowAt(lows, i, recent);
   const c = windowAt(closes, i, recent);
@@ -232,7 +238,7 @@ function rangeCompression(highs, lows, closes, i, { recent = 7, baseline = 60 } 
   if (pct === null) {
     return { key: 'range_compression', fired: false, strength: 0, inputsMissing: ['not enough history to rank the range'] };
   }
-  const strength = clamp((0.25 - pct) / 0.25, 0, 1);
+  const strength = clamp((pctCut - pct) / pctCut, 0, 1);
   return {
     key: 'range_compression',
     fired: strength > 0.15,
@@ -392,7 +398,8 @@ function unlockOverhang({ unlockPercentOfFloat, unlockDaysAway }) {
  * Reported because an extended move is itself a pre-condition for a violent
  * one — in either direction — not because "overbought" means "sell".
  */
-function extension(closes, i, { window = 60 } = {}) {
+function extension(closes, i, opts = {}) {
+  const { window = 60, zFloor = 1.2, zSpan = 2.3 } = opts;
   const w = windowAt(closes, i, window + 1);
   if (w.length < 20) return { key: 'extension', fired: false, strength: 0, inputsMissing: ['not enough history'] };
   const r = logReturns(w);
@@ -404,7 +411,7 @@ function extension(closes, i, { window = 60 } = {}) {
   }
   const move = Math.log(last / first);
   const z = move / (s * Math.sqrt(r.length));
-  const strength = clamp((Math.abs(z) - 1.2) / 2.3, 0, 1);
+  const strength = clamp((Math.abs(z) - zFloor) / Math.max(0.3, zSpan), 0, 1);
   return {
     key: 'extension',
     fired: strength > 0.2,
@@ -431,11 +438,12 @@ function extension(closes, i, { window = 60 } = {}) {
  */
 function detectAt(bars, i, ctx = {}) {
   const { closes = [], volumes = [], highs = [], lows = [] } = bars;
+  const p = ctx.params || {};
   const signals = [
-    coil(closes, i),
-    quietAccumulation(closes, volumes, i),
-    rangeCompression(highs, lows, closes, i),
-    extension(closes, i),
+    coil(closes, i, p.coil),
+    quietAccumulation(closes, volumes, i, p.quiet_accumulation),
+    rangeCompression(highs, lows, closes, i, p.range_compression),
+    extension(closes, i, p.extension),
     squeeze(ctx),
     catalystProximity(ctx.events, { horizonDays: ctx.horizonDays ?? DEFAULT_HORIZON }),
     unlockOverhang(ctx),

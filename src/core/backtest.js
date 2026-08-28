@@ -153,6 +153,31 @@ function collect(instruments, opts = {}) {
     thresholdMode = 'relative',
     // Multiples of its own baseline move for the horizon.
     relativeMultiple = 2.0,
+
+    /**
+     * WHAT counts as the thing being predicted.
+     *
+     * 'move' asks whether a large price move follows. It is the intuitive
+     * choice and it quietly rigged the first real run against the compression
+     * detector: the bar is a multiple of the 121-day BASELINE volatility, while
+     * compression fires exactly when recent volatility sits far below that
+     * baseline. So the signal demanded a move sized by the loud regime at
+     * precisely the moments the instrument had gone quiet — the outcome was
+     * anti-correlated with the signal being tested. Compression came back
+     * "failed" on 101 symbols, and this is the most likely reason.
+     *
+     * 'vol_expansion' asks what a compression signal actually claims: does
+     * volatility expand from here. That is the documented effect, it is what
+     * the detector is built on, and it is measurable without borrowing a
+     * threshold from a different regime.
+     */
+    outcome = 'move',
+    // Forward vol must exceed recent vol by this factor to count as expansion.
+    // 1.6x the long baseline almost never happens on a constant-volatility
+    // path, which pushed the base rate to nearly zero — and a near-zero base
+    // rate makes any signal that fires a few lucky times look infinitely good.
+    // 1.25x keeps the base rate in a range where the statistics mean something.
+    expansionMultiple = 1.25,
   } = opts;
   const step = Number.isFinite(stride) && stride > 0 ? stride : horizon;
 
@@ -167,27 +192,54 @@ function collect(instruments, opts = {}) {
     // only the observations that happened to resolve.
     const last = closes.length - horizon - 2;
     for (let i = warmup; i <= last; i += step) {
-      const fwd = useMaxMove ? forwardMaxMove(closes, i, horizon) : forwardReturn(closes, i, horizon);
-      if (!finite(fwd)) continue;
+      let fwd;
+      let bar;
+      let big;
 
-      // The bar this move has to clear. In relative mode it is set by the
-      // instrument's own long baseline volatility as known AT BAR i — using a
-      // full-sample volatility here would be lookahead of the most seductive
-      // kind, because it is only mildly wrong and never looks wrong.
-      let bar = threshold;
-      if (thresholdMode === 'relative') {
+      if (outcome === 'vol_expansion') {
+        // Forward volatility against the LONG baseline, never against recent
+        // volatility.
+        //
+        // Dividing by recent volatility looks like the natural comparison and
+        // is a tautology: every compression detector fires precisely when
+        // recent volatility is low, so putting that same low number in the
+        // denominator guarantees a high ratio. It is regression to the mean
+        // wearing the costume of a prediction, and it is not hypothetical —
+        // with recent volatility as the denominator, the range detector
+        // "validated" on four of six baskets of pure random walks.
+        //
+        // Against the long baseline the question is real and a compression
+        // signal does not answer it for free: does volatility come back ABOVE
+        // this instrument's own long-run normal.
         const baseVol = S.realisedVol(S.windowAt(closes, i, 121));
-        if (!finite(baseVol) || baseVol <= 0) continue;
-        bar = relativeMultiple * baseVol * Math.sqrt(horizon / 252);
+        const forwardVol = S.realisedVol(closes.slice(i + 1, i + 2 + horizon));
+        if (!finite(baseVol) || !finite(forwardVol) || baseVol <= 0) continue;
+        fwd = forwardVol / baseVol;
+        bar = expansionMultiple;
+        big = fwd >= bar;
+      } else {
+        fwd = useMaxMove ? forwardMaxMove(closes, i, horizon) : forwardReturn(closes, i, horizon);
+        if (!finite(fwd)) continue;
+        // The bar this move has to clear. In relative mode it is set by the
+        // instrument's own long baseline volatility as known AT BAR i — using a
+        // full-sample volatility here would be lookahead of the most seductive
+        // kind, because it is only mildly wrong and never looks wrong.
+        bar = threshold;
+        if (thresholdMode === 'relative') {
+          const baseVol = S.realisedVol(S.windowAt(closes, i, 121));
+          if (!finite(baseVol) || baseVol <= 0) continue;
+          bar = relativeMultiple * baseVol * Math.sqrt(horizon / 252);
+        }
+        big = Math.abs(fwd) >= bar;
       }
-      const big = Math.abs(fwd) >= bar;
       bars += 1;
       if (big) bigMoves += 1;
 
+      const baseCtx = typeof inst.ctxAt === 'function' ? inst.ctxAt(i) : (inst.ctx || {});
       const signals = S.detectAt(
         { closes, volumes: inst.volumes || [], highs: inst.highs || [], lows: inst.lows || [] },
         i,
-        typeof inst.ctxAt === 'function' ? inst.ctxAt(i) : (inst.ctx || {}),
+        opts.params ? { ...baseCtx, params: opts.params } : baseCtx,
       );
       obs.push({
         symbol: inst.symbol,
@@ -202,7 +254,7 @@ function collect(instruments, opts = {}) {
 
   return {
     obs, bars, bigMoves, baseRate: bars ? bigMoves / bars : 0,
-    horizon, threshold, thresholdMode, relativeMultiple, stride: step,
+    horizon, threshold, thresholdMode, relativeMultiple, outcome, expansionMultiple, stride: step,
   };
 }
 
@@ -234,6 +286,27 @@ function scoreSignal(key, obs, baseRate, opts = {}) {
   // fails, because the reason for building this was to find out.
   let verdict;
   let why;
+  // A degenerate base rate breaks every comparison built on top of it. Near
+  // zero, three lucky fires produce an enormous lift and a lower bound that
+  // clears a bar sitting on the floor; near one, everything "predicts" the
+  // event. Neither is a finding, and both look like one.
+  if (baseRate < 0.02 || baseRate > 0.5) {
+    return {
+      key,
+      fires: n,
+      hits,
+      hitRate: ci.p,
+      ci: { lo: ci.lo, hi: ci.hi },
+      baseRate,
+      lift: baseRate > 0 ? ci.p / baseRate : null,
+      recall: allBig > 0 ? caught / allBig : null,
+      fireRate: obs.length ? n / obs.length : 0,
+      verdict: 'unusable',
+      why: `The event being predicted happens ${(baseRate * 100).toFixed(1)}% of the time, which is too `
+        + `${baseRate < 0.02 ? 'rare' : 'common'} for any comparison against it to mean anything. `
+        + 'Adjust the threshold until the base rate lands somewhere between 2% and 50%.',
+    };
+  }
   if (n < minSample) {
     verdict = 'insufficient';
     why = `Fired only ${n} times. Below ${minSample} there is nothing to conclude, in either direction.`;
@@ -384,9 +457,147 @@ function falsePositiveProfile(instruments, opts = {}) {
   return { horizon, threshold, quietBars: quiet.length, rows };
 }
 
+/**
+ * The parameter grid.
+ *
+ * Every threshold in the detectors was hand-picked with no data behind it —
+ * 0.75 for "compressed", 0.15 for "fired", a 10-day recent window against a
+ * 60-day baseline. All guesses, and guessing is most of why the first run
+ * against 101 real symbols came back failed. These are the settings the sweep
+ * is allowed to consider instead.
+ *
+ * Kept deliberately small. A grid of ten thousand configurations will always
+ * contain one that looks brilliant on any dataset, and finding it is not
+ * research, it is a slower way of making something up.
+ */
+const PARAM_GRID = {
+  coil: [
+    { recent: 5, baseline: 60, loose: 0.7, tight: 0.3 },
+    { recent: 10, baseline: 60, loose: 0.75, tight: 0.35 },
+    { recent: 10, baseline: 120, loose: 0.6, tight: 0.25 },
+    { recent: 20, baseline: 120, loose: 0.65, tight: 0.3 },
+    { recent: 10, baseline: 60, loose: 0.5, tight: 0.2 },
+  ],
+  range_compression: [
+    { recent: 5, baseline: 60, pctCut: 0.25 },
+    { recent: 7, baseline: 60, pctCut: 0.25 },
+    { recent: 7, baseline: 120, pctCut: 0.15 },
+    { recent: 14, baseline: 120, pctCut: 0.2 },
+  ],
+  quiet_accumulation: [
+    { recent: 10, baseline: 60, volFloor: 1.4, driftCap: 0.05 },
+    { recent: 10, baseline: 60, volFloor: 1.8, driftCap: 0.04 },
+    { recent: 20, baseline: 90, volFloor: 1.5, driftCap: 0.06 },
+  ],
+  extension: [
+    { window: 60, zFloor: 1.2, zSpan: 2.3 },
+    { window: 30, zFloor: 1.0, zSpan: 2.0 },
+    { window: 120, zFloor: 1.5, zSpan: 2.5 },
+  ],
+};
+
+/**
+ * Split chronologically into three, never two.
+ *
+ * Two is enough when nothing is being chosen. The moment a sweep picks the best
+ * of several configurations, the set it picked on has been used up: the winner
+ * is partly the winner because of that data's noise, and reporting its score
+ * there is reporting the noise back. So parameters are fitted on TRAIN, the
+ * winner is chosen on VALIDATE, and the number that gets reported comes from
+ * TEST, which the search never sees.
+ */
+function threeWaySplit(instruments, { train = 0.5, validate = 0.25 } = {}) {
+  const cut = (inst, a, b) => {
+    const n = (inst.closes || []).length;
+    const from = Math.floor(n * a);
+    const to = Math.floor(n * b);
+    return {
+      ...inst,
+      closes: inst.closes.slice(from, to),
+      volumes: (inst.volumes || []).slice(from, to),
+      highs: (inst.highs || []).slice(from, to),
+      lows: (inst.lows || []).slice(from, to),
+    };
+  };
+  const out = { train: [], validate: [], test: [] };
+  for (const inst of instruments) {
+    const n = (inst.closes || []).length;
+    // Each slice has to hold a warmup plus a forward window plus enough strided
+    // observations to say anything at all.
+    if (n * Math.min(train, validate, 1 - train - validate) < 160) continue;
+    out.train.push(cut(inst, 0, train));
+    out.validate.push(cut(inst, train, train + validate));
+    out.test.push(cut(inst, train + validate, 1));
+  }
+  return out;
+}
+
+/**
+ * Fit each detector's parameters, then report on data the fitting never saw.
+ *
+ * The correction for how many configurations were tried is the part that keeps
+ * this honest. Trying five settings and reporting the best at 95% confidence is
+ * five chances to be fooled, so the interval widens by the size of the grid as
+ * well as by the number of detectors.
+ */
+function sweep(instruments, opts = {}) {
+  const { train, validate, test } = threeWaySplit(instruments, opts);
+  if (train.length < 8) {
+    return { ok: false, reason: `Only ${train.length} instruments had enough history for a three-way split.` };
+  }
+
+  const keys = Object.keys(PARAM_GRID);
+  const configsTried = keys.reduce((n, k) => n + PARAM_GRID[k].length, 0);
+  const families = configsTried + keys.length;
+
+  const trainSets = {};
+  const chosen = {};
+  const searchLog = [];
+
+  for (const key of keys) {
+    let best = null;
+    for (const params of PARAM_GRID[key]) {
+      // Fit on train, choose on validate. Scoring the choice on the same data
+      // that produced it is the classic way to manufacture an edge.
+      const v = collect(validate, { ...opts, params: { [key]: params } });
+      const score = scoreSignal(key, v.obs, v.baseRate, { ...opts, families });
+      searchLog.push({ key, params, lift: score.lift, fires: score.fires, verdict: score.verdict });
+      if (!best || (score.lift ?? 0) > (best.score.lift ?? 0)) best = { params, score };
+    }
+    chosen[key] = best.params;
+    trainSets[key] = best.score;
+  }
+
+  // One final pass on the untouched holdout, with every detector on its chosen
+  // settings at once.
+  const held = collect(test, { ...opts, params: chosen });
+  const testScores = keys.map((k) => scoreSignal(k, held.obs, held.baseRate, { ...opts, families }));
+  const weights = fitWeights(testScores);
+  const composite = scoreComposite(held.obs, held.baseRate, weights, { ...opts, families });
+
+  return {
+    ok: true,
+    outcome: opts.outcome || 'move',
+    horizon: opts.horizon ?? S.DEFAULT_HORIZON,
+    configsTried,
+    families,
+    chosen,
+    searchLog,
+    validate: { picked: trainSets },
+    test: { bars: held.bars, baseRate: held.baseRate, scores: testScores },
+    weights,
+    composite,
+    validated: testScores.filter((x) => x.verdict === 'validated').map((x) => x.key),
+    failed: testScores.filter((x) => x.verdict === 'failed').map((x) => x.key),
+  };
+}
+
 module.exports = {
   wilson,
   zForAlpha,
+  PARAM_GRID,
+  threeWaySplit,
+  sweep,
   forwardReturn,
   forwardMaxMove,
   collect,

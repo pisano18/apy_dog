@@ -116,8 +116,26 @@ async function main() {
   log(`\nHistory sources used: ${Object.entries(byProvider).map(([k, v]) => `${k} ${v}`).join(', ')}`);
   if (failed.length) log(`${failed.length} symbols had no history from any provider and were skipped.`);
 
-  const opts = { horizon, relativeMultiple: multiple, thresholdMode: 'relative' };
-  const res = B.walkForward(instruments, opts);
+  // Two questions, asked separately, because they are different questions and
+  // the first run conflated them.
+  //
+  //   'move'          does a large price move follow
+  //   'vol_expansion' does volatility come back above this instrument's own
+  //                   long-run normal
+  //
+  // A compression detector claims the second. Scoring it on the first was a
+  // methodological error on my part: the bar is a multiple of the 121-day
+  // BASELINE volatility, while compression fires exactly when recent
+  // volatility sits far below that baseline — so the signal was asked for a
+  // move sized by the loud regime at precisely the moments the instrument had
+  // gone quiet.
+  const outcome = String(arg('outcome', 'vol_expansion'));
+  const opts = { horizon, relativeMultiple: multiple, thresholdMode: 'relative', outcome };
+
+  // Parameters are fitted now, not guessed. Every threshold in the detectors
+  // was hand-picked with no data behind it, which is most of why the first real
+  // run came back failed.
+  const res = arg('no-sweep') ? B.walkForward(instruments, opts) : B.sweep(instruments, opts);
   if (!res.ok) { console.error(res.reason); process.exit(2); }
   const fp = B.falsePositiveProfile(instruments, opts);
 
@@ -135,9 +153,12 @@ async function main() {
     trainBaseRate: res.train.baseRate,
     testBaseRate: res.test.baseRate,
     testBars: res.test.bars,
+    outcome,
     scores: res.test.scores,
     composite: res.composite,
     weights: res.weights,
+    chosenParams: res.chosen || null,
+    configsTried: res.configsTried || null,
     validated: res.validated,
     failedSignals: res.failed,
     falsePositives: fp.rows,
@@ -152,7 +173,13 @@ async function main() {
   const pct = (v) => (Number.isFinite(v) ? `${(v * 100).toFixed(1)}%` : '—');
   console.log(`\n${'─'.repeat(78)}`);
   console.log(`Out-of-sample results · ${instruments.length} symbols · ${years}y · ${horizon}-day horizon`);
-  console.log(report.definition);
+  console.log(`Predicting: ${outcome === 'vol_expansion'
+    ? `volatility rising above ${multiple >= 0 ? '1.25x' : ''} this instrument's own long-run normal within ${horizon} days`
+    : report.definition}`);
+  if (res.configsTried) {
+    console.log(`Parameters fitted: ${res.configsTried} configurations searched on a validation slice, `
+      + 'reported on a holdout neither the fitting nor the choosing ever saw.');
+  }
   console.log(`Base rate: ${pct(res.test.baseRate)} of ${res.test.bars} independent observations`);
   console.log('─'.repeat(78));
   console.log('signal              verdict       fires   hit    base   lift   recall  FP');
@@ -170,6 +197,15 @@ async function main() {
     + `· n=${res.composite.fires}`);
   console.log(`\nValidated: ${res.validated.length ? res.validated.join(', ') : 'none'}`);
   console.log(`Failed:    ${res.failed.length ? res.failed.join(', ') : 'none'}`);
+  if (res.chosen) {
+    console.log('\nParameters the data chose:');
+    for (const [k, v] of Object.entries(res.chosen)) console.log(`  ${k.padEnd(20)} ${JSON.stringify(v)}`);
+  }
+  if (!res.validated.length) {
+    console.log('\nNothing validated. That is a real result and not a bug — it means these detectors, on this');
+    console.log('universe, at this horizon, do not beat simply knowing how often the event happens anyway.');
+    console.log('Try: --outcome move, a different --horizon, or --years 10 for more observations.');
+  }
   console.log(`\nWritten to ${out} — the app reads this and stops calling itself uncalibrated.`);
   console.log('A verdict of "failed" is a real result, not a bug. It means that detector does not work,');
   console.log('and it will be given zero weight rather than quietly kept because it sounded plausible.');

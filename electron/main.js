@@ -706,6 +706,27 @@ function registerIpc() {
         unreadable: rows.length - readable.length,
         firing: readable.filter((o) => o.signals.fired.length).length,
       },
+      // Why there is nothing to show, in terms of what actually happened rather
+      // than a generic instruction to press Refresh. "Hit refresh" is useless
+      // advice to somebody who already did.
+      diagnosis: (() => {
+        const m = dataset.meta || {};
+        const priceSources = (dataset.health || []).filter((h) => ['equities', 'crypto'].includes(h.id));
+        return {
+          everScanned: !!m.generatedAt,
+          scannedAt: m.generatedAt || null,
+          offline: !!m.offline,
+          seedRows: m.seedRows ?? null,
+          liveRows: m.liveRows ?? null,
+          sources: priceSources.map((h) => ({
+            id: h.id,
+            label: h.label,
+            status: h.status,
+            rows: h.count ?? 0,
+            problem: h.error || (h.warnings || [])[0] || null,
+          })),
+        };
+      })(),
     };
   });
 
