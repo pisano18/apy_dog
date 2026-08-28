@@ -5,6 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const { loadAdapters, describeAdapters } = require('../src/sources');
+const { radarPayload, signalsPayload } = require('../src/core/views');
 const { aggregate } = require('../src/core/aggregate');
 const { applyQuery, facets, describeQuery, DEFAULT_QUERY } = require('../src/core/filters');
 const { scoreAll } = require('../src/core/score');
@@ -440,136 +441,10 @@ function registerIpc() {
    * holds the dataset — six filtered queries over seven hundred rows is trivial
    * in-process and six IPC round trips is not.
    */
-  handle('data:radar', () => {
-    const rows = dataset.opportunities;
-    const budget = Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null;
-    const take = (q, n = 5) => applyQuery(rows, { ...DEFAULT_QUERY, ...q, watchlist: store.watchlistIds(), limit: n });
-    const countOf = (q) => applyQuery(rows, { ...DEFAULT_QUERY, ...q, watchlist: store.watchlistIds() }).length;
-    const spec = (q) => ({ rows: take(q), count: countOf(q), query: q });
-
-    // What is scheduled, whether or not it belongs to a ticker. Most of a given
-    // week is macro — a CPI print, an FOMC decision, an auction — and none of
-    // that hangs off a row, so a card built only from row catalysts showed one
-    // earnings date and silently dropped the five events that move everything.
-    const bySymbol = new Map();
-    for (const o of rows) if (o.symbol && !bySymbol.has(o.symbol)) bySymbol.set(o.symbol, o.id);
-    const upcoming = (dataset.events || [])
-      .filter((e) => Number.isFinite(e.daysAway) && e.daysAway >= 0 && e.daysAway <= 7)
-      .sort((a, b) => a.dateMs - b.dateMs);
-    // Earnings season can put forty companies in one week. Cap any single kind
-    // so a card of six does not become six identical rows.
-    const perKind = new Map();
-    const weekEvents = [];
-    for (const e of upcoming) {
-      const n = perKind.get(e.kind) || 0;
-      if (n >= 3) continue;
-      perKind.set(e.kind, n + 1);
-      weekEvents.push({ ...e, linkId: e.symbol ? (bySymbol.get(e.symbol) || null) : null });
-      if (weekEvents.length >= 6) break;
-    }
-
-    /**
-     * Everything with a clock on it, in one list.
-     *
-     * An offer that expires and a deadline after which an action is no longer
-     * possible are the same thing to the person holding the money, and keeping
-     * them in separate views is why "Closing soon" could show three items while
-     * a hundred and fifty dated things sat one tab away.
-     */
-    const clockRows = applyQuery(rows, {
-      ...DEFAULT_QUERY, expiringWithinDays: 45, hideTraps: false, watchlist: store.watchlistIds(), limit: 40,
-    }).map((o) => ({
-      type: 'opportunity',
-      id: o.id,
-      name: o.name,
-      sub: [o.provider || o.sourceLabel, o.section].filter(Boolean).join(' · '),
-      daysLeft: o.daysLeft,
-      value: Number.isFinite(o.scores?.oneTimeDollars) ? o.scores.oneTimeDollars : null,
-      grade: o.rating?.grade || null,
-    }));
-
-    // Ex-dividend dates: the most under-served deadline there is. Every
-    // dividend payer has a date you must own it by, it recurs visibly in the
-    // payment record, and no screener lists it as something that runs out.
-    // Only present on rows whose actual payment history supports projecting
-    // one, so this is empty until a live refresh has fetched dividends.
-    const exDiv = rows
-      .filter((o) => o.exDividend && o.exDividend.daysAway >= 0 && o.exDividend.daysAway <= 45)
-      .sort((a, b) => a.exDividend.daysAway - b.exDividend.daysAway)
-      .slice(0, 8)
-      .map((o) => ({
-        type: 'opportunity',
-        id: o.id,
-        name: `${o.name} goes ex-dividend`,
-        sub: `Own it before this date to collect the ${o.exDividend.cadence} payment · estimated from its last ${o.exDividend.basedOn} payments`,
-        daysLeft: o.exDividend.daysAway,
-        value: null,
-        grade: o.rating?.grade || null,
-      }));
-
-    const clockEvents = (dataset.events || [])
-      .filter((e) => Number.isFinite(e.daysAway) && e.daysAway >= 0 && e.daysAway <= 45)
-      // Earnings for a single ticker is a catalyst, not a deadline you can miss.
-      // Money deadlines, maturities and expiries genuinely close.
-      .filter((e) => ['money_deadline', 'maturity', 'call_date', 'token_unlock', 'lockup_expiry', 'opex', 'index_rebalance', 'treasury_auction'].includes(e.kind))
-      .map((e) => ({
-        type: 'event',
-        id: `event:${e.kind}:${e.dateMs}`,
-        name: e.title || e.label,
-        sub: `${e.label}${e.certainty === 'estimated' ? ' · estimated date' : ''}`,
-        daysLeft: e.daysAway,
-        value: null,
-        grade: null,
-        url: e.url || null,
-      }));
-
-    // Treasury auctions run weekly and options expire monthly, so a naive
-    // merge fills the card with the most routine dates on the calendar and
-    // buries the offer that genuinely disappears on Friday. Two per kind keeps
-    // the recurring ones represented without letting them dominate; scarcity is
-    // most of what makes a deadline worth showing.
-    const clockPerKind = new Map();
-    const onTheClock = [...clockRows, ...exDiv, ...clockEvents]
-      .sort((a, b) => a.daysLeft - b.daysLeft)
-      .filter((x) => {
-        if (x.type !== 'event') return true;
-        const kind = String(x.id).split(':')[1];
-        const n = clockPerKind.get(kind) || 0;
-        if (n >= 2) return false;
-        clockPerKind.set(kind, n + 1);
-        return true;
-      })
-      .slice(0, 40);
-
-    return {
-      budget,
-      meta: dataset.meta,
-      onTheClock,
-      onTheClockCount: onTheClock.length,
-      weekEvents,
-      weekEventCount: upcoming.length,
-      groups: {
-        // What a flat table can never show you: things with a deadline. Note
-        // this is opportunities only — the card below merges these with dated
-        // events, because "three things closing in the next month" was never
-        // true of the world, only of the subset the app happened to model as
-        // an offer with an expiry date.
-        closing: spec({ expiringWithinDays: 45, sortBy: 'closingSoon', hideTraps: false }),
-        // What is coming, for what you already hold or might.
-        thisWeek: spec({ track: 'movement', catalystWithinDays: 7, sortBy: 'soonest' }),
-        // The three shelves.
-        income: spec({ sections: ['income'], sortBy: 'dogScore' }),
-        movement: spec({ sections: ['movement'], sortBy: 'heat' }),
-        deals: spec({ sections: ['deals'], sortBy: 'dogScore', hideTraps: false }),
-        // Things few people follow, which is genuinely informative both ways.
-        obscure: spec({ reaches: ['obscure', 'niche'], sortBy: 'dogScore' }),
-        // Money for an afternoon's work, ranked by least effort first.
-        easy: spec({ sections: ['deals'], effortMax: 'light', sortBy: 'dogScore', hideTraps: false }),
-        // What you are already tracking.
-        watching: spec({ watchlistOnly: true, hideTraps: false, includeSpeculative: true }),
-      },
-    };
-  });
+  handle('data:radar', () => radarPayload(dataset, {
+    settings: store.settings,
+    watchlist: store.watchlistIds(),
+  }));
 
   handle('data:refresh', (opts) => doRefresh(opts || {}));
   handle('data:cancelRefresh', () => {
@@ -656,78 +531,7 @@ function registerIpc() {
    */
   handle('data:signals', () => {
     const { loadCalibration } = require('../src/core/calibration');
-    const cal = loadCalibration({ maxAgeMs: 0 });
-    const rows = dataset.opportunities.filter((o) => o.signals);
-    const readable = rows.filter((o) => !o.signals.unreadable);
-    const ranked = readable
-      .filter((o) => o.signals.fired.length > 0)
-      .sort((a, b) => (b.signals.pressure || 0) - (a.signals.pressure || 0))
-      .slice(0, 60)
-      .map((o) => ({
-        id: o.id,
-        name: o.name,
-        symbol: o.symbol || null,
-        section: o.section,
-        subType: o.subType || null,
-        price: o.price ?? null,
-        grade: o.rating?.grade || null,
-        gradeColor: o.rating?.gradeColor || null,
-        series: o.series || null,
-        seriesBasis: o.seriesBasis || null,
-        pressure: o.signals.pressure,
-        lean: o.signals.lean,
-        fired: o.signals.fired.map((f) => ({
-          key: f.key, strength: f.strength, value: f.value ?? null, evidence: f.evidence || [],
-        })),
-        missing: o.signals.missing || [],
-        expected: o.movement?.expected || null,
-        catalyst: o.movement?.catalyst?.event || null,
-      }));
-
-    return {
-      rows: ranked,
-      calibration: cal ? {
-        generatedAt: cal.generatedAt,
-        universe: (cal.universe || []).length,
-        years: cal.years,
-        horizon: cal.horizon,
-        definition: cal.definition,
-        baseRate: cal.testBaseRate,
-        bars: cal.testBars,
-        scores: cal.scores,
-        composite: cal.composite,
-        validated: cal.validated,
-        failed: cal.failedSignals,
-        weights: cal.weights,
-      } : null,
-      counts: {
-        total: rows.length,
-        readable: readable.length,
-        unreadable: rows.length - readable.length,
-        firing: readable.filter((o) => o.signals.fired.length).length,
-      },
-      // Why there is nothing to show, in terms of what actually happened rather
-      // than a generic instruction to press Refresh. "Hit refresh" is useless
-      // advice to somebody who already did.
-      diagnosis: (() => {
-        const m = dataset.meta || {};
-        const priceSources = (dataset.health || []).filter((h) => ['equities', 'crypto'].includes(h.id));
-        return {
-          everScanned: !!m.generatedAt,
-          scannedAt: m.generatedAt || null,
-          offline: !!m.offline,
-          seedRows: m.seedRows ?? null,
-          liveRows: m.liveRows ?? null,
-          sources: priceSources.map((h) => ({
-            id: h.id,
-            label: h.label,
-            status: h.status,
-            rows: h.count ?? 0,
-            problem: h.error || (h.warnings || [])[0] || null,
-          })),
-        };
-      })(),
-    };
+    return signalsPayload(dataset, loadCalibration({ maxAgeMs: 0 }));
   });
 
   handle('app:checkUpdates', () => checkForUpdates({ interactive: false }));
