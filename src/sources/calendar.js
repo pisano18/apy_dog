@@ -1006,7 +1006,16 @@ const adapter = {
     }
 
     ctx.log?.('building the forward calendar');
-    const computed = calendricalEvents({ now });
+    // Both halves, on both paths. The statutory deadlines — the filing date,
+    // the four estimated-tax dates, the 401(k) deferral cut-off, the FSA
+    // forfeiture date — were added to loadSeed alone, and the bundled calendar
+    // file carries none of them. The app shows bundled data for about a second
+    // on launch and then refreshes live, and the live fetch always returns
+    // events, so the seed path never runs again: every money deadline in the
+    // app appeared for one second and then silently vanished for the rest of
+    // the session. They are computed from the calendar and need no request, so
+    // there was never a reason for the two paths to differ.
+    const computed = [...calendricalEvents({ now }), ...moneyDeadlineEvents({ now })];
 
     const [auctions, fed, bls, earnings] = await Promise.all([
       fetchTreasury(ctx, notes, warnings),

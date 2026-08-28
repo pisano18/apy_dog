@@ -235,7 +235,20 @@ async function aggregate(adapters, opts = {}) {
   // Some sources (the calendar, the filings feed) produce dated events rather
   // than opportunities. They are collected here and attached to matching rows
   // below, which is what turns a static table into "what is about to happen".
-  const events = results.flatMap((r) => (Array.isArray(r.events) ? r.events : [])).filter(Boolean);
+  // Every event is stamped with the adapter that produced it, under a key the
+  // adapter does not own.
+  //
+  // The carry-forward below filters on `e.source`, which reads like the adapter
+  // id and is not: adapters put human provenance there — "Treasury auction
+  // cycle", "BLS release pattern", "reporting pattern". So refreshing the
+  // calendar recognised only the 25 events tagged literally 'calendar' and
+  // carried the other 158 forward while the fresh fetch re-emitted them too.
+  // The per-row attach loop dedupes, so rows stayed clean; the events array the
+  // interface renders and the counters beside it did not. Calendar cadence is
+  // an hour, so it doubled again every hour the app stayed open.
+  const events = results.flatMap((r) => (Array.isArray(r.events) ? r.events : [])
+    .filter(Boolean)
+    .map((e) => (e.adapterId === r.id ? e : { ...e, adapterId: r.id })));
 
   // --- merge ---------------------------------------------------------------
   // On a partial run, rows and events from sources that were not refreshed are
@@ -247,7 +260,7 @@ async function aggregate(adapters, opts = {}) {
     ? carried.opportunities.filter((o) => !refreshedIds.has(o.source)).map(stripDerived)
     : [];
   const carriedEvents = carried
-    ? (carried.events || []).filter((e) => !refreshedIds.has(e.source))
+    ? (carried.events || []).filter((e) => !refreshedIds.has(e.adapterId ?? e.source))
     : [];
   events.push(...carriedEvents);
 

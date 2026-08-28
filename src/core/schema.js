@@ -32,6 +32,46 @@ const rate = (v) => {
  * APY from APR given a compounding frequency. DeFi quotes both and the
  * difference is not cosmetic at high rates: 100% APR daily-compounded is 171% APY.
  */
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * How many days away is that, counted the way a person counts them?
+ *
+ * A deadline is a DAY, not an instant, and the difference decides whether an
+ * offer is on screen on the last day it can be taken. Two things were wrong:
+ *
+ *   Bare dates. Sources hand back `"2026-08-31"`, which `Date.parse` reads as
+ *   midnight UTC — the START of the last day. So on the morning of the 31st the
+ *   offer already reported -1 days and `expired: true`, and it disappeared out
+ *   of the filters, off the Radar's "On the clock" card, out of the plan's
+ *   deadline tier, and any alert on it was un-fired rather than shouted.
+ *
+ *   Rounding. `Math.round((expiry - now) / DAY)` measures elapsed time, not
+ *   days, so an offer closing tonight at 23:59 reads "1" at ten this morning
+ *   and "0" this afternoon. Nothing that closes tonight should ever say
+ *   tomorrow.
+ *
+ * Both are fixed by counting calendar days rather than milliseconds: today is
+ * 0, tonight is 0, tomorrow is 1, yesterday is -1. A bare date is taken at face
+ * value, since it names a day and no timezone; a timestamp is read in the
+ * reader's own zone, because "how many days do I have" is a question about
+ * their calendar and nobody else's.
+ */
+function calendarDaysUntil(iso, now = Date.now()) {
+  if (!iso) return null;
+  const t = new Date(now);
+  const today = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+
+  if (DATE_ONLY.test(iso)) {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Math.round((Date.UTC(y, m - 1, d) - today) / C.DAY);
+  }
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  const at = new Date(ms);
+  return Math.round((Date.UTC(at.getFullYear(), at.getMonth(), at.getDate()) - today) / C.DAY);
+}
+
 function aprToApy(apr, periodsPerYear = 365) {
   if (!Number.isFinite(apr)) return null;
   if (periodsPerYear <= 0) return apr;
@@ -280,10 +320,9 @@ function normalize(raw, ctx = {}) {
   if (out.confidence === null) out.confidence = defaultConfidence(out);
 
   // Derived rather than stored: a cached "12 days left" is wrong tomorrow.
-  const expiryMs = out.expiresAt ? Date.parse(out.expiresAt) : NaN;
-  out.daysLeft = Number.isFinite(expiryMs) ? Math.round((expiryMs - Date.now()) / C.DAY) : null;
-  const startMs = out.startsAt ? Date.parse(out.startsAt) : NaN;
-  out.daysUntilOpen = Number.isFinite(startMs) ? Math.round((startMs - Date.now()) / C.DAY) : null;
+  const nowMs = Date.now();
+  out.daysLeft = calendarDaysUntil(out.expiresAt, nowMs);
+  out.daysUntilOpen = calendarDaysUntil(out.startsAt, nowMs);
   out.notYetOpen = Number.isFinite(out.daysUntilOpen) && out.daysUntilOpen > 0;
   out.expired = Number.isFinite(out.daysLeft) && out.daysLeft < 0;
 
@@ -437,6 +476,6 @@ function headlineRate(o) {
 
 module.exports = {
   normalize, validate, headlineRate, makeId, defaultConfidence, termLabel, inferDenomination, inferTrack, inferOneTime, inferSection, inferEffort,
-  aprToApy, apyToApr, discountToApy, annualize,
+  aprToApy, apyToApr, discountToApy, annualize, calendarDaysUntil,
   _helpers: { num, str, bool, clamp, arr },
 };

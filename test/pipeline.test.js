@@ -279,3 +279,87 @@ describe('persistence round trip', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 });
+
+/**
+ * Refreshing one source must not multiply another's events.
+ *
+ * The app refreshes each source on its own cadence, so almost every refresh
+ * after launch is a partial one, and the events belonging to sources that were
+ * not refreshed are carried forward. That carry-forward filtered on `e.source`,
+ * which reads like the adapter id and is not — adapters put human provenance
+ * there ("Treasury auction cycle", "BLS release pattern"). So refreshing the
+ * calendar recognised only the events tagged literally 'calendar' and carried
+ * the rest forward while the fresh fetch re-emitted them as well. The events
+ * list grew every hour the app stayed open.
+ */
+describe('partial refresh', () => {
+  let adapters;
+  before(() => { adapters = loadAdapters().adapters; });
+
+  test('refreshing one source repeatedly does not grow the event list', async () => {
+    let state = await aggregate(adapters, { offline: true });
+    const initial = state.events.length;
+    assert.ok(initial > 100, `expected a populated calendar, got ${initial}`);
+
+    for (let i = 0; i < 3; i += 1) {
+      state = await aggregate(adapters, { offline: true, only: ['calendar'], previous: state });
+      assert.strictEqual(state.events.length, initial,
+        `event count moved to ${state.events.length} on refresh ${i + 1} — events are being duplicated`);
+    }
+  });
+
+  test('a source that was not refreshed keeps its events', async () => {
+    const first = await aggregate(adapters, { offline: true });
+    const filingsBefore = first.events.filter((e) => e.adapterId === 'filings').length;
+    assert.ok(filingsBefore > 0, 'expected filing events to carry across');
+
+    const second = await aggregate(adapters, { offline: true, only: ['calendar'], previous: first });
+    assert.strictEqual(second.events.filter((e) => e.adapterId === 'filings').length, filingsBefore,
+      'refreshing the calendar dropped the filings events instead of carrying them');
+  });
+
+  test('every event knows which adapter produced it', () => {
+    // The provenance string an adapter writes is for the reader. The adapter id
+    // is for the pipeline, and confusing the two is what caused the duplication.
+    return aggregate(adapters, { offline: true }).then((r) => {
+      const ids = new Set(adapters.map((a) => a.id));
+      for (const e of r.events) {
+        assert.ok(ids.has(e.adapterId), `an event is tagged "${e.adapterId}", which is not an adapter`);
+      }
+    });
+  });
+});
+
+/**
+ * The statutory deadlines have to survive going online.
+ *
+ * They were added to the seed path only. The app shows bundled data for about a
+ * second on launch and then refreshes live, and the calendar's live fetch always
+ * returns events, so the seed path never ran again: the filing date, the four
+ * estimated-tax dates, the 401(k) deferral cut-off and the FSA forfeiture date
+ * appeared for one second and vanished for the rest of the session.
+ */
+describe('money deadlines', () => {
+  test('both the bundled and the live calendar carry them', async () => {
+    const calendar = require('../src/sources/calendar');
+    const ctx = {
+      now: Date.now(),
+      seedDir: require('node:path').join(__dirname, '..', 'data', 'seed'),
+      schema: require('../src/core/schema'),
+      C: require('../src/core/constants'),
+      cache: { get: () => null, set: () => {} },
+      // No network in the test environment: every fetch fails and the adapter
+      // still has to produce its computed events, which is exactly the path the
+      // app takes when a feed is down.
+      http: { getJson: async () => { throw new Error('offline'); }, getText: async () => { throw new Error('offline'); } },
+      log: () => {},
+      settings: {},
+    };
+    const seeded = calendar.loadSeed(ctx);
+    const live = await calendar.fetch(ctx);
+    const count = (res) => (res.events || []).filter((e) => e.kind === 'money_deadline').length;
+    assert.ok(count(seeded) > 0, 'the bundled calendar lost its money deadlines');
+    assert.strictEqual(count(live), count(seeded),
+      'the live calendar drops the money deadlines the bundled one has');
+  });
+});

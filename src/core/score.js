@@ -165,16 +165,46 @@ function scoreOne(o, opts = {}) {
    * column read 4.03% and the after-tax column beside it still read 380%, so
    * the table contradicted itself and the sort disagreed with both.
    */
-  const blend = (rate) => {
+  const blend = (rate, rf = riskFree) => {
     if (!Number.isFinite(rate)) return rate;
-    if (hasBudget && affordable === false) return riskFree;
+    if (hasBudget && affordable === false) return rf;
     if (share >= 0.999 && !o.oneTime) return rate;
     const periodPct = o.oneTime ? (Math.pow(1 + rate / 100, yearsHeld) - 1) * 100 : rate;
     const idleAfter = o.oneTime ? Math.max(0, 1 - yearsHeld) : 0;
     const dollars = deployable * (periodPct / 100)
-      + deployable * (riskFree / 100) * idleAfter
-      + (basisAmount - deployable) * (riskFree / 100);
+      + deployable * (rf / 100) * idleAfter
+      + (basisAmount - deployable) * (rf / 100);
     return (dollars / basisAmount) * 100;
+  };
+
+  /**
+   * The remainder is real money and it is taxed like real money.
+   *
+   * `blend` mixes the row's rate with what the leftover earns in cash, and the
+   * leftover used to be credited at the raw nominal rate on EVERY basis. So the
+   * "after your tax" column contained untaxed interest and the "after tax and
+   * inflation" column contained interest that had been neither taxed nor
+   * deflated — and because the cap term is usually the larger of the two, the
+   * adjustments were very nearly cancelled out. A capped 6.17% credit-union
+   * account read 3.71% after inflation where the honest figure was 0.37%: an
+   * order of magnitude, in the column a reader would trust most.
+   *
+   * The cash is short Treasuries, which is where the risk-free rate comes from,
+   * so it is priced as Treasuries: federally taxable, exempt from state. Each
+   * basis then blends against the version of cash that has been through the
+   * same transformation the basis itself has.
+   */
+  const rfTax = applyTax(
+    { apy: { total: riskFree }, taxTreatment: C.TAX_TREATMENT.TREASURY },
+    taxProfile,
+  );
+  const rfFor = {
+    gross: riskFree,
+    afterTax: Number.isFinite(rfTax.afterTaxApy) ? rfTax.afterTaxApy : riskFree,
+    afterTaxReal: Number.isFinite(rfTax.afterTaxRealApy) ? rfTax.afterTaxRealApy : riskFree,
+    // Tax-equivalent yield restates everything in fully-taxable ordinary
+    // dollars, so cash has to be restated too rather than passed through raw.
+    taxEquivalent: Number.isFinite(rfTax.taxEquivalentYield) ? rfTax.taxEquivalentYield : riskFree,
   };
 
   // The single payment a one-off actually makes, recovered by un-annualising.
@@ -186,11 +216,19 @@ function scoreOne(o, opts = {}) {
     ? deployable * (grossPeriodPct / 100)
     : null;
 
-  const blended = blend(chosenRaw);
-  const blendedGross = blend(gross);
-  const blendedAfterTax = blend(tax.afterTaxApy);
-  const blendedAfterTaxReal = blend(tax.afterTaxRealApy);
-  const blendedTaxEquivalent = blend(tax.taxEquivalentYield);
+  // `chosenRaw` is whichever basis the ranking is set to, so it blends against
+  // the matching version of cash — otherwise changing the ranking basis quietly
+  // changes what the leftover money is assumed to earn.
+  const rfForChosen = chosenRaw === tax.afterTaxRealApy ? rfFor.afterTaxReal
+    : chosenRaw === tax.afterTaxApy ? rfFor.afterTax
+      : chosenRaw === tax.taxEquivalentYield ? rfFor.taxEquivalent
+        : rfFor.gross;
+
+  const blended = blend(chosenRaw, rfForChosen);
+  const blendedGross = blend(gross, rfFor.gross);
+  const blendedAfterTax = blend(tax.afterTaxApy, rfFor.afterTax);
+  const blendedAfterTaxReal = blend(tax.afterTaxRealApy, rfFor.afterTaxReal);
+  const blendedTaxEquivalent = blend(tax.taxEquivalentYield, rfFor.taxEquivalent);
 
   let blendNote = null;
   if (hasBudget && affordable === false) {

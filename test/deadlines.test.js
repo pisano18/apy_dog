@@ -134,3 +134,65 @@ describe('they reach the app', () => {
     }
   });
 });
+
+/**
+ * An offer's own deadline, which is a different path from a calendar event's.
+ *
+ * The events above were fixed once. Opportunities were not, and they carry
+ * their deadlines as bare dates: `"expiresAt": "2026-08-31"`. `Date.parse`
+ * reads that as midnight UTC — the START of the last day — so on the morning of
+ * the 31st a still-live offer reported -1 days and `expired: true`. It then
+ * dropped out of the expiring filter, off the Radar's "On the clock" card, out
+ * of the plan's deadline tier, and store.evaluateAlerts un-fired any alert on
+ * it rather than saying "closes today". The last day an offer can be taken is
+ * the day it most needs to be visible.
+ */
+describe("an offer's last day is a day it is still on", () => {
+  const { calendarDaysUntil } = require('../src/core/schema');
+  const schema = require('../src/core/schema');
+
+  test('a bare date is the whole of that day, not the first instant of it', () => {
+    const now = Date.parse('2026-08-31T14:00:00Z');
+    assert.strictEqual(calendarDaysUntil('2026-08-31', now), 0, 'today read as anything but 0');
+    assert.strictEqual(calendarDaysUntil('2026-09-01', now), 1);
+    assert.strictEqual(calendarDaysUntil('2026-08-30', now), -1);
+  });
+
+  test('nothing closing tonight is ever described as closing tomorrow', () => {
+    // Elapsed-time rounding made a 23:59 deadline read "1" all morning.
+    for (const hour of ['00:30', '09:00', '13:00', '21:45']) {
+      const now = Date.parse(`2026-08-31T${hour}:00Z`);
+      assert.strictEqual(calendarDaysUntil('2026-08-31T23:59:59Z', now), 0,
+        `at ${hour} a deadline of tonight read as ${calendarDaysUntil('2026-08-31T23:59:59Z', now)}`);
+    }
+  });
+
+  test('a row expiring today is not marked expired', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const row = schema.normalize({
+      id: 'x', name: 'Closes today', source: 'deals', sourceLabel: 'Deals',
+      apy: { total: 5 }, expiresAt: today,
+    }, { source: 'deals' });
+    assert.strictEqual(row.daysLeft, 0, `a row closing today reports ${row.daysLeft} days left`);
+    assert.strictEqual(row.expired, false, 'a row closing today is being hidden on its last day');
+  });
+
+  test('and one that closed yesterday still is', () => {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const row = schema.normalize({
+      id: 'y', name: 'Closed', source: 'deals', sourceLabel: 'Deals',
+      apy: { total: 5 }, expiresAt: yesterday,
+    }, { source: 'deals' });
+    assert.ok(row.daysLeft < 0 && row.expired, 'an offer that has closed is being shown as live');
+  });
+
+  test('an offer that opens today is open', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const row = schema.normalize({
+      id: 'z', name: 'Opens today', source: 'deals', sourceLabel: 'Deals',
+      apy: { total: 5 }, startsAt: today,
+    }, { source: 'deals' });
+    assert.strictEqual(row.daysUntilOpen, 0);
+    assert.strictEqual(row.notYetOpen, false, 'an offer that opened this morning reads as not yet open');
+  });
+});

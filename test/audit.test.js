@@ -457,6 +457,39 @@ describe('every row is actionable and honest', () => {
       }
     });
 
+    test('the money a cap excludes is taxed and deflated like the rest of it', () => {
+      // `blend` mixes the row's rate with what the leftover earns in cash, and
+      // the leftover was credited at the raw nominal rate on every basis. So
+      // "after your tax" contained untaxed interest and "after tax and
+      // inflation" contained interest that had been neither taxed nor deflated.
+      // The cap term is usually the larger of the two, so the adjustments were
+      // very nearly cancelled: a capped 6.17% account read 3.71% after
+      // inflation where the honest figure is 0.37%.
+      //
+      // The check is a ratio rather than a level, because the failure was not
+      // that the number was wrong by a little — it was that the adjustment had
+      // essentially stopped happening.
+      const capped = rows.filter((o) => o.scores?.blendApplied
+        && !o.oneTime
+        && o.scores.deployable < o.scores.basisAmount * 0.9
+        && Number.isFinite(o.scores.blendedGross) && o.scores.blendedGross > 1
+        && Number.isFinite(o.scores.blendedAfterTaxReal)
+        && o.taxTreatment !== 'tax_deferred' && !o.tax?.sheltered);
+      assert.ok(capped.length >= 5, `expected capped rows, got ${capped.length}`);
+
+      const inflation = 2.6;   // the audit profile's assumption, below
+      for (const o of capped) {
+        const gross = o.scores.blendedGross;
+        const real = o.scores.blendedAfterTaxReal;
+        // Whatever tax rate applies, a positive nominal blend of X% cannot
+        // survive inflation intact. Anything above (gross - inflation) means
+        // some part of the blend escaped the deflator entirely.
+        assert.ok(real <= gross - inflation + 0.35,
+          `${o.name}: ${gross.toFixed(2)}% nominal becomes ${real.toFixed(2)}% after `
+          + `${inflation}% inflation and tax — some of it was never adjusted`);
+      }
+    });
+
     test('a one-off pays what it says it pays, over however long it takes', () => {
       // The headline on a one-off is annualised — $300 on $10,000 held five
       // years is 0.59% a year — and turning it back into dollars needs the whole
