@@ -2,7 +2,7 @@
 
 const contract = require('./_contract');
 const baseHttp = require('../core/http');
-const { fetchDaily, UA: PROVIDER_UA } = require('../core/history-providers');
+const { fetchDaily, yahooCredentials, UA: PROVIDER_UA } = require('../core/history-providers');
 const baseSchema = require('../core/schema');
 const baseC = require('../core/constants');
 const { analyse } = require('../core/movement');
@@ -1374,6 +1374,7 @@ async function fetchMeasuredTier(ctx, entries, counter) {
         counter.calls += 1;
         const payload = await http.getJSON(sparkUrl(host, batch), {
           signal: ctx.signal, timeout: 25000, retries: 1, concurrency: 2,
+          headers: await yahooHeaders(ctx),
         });
         const parsed = parseSpark(payload);
         if (parsed.size) got = parsed;
@@ -1406,6 +1407,28 @@ async function fetchMeasuredTier(ctx, entries, counter) {
   }
 
   return { series, failedBatches, viaChart, unavailable, batchCount: batches.length };
+}
+
+/**
+ * The headers Yahoo now requires before it will serve anything.
+ *
+ * This is the fix for the failure that started all of this: a real machine
+ * fetched 105 symbols and got zero, because the request went out with Node's
+ * default User-Agent and no cookie. Yahoo answers reliably with a browser
+ * User-Agent plus the cookie/crumb pair, and refuses without them.
+ *
+ * The credentials are minted once and cached for an hour inside
+ * history-providers; failing to get them is not fatal, because some regions
+ * still serve the chart endpoint bare and a bare attempt beats no attempt.
+ */
+async function yahooHeaders(ctx) {
+  const base = { 'User-Agent': PROVIDER_UA };
+  try {
+    const creds = await yahooCredentials({ signal: ctx?.signal });
+    return creds?.cookie ? { ...base, Cookie: creds.cookie } : base;
+  } catch {
+    return base;
+  }
 }
 
 /**
@@ -1484,7 +1507,7 @@ async function fetchChartSeries(ctx, symbol, counter = { calls: 0 }) {
       counter.calls += 1;
       const payload = await http.getJSON(chartUrl(host, symbol), {
         signal: ctx.signal, timeout: 20000, retries: 1, concurrency: 3,
-        headers: { 'User-Agent': PROVIDER_UA },
+        headers: await yahooHeaders(ctx),
       });
       const s = parseChart(payload);
       if (s && !s.error && s.closes?.length) return s;

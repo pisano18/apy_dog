@@ -143,10 +143,17 @@ function advise(feeds, hist) {
     tips.push('Something returned 429 (too many requests). Wait a few minutes and run this again; '
       + 'the free tiers throttle by IP.');
   }
+  const yahooOk = hist.some((r) => r.provider === 'yahoo' && r.ok);
+  const stooqDead = hist.filter((r) => r.provider === 'stooq').every((r) => !r.ok);
+  if (yahooOk && stooqDead) {
+    tips.push('Stooq is serving a JavaScript bot challenge and Yahoo is answering. This is the normal state and '
+      + 'nothing is wrong: the app tries Yahoo first and only falls back to Stooq if Yahoo is down. Price history '
+      + 'works, and the backtest will run.');
+  }
   if (yahooDead && stooqOk) {
-    tips.push('Yahoo is refusing and Stooq is answering, which is the expected state now — Yahoo requires a '
-      + 'cookie and a crumb token and blocks non-browser clients aggressively. The app uses Stooq first for '
-      + 'exactly this reason, so price history will still work. Nothing to fix.');
+    tips.push('Yahoo is refusing and Stooq is answering. The app will fall back to Stooq automatically, so price '
+      + 'history still works — but Stooq carries no dividend data, so trailing yields on stock rows will stay as '
+      + 'the bundled figures until Yahoo is reachable again.');
   }
   if (histDead) {
     tips.push('No price history provider answered, so Signals cannot be calibrated and charts will stay drawn '

@@ -58,9 +58,16 @@ honestly reported as failed. Lookahead is prevented structurally and tested by p
 evaluation point.
 
 ```bash
+npm run doctor              # what this machine can reach, and what each feed says when it refuses
 npm run backtest            # 5y of real daily history, out of sample
 npm run backtest --years 10 --horizon 42
 ```
+
+**Run `npm run doctor` first if anything looks wrong.** It checks every feed and prints the HTTP status and the
+server's own words for each, with advice keyed to the pattern of failures — it tells a corporate proxy apart from a
+rate limit apart from a provider's bot gate, and says when a failure is expected and harmless. Yahoo requires a
+browser User-Agent plus a cookie and a crumb token; Stooq serves a JavaScript challenge to non-browser clients. The
+app tries Yahoo first, falls back to Stooq, and names every failure rather than swallowing it.
 
 Until you run that, the app says **uncalibrated** at the top of the Signals view, every time, and means it: the
 ordering is meaningful and the number is not. Once you have, it shows the measured hit rate, base rate, lift and
@@ -403,7 +410,8 @@ src/core/          schema · opportunity-kinds · tracks · rating · risk · ta
 src/sources/       one adapter per feed, auto-discovered, contract in _contract.js
 src/ui/            index.html · styles.css · format.js · filters-def.js · render.js · app.js
 data/seed/         bundled offline snapshots
-scripts/           scan.js (headless) · backtest.js (real-history validation) · probe.js · make-icon.js
+scripts/           scan.js (headless) · backtest.js (real-history validation) · doctor.js (feed diagnosis)
+                   probe.js · make-icon.js
 test/              node --test
 ```
 

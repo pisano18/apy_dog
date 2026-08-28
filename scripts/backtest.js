@@ -28,6 +28,28 @@ const path = require('node:path');
 const B = require('../src/core/backtest');
 const { fetchDaily } = require('../src/core/history-providers');
 
+/**
+ * A universe chosen for spread, not for outcome.
+ *
+ * Picking symbols because you remember them going up is how a backtest reports
+ * a spectacular edge that vanishes the moment it meets tomorrow. This is a wide
+ * cross-section — indices, mega caps, sleepy dividend names, sectors, and small
+ * volatile ones — so the result describes a market rather than a highlight
+ * reel. The famous squeezes are included precisely because excluding them would
+ * be its own bias, and they are a small minority of the list.
+ */
+const DEFAULT_UNIVERSE = [
+  'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'EFA', 'EEM', 'TLT', 'HYG', 'LQD', 'GLD', 'SLV', 'USO', 'XLE', 'XLF',
+  'XLK', 'XLV', 'XLU', 'XLP', 'XBI', 'SMH', 'KRE', 'JETS', 'ARKK',
+  'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'CSCO', 'ORCL', 'CRM', 'ADBE',
+  'JPM', 'BAC', 'WFC', 'GS', 'C', 'V', 'MA', 'AXP',
+  'JNJ', 'PFE', 'MRK', 'ABBV', 'LLY', 'UNH', 'CVS', 'MRNA', 'BNTX',
+  'KO', 'PEP', 'PG', 'WMT', 'COST', 'MCD', 'NKE', 'SBUX', 'T', 'VZ', 'XOM', 'CVX', 'COP',
+  'BA', 'CAT', 'DE', 'GE', 'F', 'GM', 'UAL', 'DAL', 'CCL', 'NCLH', 'MGM',
+  'GME', 'AMC', 'BB', 'KOSS', 'CLOV', 'PLTR', 'NIO', 'RIOT', 'MARA', 'MSTR', 'COIN', 'HOOD',
+  'SOFI', 'LCID', 'RIVN', 'CHPT', 'DKNG', 'ROKU', 'PTON', 'ZM', 'DOCU', 'SHOP', 'PYPL',
+];
+
 function arg(name, fallback = null) {
   const i = process.argv.indexOf(`--${name}`);
   if (i === -1) return fallback;

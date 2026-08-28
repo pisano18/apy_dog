@@ -11,14 +11,19 @@ const http = require('./http');
  *
  * ── One provider is not a source, it is a single point of failure ───────────
  *
- * Yahoo's chart endpoint has been progressively locked down: it now wants a
- * browser User-Agent, a cookie from one host and a "crumb" token minted at
- * another, and it returns 401 or 429 without them. Code written against the
- * documented shape works right up until it does not, everywhere at once.
+ * Yahoo's chart endpoint wants a browser User-Agent, a cookie minted at one
+ * host and a "crumb" token from another, and returns 401 without them. Supply
+ * all three and it answers reliably, which is why it is tried FIRST — and why
+ * the original single-provider version returned zero of 105 symbols on a real
+ * machine: it asked without the crumb.
  *
- * Stooq is therefore tried FIRST. It serves plain CSV over a URL with no key,
- * no cookie, no token and no per-minute quota. It is less pretty and enormously
- * more likely to answer.
+ * Stooq was originally first, on the reasoning that plain CSV with no key and
+ * no token must be the more robust option. On a real machine it turns out to
+ * serve a JavaScript bot challenge instead of data — "This site requires
+ * JavaScript to verify" — so from any non-browser client it is useless. It is
+ * kept as a fallback because it costs nothing to try when Yahoo is down, and
+ * because being wrong about which provider is sturdier is exactly the reason to
+ * carry two.
  *
  * ── Never swallow the reason ────────────────────────────────────────────────
  *
@@ -93,8 +98,16 @@ async function fromStooq(symbol, { years = 5, signal = null } = {}) {
   });
   const parsed = parseStooqCsv(text);
   if (!parsed) {
-    const e = new Error(`Stooq returned no usable rows for "${stooqSymbol(symbol)}"`);
-    e.body = String(text || '').slice(0, 160);
+    // A bot challenge arrives as a 200 with an HTML page, which is the nastiest
+    // failure mode there is because it looks like success. Naming it as such
+    // beats "no usable rows", which sounds like a bad ticker.
+    const body = String(text || '');
+    const challenged = /noscript|requires JavaScript|<!DOCTYPE html/i.test(body);
+    const e = new Error(challenged
+      ? 'Stooq served a JavaScript bot challenge instead of data — it does not answer non-browser clients'
+      : `Stooq returned no usable rows for "${stooqSymbol(symbol)}"`);
+    e.body = body.slice(0, 160);
+    e.botChallenge = challenged;
     throw e;
   }
   // Stooq serves the full history; trim to the window asked for.
@@ -184,8 +197,8 @@ async function fromYahoo(symbol, { years = 5, signal = null } = {}) {
 // ---------------------------------------------------------------------------
 
 const PROVIDERS = [
-  { key: 'stooq', label: 'Stooq (CSV, no key)', fn: fromStooq },
   { key: 'yahoo', label: 'Yahoo Finance (cookie + crumb)', fn: fromYahoo },
+  { key: 'stooq', label: 'Stooq (CSV, no key)', fn: fromStooq },
 ];
 
 /**

@@ -193,7 +193,13 @@ async function doRefresh({ offline = false, only = null } = {}) {
  * An adapter can override this by exporting ttlMs.
  */
 const CADENCE = {
-  crypto: 60,
+  // CoinGecko's free tier throttles by IP at roughly ten calls a minute, and a
+  // full crypto scan is eight of them. At a 60-second cadence that is a
+  // sustained 8/min against a 10/min ceiling, which earns a 429 within minutes
+  // and then silently serves stale data — observed in the wild, not theorised.
+  // Four minutes leaves comfortable headroom and is still far fresher than
+  // anything a person acts on.
+  crypto: 240,
   equities: 150,
   defillama: 300,
   filings: 420,

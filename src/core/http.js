@@ -1,5 +1,7 @@
 'use strict';
 
+const { setMaxListeners } = require('node:events');
+
 const { setTimeout: delay } = require('node:timers/promises');
 
 /**
@@ -82,6 +84,15 @@ async function request(url, opts = {}) {
     const onOuterAbort = () => ctrl.abort(outerSignal.reason);
     if (outerSignal) {
       if (outerSignal.aborted) { clearTimeout(timer); pool.release(); throw new HttpError('aborted', { url }); }
+      // One scan shares a single cancel signal across every in-flight request,
+      // and a full refresh runs far more than ten at once — which tripped
+      // Node's default ten-listener warning on every launch. The listeners are
+      // correctly removed in the finally block, so this is a real concurrency
+      // level rather than a leak, and the ceiling should describe it rather
+      // than warn about it.
+      if (typeof setMaxListeners === 'function') {
+        try { setMaxListeners(0, outerSignal); } catch { /* older runtimes */ }
+      }
       outerSignal.addEventListener('abort', onOuterAbort, { once: true });
     }
 
@@ -102,9 +113,12 @@ async function request(url, opts = {}) {
       const ok = acceptStatus ? acceptStatus(res.status) : res.ok;
       if (!ok) {
         const text = await res.text().catch(() => '');
-        throw new HttpError(`HTTP ${res.status} ${res.statusText} for ${url}`, {
+        const err = new HttpError(`HTTP ${res.status} ${res.statusText} for ${url}`, {
           status: res.status, url, body: text.slice(0, 500),
         });
+        const ra = res.headers.get('retry-after');
+        if (ra && Number.isFinite(Number(ra))) err.retryAfter = Number(ra);
+        throw err;
       }
 
       if (as === 'text') return await res.text();
@@ -132,7 +146,15 @@ async function request(url, opts = {}) {
       lastErr = err instanceof HttpError ? err : new HttpError(err.message || String(err), { url, cause: err });
       const isLast = attempt === retries;
       if (isLast || !lastErr.retryable) break;
-      const backoff = Math.min(8000, 400 * 2 ** attempt) + Math.random() * 300;
+      // A 429 is the server telling you the rate, not a transient blip.
+      // Retrying it on the same 400ms ladder as a dropped connection is how a
+      // free tier goes from throttled to blocked, so it gets its own much
+      // longer backoff — and its Retry-After header, where one is offered.
+      const throttled = lastErr.status === 429;
+      const retryAfterMs = Number(lastErr.retryAfter) > 0 ? Number(lastErr.retryAfter) * 1000 : null;
+      const backoff = throttled
+        ? (retryAfterMs ?? Math.min(30000, 4000 * 2 ** attempt)) + Math.random() * 500
+        : Math.min(8000, 400 * 2 ** attempt) + Math.random() * 300;
       await delay(backoff);
     } finally {
       clearTimeout(timer);
