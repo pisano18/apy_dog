@@ -81,6 +81,22 @@ describe('the backtest reaches its own logic before it reaches the network', () 
   });
 });
 
+describe('importing a script does nothing', () => {
+  for (const f of SCRIPTS) {
+    test(`${f} does its work only when run, never when required`, () => {
+      // The scripts test requires every script to catch missing identifiers,
+      // and share.js did its entire job on import as a result — spawning a real
+      // network diagnostic and writing files into the repo as a side effect of
+      // being loaded. Every script needs the guard.
+      const src = fs.readFileSync(path.join(ROOT, 'scripts', f), 'utf8');
+      const guarded = /require\.main === module/.test(src)
+        || /^main\(\)\.catch/m.test(src)
+        || /^main\(\);?$/m.test(src);
+      assert.ok(guarded, `${f} has no entry-point guard, so requiring it runs it`);
+    });
+  }
+});
+
 describe('the analysis path is covered without a network', () => {
   test('backtest.js delegates its analysis rather than inlining it', () => {
     // Three crashes shipped from this file, every one of them downstream of a

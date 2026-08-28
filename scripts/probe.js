@@ -181,7 +181,7 @@ const PROBES = [
   },
 ];
 
-(async () => {
+async function main() {
   const results = [];
   if (!asJson) {
     console.log(c('bold', '\nAPY Dog — probing upstream endpoints\n'));
@@ -243,7 +243,15 @@ const PROBES = [
   }
   console.log('');
   process.exit(brokenRequired.length ? 1 : 0);
-})().catch((err) => {
-  console.error('probe failed:', err);
-  process.exit(2);
-});
+}
+
+// Guarded so that importing this file does nothing. The scripts test requires
+// every script in order to catch missing identifiers, and a script that does its
+// work at module scope turns that check into a live run.
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('probe failed:', err);
+    process.exit(2);
+  });
+}

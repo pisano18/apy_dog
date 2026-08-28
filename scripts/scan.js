@@ -43,7 +43,7 @@ const C_ = { dim: '\x1b[2m', reset: '\x1b[0m', bold: '\x1b[1m', green: '\x1b[32m
 const useColor = process.stdout.isTTY && !has('--no-color');
 const c = (code, s) => (useColor ? `${C_[code]}${s}${C_.reset}` : String(s));
 
-(async () => {
+async function main() {
   const store = new Store(dataDir);
   const cache = new Cache(path.join(dataDir, 'cache'));
   const { adapters, problems } = loadAdapters({ log: (m) => log(c('yellow', `[sources] ${m}`)) });
@@ -137,7 +137,15 @@ const c = (code, s) => (useColor ? `${C_[code]}${s}${C_.reset}` : String(s));
     for (const f of failed) for (const w of f.warnings) log(c('red', `  · ${w}`));
   }
   log('');
-})().catch((err) => {
-  console.error('scan failed:', err);
-  process.exit(1);
-});
+}
+
+// Guarded so that importing this file does nothing. The scripts test requires
+// every script in order to catch missing identifiers, and a script that does its
+// work at module scope turns that check into a live run.
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('scan failed:', err);
+    process.exit(1);
+  });
+}

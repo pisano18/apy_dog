@@ -150,7 +150,16 @@ for (let x = Math.round(SIZE * 0.13); x < SIZE * 0.88; x += 1) {
   for (let dy = 0; dy < 3; dy += 1) set(x, Math.round(SIZE * 0.79) + dy, [90, 102, 120], 150);
 }
 
-const out = path.join(__dirname, '..', 'build');
-fs.mkdirSync(out, { recursive: true });
-fs.writeFileSync(path.join(out, 'icon.png'), encodePNG(SIZE, SIZE, px));
-console.log(`wrote ${path.join(out, 'icon.png')} (${SIZE}x${SIZE})`);
+
+// Guarded so that importing this file does nothing. The scripts test requires
+// every script in order to catch missing identifiers, and a script that does
+// its work at module scope turns that check into a live run.
+
+function main() {
+  const out = path.join(__dirname, '..', 'build');
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(path.join(out, 'icon.png'), encodePNG(SIZE, SIZE, px));
+  console.log(`wrote ${path.join(out, 'icon.png')} (${SIZE}x${SIZE})`);
+}
+
+if (require.main === module) main();

@@ -86,6 +86,11 @@ npm run backtest            # 5y of real daily history, out of sample
 npm run backtest --years 10 --horizon 42
 ```
 
+**To send results back:** `npm run share` runs the diagnostics and writes their full output into
+`data/reports/`, so one commit hands over the complete picture instead of whatever fitted on screen. It contains
+HTTP statuses, hit rates and base rates — never your amount, tax settings or watchlist, which live in your user
+data directory and are not touched.
+
 **Run `npm run doctor` first if anything looks wrong.** It checks every feed and prints the HTTP status and the
 server's own words for each, with advice keyed to the pattern of failures — it tells a corporate proxy apart from a
 rate limit apart from a provider's bot gate, and says when a failure is expected and harmless. Yahoo requires a
@@ -434,7 +439,7 @@ src/sources/       one adapter per feed, auto-discovered, contract in _contract.
 src/ui/            index.html · styles.css · format.js · filters-def.js · render.js · app.js
 data/seed/         bundled offline snapshots
 scripts/           scan.js (headless) · backtest.js (real-history validation) · doctor.js (feed diagnosis)
-                   probe.js · make-icon.js
+                   share.js (write diagnostics into the repo) · probe.js · make-icon.js
 test/              node --test
 ```
 
