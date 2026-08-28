@@ -314,6 +314,21 @@ function scoreSignal(key, obs, baseRate, opts = {}) {
     verdict = 'validated';
     why = `Hit ${(ci.p * 100).toFixed(1)}% against a ${(baseRate * 100).toFixed(1)}% base rate, and the bottom of `
       + `the 95% interval (${(ci.lo * 100).toFixed(1)}%) still clears it.`;
+  } else if (ci.hi < baseRate) {
+    // Significantly WORSE than chance, which is information rather than
+    // failure: a detector reliably below the base rate is a detector pointed
+    // the wrong way round, and inverting it is a real hypothesis.
+    //
+    // The bar is deliberately the same one validation has to clear, from the
+    // other side. Compression came back at 0.74 lift on real data and looked
+    // like exactly this, but its interval reached 26.4% against a 24.8% base
+    // rate — so it is not inverted, it is uninformative, and saying otherwise
+    // would have been a story invented from a point estimate.
+    verdict = 'inverted';
+    why = `Hit ${(ci.p * 100).toFixed(1)}% against a ${(baseRate * 100).toFixed(1)}% base rate, and the TOP of `
+      + `the interval (${(ci.hi * 100).toFixed(1)}%) is still below it. Reliably worse than chance, which means `
+      + 'the effect is real and pointed the wrong way. Inverting it is a new hypothesis and needs its own run on '
+      + 'data this one has not seen.';
   } else if (ci.p > baseRate) {
     verdict = 'unproven';
     why = `Hit ${(ci.p * 100).toFixed(1)}% against ${(baseRate * 100).toFixed(1)}%, but the interval `
@@ -353,7 +368,13 @@ function scoreSignal(key, obs, baseRate, opts = {}) {
 function fitWeights(scores) {
   const w = {};
   for (const s of scores) {
-    if (s.verdict === 'failed' || s.verdict === 'insufficient' || !finite(s.lift)) { w[s.key] = 0; continue; }
+    if (['failed', 'insufficient', 'unusable', 'inverted'].includes(s.verdict) || !finite(s.lift)) {
+      // Inverted included: acting on it would mean flipping a detector on the
+      // strength of the same data that revealed the flip, which is the oldest
+      // way there is to turn noise into a strategy.
+      w[s.key] = 0;
+      continue;
+    }
     // Excess lift above 1, damped, and halved while the result is only unproven.
     const raw = Math.max(0, s.lift - 1);
     w[s.key] = Math.round(100 * Math.min(2, raw) * (s.verdict === 'validated' ? 1 : 0.5)) / 100;
@@ -485,13 +506,24 @@ const PARAM_GRID = {
     { recent: 14, baseline: 120, pctCut: 0.2 },
   ],
   quiet_accumulation: [
+    // The original three fired NINE times across 1,110 observations, which is
+    // not a strict detector, it is an unmeasurable one — no verdict is possible
+    // either way. These are loosened until the thing can actually be judged.
+    { recent: 10, baseline: 60, volFloor: 1.15, driftCap: 0.10 },
+    { recent: 10, baseline: 60, volFloor: 1.25, driftCap: 0.08 },
+    { recent: 20, baseline: 90, volFloor: 1.2, driftCap: 0.10 },
+    { recent: 5, baseline: 60, volFloor: 1.3, driftCap: 0.06 },
     { recent: 10, baseline: 60, volFloor: 1.4, driftCap: 0.05 },
-    { recent: 10, baseline: 60, volFloor: 1.8, driftCap: 0.04 },
-    { recent: 20, baseline: 90, volFloor: 1.5, driftCap: 0.06 },
   ],
   extension: [
+    // The one that validated. Explored a little more finely around the setting
+    // the data picked (window 30, zFloor 1.0), and no further: a grid that
+    // keeps growing around a winner is how a real effect gets tuned into an
+    // imaginary one.
     { window: 60, zFloor: 1.2, zSpan: 2.3 },
     { window: 30, zFloor: 1.0, zSpan: 2.0 },
+    { window: 30, zFloor: 0.8, zSpan: 1.8 },
+    { window: 45, zFloor: 1.0, zSpan: 2.2 },
     { window: 120, zFloor: 1.5, zSpan: 2.5 },
   ],
 };

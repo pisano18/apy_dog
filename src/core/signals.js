@@ -119,12 +119,27 @@ function percentileRank(history, value) {
 // ---------------------------------------------------------------------------
 
 /**
- * Volatility compression. The workhorse.
+ * Volatility compression.
  *
- * Realised vol over the recent window against its own longer baseline. A ratio
- * well below 1 means this thing is quieter than it normally is, and quiet does
- * not persist — it is the single most reliable "something is coming" reading
- * available from price alone, and it says nothing whatsoever about direction.
+ * ── MEASURED AND FAILED. Read this before trusting it. ──────────────────────
+ *
+ * This was built as the workhorse, on the standard claim that quiet does not
+ * persist and a compressed instrument is coiled for a move. Against 101 real
+ * symbols over five years, out of sample, across fifteen parameter settings, it
+ * came back at 0.74 lift on BOTH outcome definitions — worse than knowing
+ * nothing. Its interval (12.2% to 26.4% against a 24.8% base rate) also does
+ * not clear the base rate from below, so it is not secretly an inverted signal
+ * either. It is simply uninformative.
+ *
+ * The finding that replaced it is the opposite one: volatility PERSISTS at this
+ * horizon rather than mean-reverting. Quiet begets quiet, and it is the
+ * instrument that has just moved hard which keeps moving. That is why
+ * `extension` validated on the same run and this did not.
+ *
+ * Kept in the codebase because a failed detector with its result written next to
+ * it is worth more than a deleted one — it stops the same idea being rebuilt
+ * from folklore in six months. It carries zero weight whenever a calibration is
+ * loaded, and the interface no longer describes it as evidence of anything.
  */
 function coil(closes, i, opts = {}) {
   const { recent = 10, baseline = 60, loose = 0.75, tight = 0.35 } = opts;
@@ -393,10 +408,22 @@ function unlockOverhang({ unlockPercentOfFloat, unlockDaysAway }) {
 }
 
 /**
- * Trend that has gone too far too fast in its own terms.
+ * A move that has gone far in its own terms.
  *
- * Reported because an extended move is itself a pre-condition for a violent
- * one — in either direction — not because "overbought" means "sell".
+ * ── MEASURED AND VALIDATED, on one of two outcomes. ─────────────────────────
+ *
+ * The only detector here that beat its base rate on real data: 35.3% against a
+ * 24.8% base over 167 independent observations, lift 1.43, surviving a
+ * three-way split and a correction for nineteen simultaneous comparisons. It
+ * fires on 7.8% of quiet periods, so it is selective rather than always-on.
+ *
+ * On the harder question — whether a large PRICE move follows rather than
+ * merely more volatility — it reached 1.62 lift but on only 60 observations,
+ * which is "promising and unproven", not proven. Treat it as a volatility
+ * forecast that has been checked, and a price forecast that has not.
+ *
+ * Nothing here is directional. An extended move predicts more movement, not a
+ * reversal: "overbought" is not a sell signal and this does not say it is.
  */
 function extension(closes, i, opts = {}) {
   const { window = 60, zFloor = 1.2, zSpan = 2.3 } = opts;

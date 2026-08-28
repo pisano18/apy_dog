@@ -444,3 +444,42 @@ describe('the outcome must not be the signal in disguise', () => {
     assert.match(common.why, /too common/);
   });
 });
+
+describe('a detector pointed the wrong way is distinguished from a useless one', () => {
+  test('reliably below the base rate reads as inverted, not merely failed', () => {
+    // 400 observations, fires on all of them, hits 2% against a 25% base rate.
+    // That is not "no edge", it is an edge facing backwards.
+    const obs = Array.from({ length: 400 }, (_, k) => ({
+      big: k < 8, signals: { coil: { fired: true, strength: 1 } }, forward: 0, symbol: 'X', i: k,
+    }));
+    const r = B.scoreSignal('coil', obs, 0.25);
+    assert.strictEqual(r.verdict, 'inverted');
+    assert.match(r.why, /pointed the wrong way/);
+    assert.match(r.why, /needs its own run/, 'inverting must be flagged as a new hypothesis');
+  });
+
+  test('below the base rate but within the interval is only failed', () => {
+    // The real compression result: 263 fires, 18.3% against 24.8%, interval
+    // reaching 26.4%. Calling that inverted would be a story told from a point
+    // estimate, and it is exactly the mistake this separates out.
+    const fires = 263;
+    const hits = Math.round(fires * 0.183);
+    const obs = Array.from({ length: 1110 }, (_, k) => ({
+      big: k < Math.round(1110 * 0.248),
+      signals: { coil: { fired: k < fires && k < hits ? true : (k < fires) } },
+      forward: 0, symbol: 'X', i: k,
+    }));
+    const r = B.scoreSignal('coil', obs, 0.248);
+    assert.notStrictEqual(r.verdict, 'inverted',
+      'a lift below 1 whose interval still touches the base rate is not an inversion');
+  });
+
+  test('an inverted signal is given zero weight, never a flipped one', () => {
+    const w = B.fitWeights([
+      { key: 'coil', verdict: 'inverted', lift: 0.3 },
+      { key: 'extension', verdict: 'validated', lift: 1.43 },
+    ]);
+    assert.strictEqual(w.coil, 0, 'acting on an inversion found in the same data is how noise becomes a strategy');
+    assert.ok(w.extension > 0);
+  });
+});

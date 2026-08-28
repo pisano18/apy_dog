@@ -957,10 +957,11 @@ R.signalsView = (d) => {
   return `<div class="wrap">
     <h2>What is about to do something</h2>
     <p class="lead">Direction is not forecastable, and anything claiming otherwise is selling something. Size is a
-      different question: volatility clusters and mean-reverts, so unusual quiet genuinely says something about how
-      big the next move will be — while saying nothing about which way. These are ranked by how many pre-move
-      conditions are firing at once ${window.helpChip ? window.helpChip('pressure') : ''}, with the evidence for
-      each one so you can disagree with it.</p>
+      different question, and it is the one worth asking — but only the detectors that have actually beaten their
+      own base rate get a vote here ${window.helpChip ? window.helpChip('pressure') : ''}. On the last real
+      measurement that meant <b>stretched</b> at 1.43x lift, while <b>compression</b> and <b>tight range</b> failed
+      outright and were given zero weight: the widely repeated idea that a quiet stock is coiled for a move did not
+      survive contact with 101 symbols over five years. Every row shows its evidence so you can disagree with it.</p>
 
     ${banner}
 

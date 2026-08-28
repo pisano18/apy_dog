@@ -52,10 +52,33 @@ invents an edge that is not there:
 | **Multiple comparisons** | Seven detectors at 95% throws a false positive about a third of the time — and it is the false one you believe | Bonferroni correction |
 | **The threshold itself** | A fixed 15% bar put the base rate at 43%, so "large move" meant "volatile instrument" — which every volatility detector answers trivially and correctly while telling you nothing | A multiple of each instrument's *own* baseline, computed point-in-time |
 
-After all three: **zero false validations across twenty independent noise baskets**, while compression still
-validates at 1.5x lift out-of-sample on planted regime-switching data — and the detector that was never planted is
-honestly reported as failed. Lookahead is prevented structurally and tested by poisoning every bar after the
-evaluation point.
+After all three: **zero false validations across twenty independent noise baskets**, while planted structure is
+still detected at 2.0x lift on synthetic regime data — and the detector that was never planted is honestly
+reported as failed. Lookahead is prevented structurally and tested by poisoning every bar after the evaluation
+point.
+
+### What it found on real data
+
+101 symbols, 5 years, out of sample, 1,110 independent observations, 19 simultaneous comparisons corrected for:
+
+| Detector | Verdict | Hit | Base | Lift |
+|---|---|---|---|---|
+| **Stretched** | **validated** | 35.3% | 24.8% | **1.43** |
+| Compression (coil) | failed | 18.3% | 24.8% | 0.74 |
+| Tight range | failed | 22.9% | 24.8% | 0.92 |
+| Quiet accumulation | insufficient | — | — | — |
+
+**The headline idea did not survive.** "A quiet stock is coiled for a move" is one of the most repeated claims in
+trading, it is what this engine was built around, and across fifteen parameter settings and both definitions of
+"large move" it was followed by a big move *less* often than average. It is not secretly an inverted signal either
+— its interval reaches 26.4% against a 24.8% base rate, so it is simply uninformative. It now carries zero weight.
+
+What the same data shows instead is the opposite effect: **volatility persists rather than mean-reverting** at this
+horizon. Quiet begets quiet, and the instrument that has just moved hard keeps moving — which is exactly why
+"stretched" validated and compression did not.
+
+That is one working detector out of seven, and the app says so on the Signals page rather than quietly averaging a
+failed signal into a confident-looking number.
 
 ```bash
 npm run doctor              # what this machine can reach, and what each feed says when it refuses

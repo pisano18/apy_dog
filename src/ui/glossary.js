@@ -172,17 +172,23 @@
       term: 'Pressure',
       what: 'How many pre-move conditions are firing at once, 0 to 100.',
       why: 'It ranks what is most likely to do something soon. It is not a probability and never a direction.',
-      catch: 'Until the backtest has run on real history, this is an uncalibrated ranking — the ordering is '
-        + 'meaningful, the number is not. Run "npm run backtest" and it becomes a measured one.',
-      see: ['coil', 'calibration', 'lean'],
+      catch: 'Only the detectors that actually beat their base rate contribute. On the last real measurement that '
+        + 'was one of them — "stretched", at 1.43x — while compression and tight range failed outright and were '
+        + 'given zero weight. So this number rests on less than it looks like it does. Until you run '
+        + '"npm run backtest" on your own machine it rests on nothing measured at all.',
+      see: ['coil', 'calibration', 'lean', 'baseRate'],
     },
     coil: {
       term: 'Compression (coil)',
       what: 'Trading much more quietly than it normally does.',
-      why: 'Volatility clusters and mean-reverts — one of the most replicated findings in finance. Unusual quiet '
-        + 'genuinely says something about the size of what comes next.',
-      catch: 'It says NOTHING about direction. A coil resolves violently in whichever way it resolves.',
-      see: ['volatility', 'pressure'],
+      why: 'It is in this app because "a coiled stock is about to explode" is one of the most widely repeated '
+        + 'ideas in trading, and it was worth actually checking.',
+      catch: 'It was checked and it does not work. Across 101 symbols over five years, out of sample, it was '
+        + 'followed by a large move LESS often than average — 0.74 times the base rate, on both definitions of '
+        + '"large". It is not secretly a reverse signal either; the numbers are simply uninformative. It now '
+        + 'carries zero weight. What the same data DID show is the opposite: volatility persists rather than '
+        + 'mean-reverts, which is why "stretched" works and this does not.',
+      see: ['volatility', 'pressure', 'baseRate', 'lift'],
     },
     quietAccumulation: {
       term: 'Quiet accumulation',
