@@ -146,3 +146,50 @@ describe('the doctor reports rather than throws', () => {
     assert.ok(/( ok |FAIL)/.test(out), 'doctor rendered no verdicts');
   });
 });
+
+/**
+ * A calibration is earned, never shipped.
+ *
+ * calibration.js says so in its own docstring — "Deliberately not bundled with
+ * the app. A calibration file that shipped would be a backtest against data
+ * chosen after the fact, on a universe picked by somebody who already knew how
+ * it turned out" — and the file was committed and packaged anyway, because
+ * `npm run share` uses git as its return channel and build.files says
+ * `data/**` with no exclusion.
+ *
+ * The cost is not academic. loadCalibration finds it, its guard passes, and the
+ * Signals view renders "Calibrated. Measured on 101 symbols over 5 years" in
+ * place of "Uncalibrated — this is a ranking, not a probability" for somebody
+ * who has never run anything. That banner is the app's single most important
+ * honesty guard and it was off by default.
+ */
+describe('a calibration is earned, never shipped', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { execFileSync } = require('node:child_process');
+  const ROOT = path.join(__dirname, '..');
+
+  test('no calibration is committed to the repository', () => {
+    const tracked = execFileSync('git', ['ls-files', 'data'], { cwd: ROOT, encoding: 'utf8' })
+      .split('\n').filter(Boolean);
+    const shipped = tracked.filter((f) => /(^|\/)calibration[^/]*\.json$/.test(f) && !f.startsWith('data/reports/'));
+    assert.deepStrictEqual(shipped, [],
+      `these would hand the next person a measurement they never made: ${shipped.join(', ')}`);
+  });
+
+  test('and the packaged build excludes it even if one appears', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    const files = pkg.build?.files || [];
+    assert.ok(files.includes('!data/calibration*.json'),
+      'build.files must exclude the calibration from the packaged app');
+    assert.ok(files.includes('!data/reports/**'),
+      "build.files must exclude a developer's diagnostic output from the packaged app");
+  });
+
+  test('the app reads nothing when nothing has been measured', () => {
+    const { loadCalibration } = require('../src/core/calibration');
+    const missing = path.join(__dirname, 'fixtures', 'no-such-calibration.json');
+    assert.strictEqual(loadCalibration({ maxAgeMs: 0, file: missing }), null,
+      'a missing calibration must read as uncalibrated, not as an empty one');
+  });
+});

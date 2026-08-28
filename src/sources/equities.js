@@ -148,6 +148,27 @@ const GROUPS = {
     note: 'The ballast side of a portfolio. A bond fund has no maturity date, so unlike a bond you hold to maturity '
       + 'it never returns par: a rate rise is a real price loss until yields come back down.',
   },
+  treasury_fund: {
+    label: 'Treasury fund',
+    // Still an ETF, because that is what you buy and how it behaves. Filing it
+    // as a government bond would hand it the credit-risk grade of a Treasury
+    // while it keeps the duration risk of a fund — TLT fell about 48% peak to
+    // trough in 2022 and cannot default, and a reader needs both facts. Only
+    // the tax treatment changes here, because only the tax treatment was wrong.
+    assetClass: ETF,
+    // Treasury interest is exempt from state and local income tax, and a fund
+    // holding nothing but Treasuries passes that exemption through. Filing all
+    // of these under one "core bond fund" heading taxed them as fully taxable
+    // ordinary income: in California that charged 9.3% state tax on interest
+    // that owes none, so TLT read 2.87% after tax where the truth is 3.27%. The
+    // bond and fund adapters classify the same tickers correctly, but the
+    // dedupe prefers the richer equities row, so the right answer was being
+    // computed and then thrown away.
+    taxTreatment: TAX.TREASURY,
+    note: 'US government debt, so no credit risk worth pricing and no state or local income tax on the interest — '
+      + 'which is worth roughly a percentage point of yield in a high-tax state and nothing at all in Texas. '
+      + 'Like any bond fund it has no maturity date, so a rate rise is a real price loss until yields come back down.',
+  },
   dividend_growth: {
     label: 'Dividend fund',
     assetClass: ETF,
@@ -336,14 +357,7 @@ const MEASURED_UNIVERSE = {
     ['FIPFX', 'Fidelity Freedom Index 2050 Fund'],
     ['FDEWX', 'Fidelity Freedom Index 2055 Fund'],
   ],
-  bond_core: [
-    ['BND', 'Vanguard Total Bond Market ETF'],
-    ['AGG', 'iShares Core US Aggregate Bond ETF'],
-    ['BNDX', 'Vanguard Total International Bond ETF'],
-    ['BNDW', 'Vanguard Total World Bond ETF'],
-    ['IUSB', 'iShares Core Total USD Bond Market ETF'],
-    ['SPAB', 'SPDR Portfolio Aggregate Bond ETF'],
-    ['SCHZ', 'Schwab US Aggregate Bond ETF'],
+  treasury_fund: [
     ['VGSH', 'Vanguard Short-Term Treasury ETF'],
     ['VGIT', 'Vanguard Intermediate-Term Treasury ETF'],
     ['VGLT', 'Vanguard Long-Term Treasury ETF'],
@@ -354,6 +368,19 @@ const MEASURED_UNIVERSE = {
     ['GOVT', 'iShares US Treasury Bond ETF'],
     ['SCHO', 'Schwab Short-Term US Treasury ETF'],
     ['SCHR', 'Schwab Intermediate-Term US Treasury ETF'],
+    ['TIP', 'iShares TIPS Bond ETF'],
+    ['VTIP', 'Vanguard Short-Term Inflation-Protected Securities ETF'],
+    ['SCHP', 'Schwab US TIPS ETF'],
+    ['STIP', 'iShares 0-5 Year TIPS Bond ETF'],
+  ],
+  bond_core: [
+    ['BND', 'Vanguard Total Bond Market ETF'],
+    ['AGG', 'iShares Core US Aggregate Bond ETF'],
+    ['BNDX', 'Vanguard Total International Bond ETF'],
+    ['BNDW', 'Vanguard Total World Bond ETF'],
+    ['IUSB', 'iShares Core Total USD Bond Market ETF'],
+    ['SPAB', 'SPDR Portfolio Aggregate Bond ETF'],
+    ['SCHZ', 'Schwab US Aggregate Bond ETF'],
     ['BSV', 'Vanguard Short-Term Bond ETF'],
     ['BIV', 'Vanguard Intermediate-Term Bond ETF'],
     ['BLV', 'Vanguard Long-Term Bond ETF'],
@@ -362,10 +389,6 @@ const MEASURED_UNIVERSE = {
     ['VCIT', 'Vanguard Intermediate-Term Corporate Bond ETF'],
     ['LQD', 'iShares iBoxx $ Investment Grade Corporate Bond ETF'],
     ['IGSB', 'iShares 1-5 Year Investment Grade Corporate Bond ETF'],
-    ['TIP', 'iShares TIPS Bond ETF'],
-    ['VTIP', 'Vanguard Short-Term Inflation-Protected Securities ETF'],
-    ['SCHP', 'Schwab US TIPS ETF'],
-    ['STIP', 'iShares 0-5 Year TIPS Bond ETF'],
     ['FXNAX', 'Fidelity US Bond Index Fund'],
     ['VBTLX', 'Vanguard Total Bond Market Index Fund Admiral', { min: 3000 }],
   ],

@@ -35,7 +35,9 @@
       "src/**/*",
       "data/**/*",
       "!**/*.test.js",
-      "!test/**/*"
+      "!test/**/*",
+      "!data/calibration*.json",
+      "!data/reports/**"
     ],
     "directories": {
       "output": "release",

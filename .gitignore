@@ -7,3 +7,13 @@ dist/
 
 # Smoke-test screenshots are regenerated on every run; the icon is a real asset.
 build/smoke*.png
+
+# A calibration is something a machine earned by running the backtest, not
+# something the app arrives already believing. A committed one would hand the
+# next person a measurement they never made — on a universe chosen by somebody
+# who already knew how it turned out — and switch off the "Uncalibrated: this is
+# a ranking, not a probability" banner the whole honesty story rests on.
+# Diagnostics from `npm run share` are copied into data/reports/ instead, where
+# nothing reads them.
+data/calibration.json
+data/calibration-*.json

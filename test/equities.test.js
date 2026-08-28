@@ -784,3 +784,55 @@ test('a chart states whether it was recorded or drawn', () => {
   const [rec] = adapter.parseTickerIndex(SEC_EXCHANGE).records;
   assert.equal(adapter.buildIndexRow(rec, { schema, C }).seriesBasis, null);
 });
+
+/**
+ * Treasury funds pass their state exemption through.
+ *
+ * Every bond fund used to sit in one `bond_core` category taxed as fully
+ * taxable ordinary income, and fourteen of them hold nothing but US Treasuries,
+ * whose interest owes no state or local income tax. In California that charged
+ * 9.3% on interest that owes none: TLT read 2.87% after tax where the truth is
+ * 3.27%, in the visible, sortable column that is also the default ranking basis.
+ * The bond and fund adapters classify the same tickers correctly, but the
+ * dedupe prefers the richer equities row, so the right answer was computed and
+ * then discarded.
+ */
+test.describe('a Treasury fund is taxed like Treasuries', () => {
+  const TREASURY_ONLY = ['VGSH', 'VGIT', 'VGLT', 'SHY', 'IEI', 'IEF', 'TLT', 'GOVT', 'SCHO', 'SCHR',
+    'TIP', 'VTIP', 'SCHP', 'STIP'];
+  const MIXED_OR_CREDIT = ['BND', 'AGG', 'LQD', 'VCSH', 'VCIT', 'MBB', 'BNDX', 'IGSB'];
+
+  const entries = () => new Map(adapter.universeEntries().map((e) => [e.symbol, e]));
+
+  test('every pure-Treasury fund is', () => {
+    const all = entries();
+    for (const sym of TREASURY_ONLY) {
+      const e = all.get(sym);
+      assert.ok(e, `${sym} left the universe`);
+      assert.strictEqual(adapter.GROUPS[e.group].taxTreatment, C.TAX_TREATMENT.TREASURY,
+        `${sym} holds only Treasuries and is taxed as ${adapter.GROUPS[e.group].taxTreatment}`);
+    }
+  });
+
+  test('and a fund holding credit is not', () => {
+    // A partial-Treasury fund does get a pro-rata exemption in most states, but
+    // claiming the full one on an aggregate bond fund would be the same error
+    // pointing the other way.
+    const all = entries();
+    for (const sym of MIXED_OR_CREDIT) {
+      const e = all.get(sym);
+      assert.ok(e, `${sym} left the universe`);
+      assert.notStrictEqual(adapter.GROUPS[e.group].taxTreatment, C.TAX_TREATMENT.TREASURY,
+        `${sym} holds corporate or foreign credit and cannot claim the Treasury exemption`);
+    }
+  });
+
+  test('it is still an ETF, with a fund\'s duration risk', () => {
+    // Filing it as a government bond would hand it the credit-risk grade of a
+    // Treasury while it keeps the price behaviour of a long-duration fund. TLT
+    // fell about 48% peak to trough in 2022 and cannot default; a reader needs
+    // both facts, and only the tax treatment was ever wrong.
+    const e = entries().get('TLT');
+    assert.strictEqual(adapter.GROUPS[e.group].assetClass, C.ASSET_CLASS.ETF);
+  });
+});

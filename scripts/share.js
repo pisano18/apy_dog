@@ -80,8 +80,23 @@ if (!quick) {
   console.log('skipping the backtests (--quick)');
 }
 
+// The calibration itself is not committed: a calibration is something a machine
+// earned by running the backtest, and one arriving over git would hand the next
+// person a measurement they never made while switching off the "Uncalibrated"
+// banner. A copy goes into data/reports, where it is a diagnostic record and
+// nothing reads it.
+for (const name of fs.existsSync(path.join(ROOT, 'data')) ? fs.readdirSync(path.join(ROOT, 'data')) : []) {
+  if (!/^calibration.*\.json$/.test(name)) continue;
+  try {
+    fs.copyFileSync(path.join(ROOT, 'data', name), path.join(ROOT, 'data', 'reports', name));
+    console.log(`${name} -> data/reports/${name}`);
+  } catch (err) {
+    console.log(`could not copy ${name}: ${err.message}`);
+  }
+}
+
 console.log('\nDone. Send it over with:\n');
-console.log('  git add data/reports data/calibration*.json');
+console.log('  git add data/reports');
 console.log('  git commit -m "share: diagnostics"');
 console.log('  git push origin claude/investment-opportunity-finder-tyyj0s');
 }

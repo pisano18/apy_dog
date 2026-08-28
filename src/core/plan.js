@@ -331,8 +331,16 @@ function buildPlan(rows, opts = {}) {
   }
 
   // ---- tier 7: everything else --------------------------------------------
+  // Nothing already in the plan comes round again. The buffer tier draws from
+  // this same pool, so whenever a buffer pick was also a top-three income row it
+  // was emitted twice — and the interface numbers steps by id, so the duplicate
+  // collapsed the Map entry and BOTH copies rendered the later number. A plan is
+  // an order of operations; telling somebody to do step 9 twice, once labelled 4,
+  // is not one.
+  for (const s of steps) takenIds.add(s.id);
   const core = rows
     .filter((o) => o.section === 'income' && !o.oneTime
+      && !takenIds.has(o.id)
       && o.scores?.traps?.verdict !== 'likely_trap'
       && canAfford(o))
     .sort((a, b) => (b.scores?.dogScore ?? -1) - (a.scores?.dogScore ?? -1))

@@ -146,3 +146,47 @@ describe('it does not sell you anything without the catch', () => {
     }
   });
 });
+
+/**
+ * A plan is an order of operations, and an order cannot contain the same thing
+ * twice.
+ *
+ * Tiers 4, 5 and 6 all guarded against re-listing. Tier 7 did not, and it drew
+ * from the same pool the buffer tier draws from — so whenever a buffer pick was
+ * also a top-three income row it appeared twice. The interface numbers steps by
+ * id (`new Map(p.steps.map((s, i) => [s.id, i + 1]))`), so the duplicate
+ * collapsed the Map entry and both copies rendered the later number: step 4 and
+ * step 9, both labelled 9.
+ */
+describe('no step appears twice', () => {
+  const budgets = [0, 1000, 5000, 25000, 50000, 100000, 250000];
+  const factSets = [
+    {},
+    { employerMatches: false, monthlyExpenses: 2500, bufferMonths: 6, hoursAvailable: 4 },
+    { employerMatches: true, cardBalance: 8000, monthlyExpenses: 4000, bufferMonths: 3, hoursAvailable: 20 },
+    { employerMatches: null, monthlyExpenses: 900, bufferMonths: 12, hoursAvailable: 0 },
+  ];
+
+  test('across every budget and every set of answers', () => {
+    for (const budget of budgets) {
+      for (const facts of factSets) {
+        const p = buildPlan(rows, { budget: budget || null, facts });
+        const ids = p.steps.map((s) => s.id);
+        const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+        assert.deepStrictEqual([...new Set(dupes)], [],
+          `budget ${budget}, facts ${JSON.stringify(facts)}: repeated ${[...new Set(dupes)].join(', ')}`);
+      }
+    }
+  });
+
+  test('and the numbering the interface derives is therefore one per step', () => {
+    const p = buildPlan(rows, {
+      budget: 50000,
+      facts: { employerMatches: false, monthlyExpenses: 2500, bufferMonths: 6, hoursAvailable: 4 },
+    });
+    // Exactly what src/ui/app.js does to number them.
+    const order = new Map(p.steps.map((s, i) => [s.id, i + 1]));
+    assert.strictEqual(order.size, p.steps.length,
+      'two steps share an id, so both will render the same number');
+  });
+});
