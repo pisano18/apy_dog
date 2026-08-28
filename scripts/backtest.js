@@ -25,73 +25,14 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const http = require('../src/core/http');
 const B = require('../src/core/backtest');
-const S = require('../src/core/signals');
-
-const YAHOO_HOSTS = ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com'];
-
-/**
- * A universe chosen for spread, not for outcome.
- *
- * Picking symbols because you remember them going up is how a backtest reports
- * a spectacular edge that vanishes the moment it meets tomorrow. This is a wide
- * cross-section — mega caps, sleepy dividend names, indices, small and volatile
- * names, and the famous squeezes — so the result reflects a market rather than
- * a highlight reel. The squeeze names are included precisely because excluding
- * them would be its own bias, and they are a small minority.
- */
-const DEFAULT_UNIVERSE = [
-  'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'EFA', 'EEM', 'TLT', 'HYG', 'LQD', 'GLD', 'SLV', 'USO', 'XLE', 'XLF',
-  'XLK', 'XLV', 'XLU', 'XLP', 'XBI', 'SMH', 'KRE', 'JETS', 'ARKK',
-  'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'CSCO', 'ORCL', 'CRM', 'ADBE',
-  'JPM', 'BAC', 'WFC', 'GS', 'C', 'V', 'MA', 'AXP',
-  'JNJ', 'PFE', 'MRK', 'ABBV', 'LLY', 'UNH', 'CVS', 'MRNA', 'BNTX',
-  'KO', 'PEP', 'PG', 'WMT', 'COST', 'MCD', 'NKE', 'SBUX', 'T', 'VZ', 'XOM', 'CVX', 'COP',
-  'BA', 'CAT', 'DE', 'GE', 'F', 'GM', 'UAL', 'DAL', 'CCL', 'NCLH', 'MGM',
-  'GME', 'AMC', 'BBBY', 'BB', 'KOSS', 'CLOV', 'SNDL', 'PLTR', 'NIO', 'RIOT', 'MARA', 'MSTR', 'COIN', 'HOOD',
-  'SOFI', 'LCID', 'RIVN', 'CHPT', 'SPCE', 'DKNG', 'ROKU', 'PTON', 'ZM', 'DOCU', 'SHOP', 'SQ', 'PYPL',
-];
+const { fetchDaily } = require('../src/core/history-providers');
 
 function arg(name, fallback = null) {
   const i = process.argv.indexOf(`--${name}`);
   if (i === -1) return fallback;
   const v = process.argv[i + 1];
   return v && !v.startsWith('--') ? v : true;
-}
-
-const chartUrl = (host, symbol, years) =>
-  `${host}/v8/finance/chart/${encodeURIComponent(symbol)}?range=${years}y&interval=1d`;
-
-async function fetchHistory(symbol, years) {
-  for (const host of YAHOO_HOSTS) {
-    try {
-      const payload = await http.getJSON(chartUrl(host, symbol, years), { timeout: 25000, retries: 1, concurrency: 4 });
-      const res = payload?.chart?.result?.[0];
-      const closes = res?.indicators?.quote?.[0]?.close;
-      const volumes = res?.indicators?.quote?.[0]?.volume;
-      const highs = res?.indicators?.quote?.[0]?.high;
-      const lows = res?.indicators?.quote?.[0]?.low;
-      if (!Array.isArray(closes) || closes.length < 200) continue;
-      // Forward-fill nulls rather than dropping them: dropping a bar silently
-      // shortens the forward window and makes a 21-day horizon mean something
-      // different for every instrument.
-      const clean = [];
-      let lastGood = null;
-      for (const c of closes) {
-        if (typeof c === 'number' && Number.isFinite(c) && c > 0) { lastGood = c; clean.push(c); } else if (lastGood !== null) clean.push(lastGood);
-        else clean.push(NaN);
-      }
-      return {
-        symbol,
-        closes: clean,
-        volumes: Array.isArray(volumes) ? volumes.map((v) => (Number.isFinite(v) ? v : NaN)) : [],
-        highs: Array.isArray(highs) ? highs.map((v) => (Number.isFinite(v) ? v : NaN)) : [],
-        lows: Array.isArray(lows) ? lows.map((v) => (Number.isFinite(v) ? v : NaN)) : [],
-      };
-    } catch { /* try the other host */ }
-  }
-  return null;
 }
 
 async function main() {
@@ -108,22 +49,50 @@ async function main() {
 
   const instruments = [];
   const failed = [];
+  const byProvider = {};
   const batch = 8;
   for (let i = 0; i < symbols.length; i += batch) {
     const slice = symbols.slice(i, i + batch);
-    const got = await Promise.all(slice.map((s) => fetchHistory(s, years).catch(() => null)));
+    const got = await Promise.all(slice.map((sym) => fetchDaily(sym, { years }).catch((e) => ({ ok: false, attempts: [{ provider: 'thrown', message: String(e?.message || e) }] }))));
     for (let k = 0; k < slice.length; k += 1) {
-      if (got[k]) instruments.push(got[k]); else failed.push(slice[k]);
+      const r = got[k];
+      if (r.ok) {
+        instruments.push(r.data);
+        byProvider[r.data.provider] = (byProvider[r.data.provider] || 0) + 1;
+      } else {
+        failed.push({ symbol: slice[k], attempts: r.attempts });
+      }
     }
     log(`  ${Math.min(i + batch, symbols.length)}/${symbols.length}  (${instruments.length} ok, ${failed.length} failed)`);
   }
 
   if (instruments.length < 10) {
-    console.error(`\nOnly ${instruments.length} symbols returned history. `
-      + 'This needs network access to Yahoo Finance; nothing can be concluded from a sample this small.');
-    if (failed.length) console.error(`Failed: ${failed.slice(0, 20).join(', ')}${failed.length > 20 ? '…' : ''}`);
+    // The previous version said "0 ok, 105 failed" and stopped, which told
+    // nobody anything. Every failure now names the provider, the status and
+    // what the server actually said, because that is the difference between a
+    // fixable problem and a mystery.
+    console.error(`\nOnly ${instruments.length} of ${symbols.length} symbols returned history, `
+      + 'so there is nothing to conclude. Here is exactly what each provider said:\n');
+    const seen = new Map();
+    for (const f of failed) {
+      for (const a of f.attempts || []) {
+        const key = `${a.provider}|${a.status || ''}|${a.message}`;
+        if (!seen.has(key)) seen.set(key, { ...a, count: 0, example: f.symbol });
+        seen.get(key).count += 1;
+      }
+    }
+    for (const v of [...seen.values()].sort((a, b) => b.count - a.count)) {
+      console.error(`  ${String(v.provider).padEnd(7)} ${v.count.toString().padStart(4)}x  `
+        + `${v.status ? `HTTP ${v.status} ` : ''}${v.message}`);
+      if (v.sample) console.error(`               server said: ${v.sample}`);
+    }
+    console.error('\nRun "npm run doctor" for a full picture of what this machine can reach, '
+      + 'and paste that output into a bug report.');
     process.exit(2);
   }
+
+  log(`\nHistory sources used: ${Object.entries(byProvider).map(([k, v]) => `${k} ${v}`).join(', ')}`);
+  if (failed.length) log(`${failed.length} symbols had no history from any provider and were skipped.`);
 
   const opts = { horizon, relativeMultiple: multiple, thresholdMode: 'relative' };
   const res = B.walkForward(instruments, opts);
@@ -133,7 +102,9 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     universe: instruments.map((i) => i.symbol),
-    failed,
+    providers: byProvider,
+    failed: failed.map((f) => f.symbol),
+    failureDetail: failed.slice(0, 20),
     years,
     horizon,
     relativeMultiple: multiple,

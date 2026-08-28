@@ -109,6 +109,19 @@ async function request(url, opts = {}) {
 
       if (as === 'text') return await res.text();
       if (as === 'buffer') return Buffer.from(await res.arrayBuffer());
+      // The whole envelope, for the rare caller that needs headers — a
+      // Set-Cookie in particular, which several feeds now require before they
+      // will serve anything.
+      if (as === 'response') {
+        const headers = {};
+        res.headers.forEach((v, k) => {
+          // Node exposes multiple Set-Cookie values joined; keep them splittable.
+          headers[k.toLowerCase()] = k.toLowerCase() === 'set-cookie'
+            ? (typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : v.split(/,(?=[^;]+=)/))
+            : v;
+        });
+        return { status: res.status, ok: res.ok, headers, text: await res.text() };
+      }
       const text = await res.text();
       try {
         return JSON.parse(text);

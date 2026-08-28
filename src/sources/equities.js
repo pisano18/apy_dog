@@ -2,6 +2,7 @@
 
 const contract = require('./_contract');
 const baseHttp = require('../core/http');
+const { fetchDaily, UA: PROVIDER_UA } = require('../core/history-providers');
 const baseSchema = require('../core/schema');
 const baseC = require('../core/constants');
 const { analyse } = require('../core/movement');
@@ -1403,20 +1404,68 @@ async function fetchMeasuredTier(ctx, entries, counter) {
   return { series, failedBatches, viaChart, unavailable, batchCount: batches.length };
 }
 
-/** One symbol from the chart endpoint: prices, volume AND dividends. */
+/**
+ * One symbol's price history.
+ *
+ * Yahoo first, because it is the only one of the two that also carries dividend
+ * events, which the trailing-yield calculation needs. If Yahoo refuses — and it
+ * increasingly does, since it now wants a cookie and a crumb and blocks
+ * non-browser clients — this falls back to Stooq for prices alone rather than
+ * returning nothing.
+ *
+ * Returning nothing was the old behaviour and it was quietly catastrophic: no
+ * closes means no measured chart, which means every row keeps its drawn curve,
+ * which means the signal engine has nothing it is willing to read. One provider
+ * going down took the whole feature with it, silently.
+ *
+ * `lastError` is set on the context so the caller can tell the user WHY rather
+ * than reporting a bare count of failures.
+ */
 async function fetchChartSeries(ctx, symbol, counter = { calls: 0 }) {
   const http = ctx.http || baseHttp;
+  const errors = [];
   for (const host of YAHOO_HOSTS) {
     if (ctx.signal?.aborted) return null;
     try {
       counter.calls += 1;
       const payload = await http.getJSON(chartUrl(host, symbol), {
         signal: ctx.signal, timeout: 20000, retries: 1, concurrency: 3,
+        headers: { 'User-Agent': PROVIDER_UA },
       });
       const s = parseChart(payload);
       if (s && !s.error && s.closes?.length) return s;
-    } catch { /* try the other host, then give up on this symbol */ }
+      errors.push(`${host}: ${s?.error || 'no closes in the response'}`);
+    } catch (e) {
+      errors.push(`${host}: ${e?.status ? `HTTP ${e.status}` : ''} ${String(e?.message || e).slice(0, 90)}`.trim());
+    }
   }
+
+  // Yahoo is out. Prices without dividends still measure volatility, drawdown,
+  // trend and the chart, which is most of what the row needs.
+  try {
+    if (ctx.signal?.aborted) return null;
+    counter.calls += 1;
+    const d = await fetchDaily(symbol, { years: 1, only: 'stooq', signal: ctx.signal });
+    if (d.ok && d.data.closes.length > 30) {
+      ctx.__usedFallback = (ctx.__usedFallback || 0) + 1;
+      return {
+        closes: d.data.closes,
+        volumes: d.data.volumes,
+        highs: d.data.highs,
+        lows: d.data.lows,
+        price: d.data.closes[d.data.closes.length - 1],
+        lastTsMs: Date.parse(`${d.data.dates[d.data.dates.length - 1]}T21:00:00Z`) || Date.now(),
+        dividends: null,          // Stooq does not carry them; the row says so.
+        currency: 'USD',
+        provider: 'stooq',
+      };
+    }
+    errors.push(...(d.attempts || []).map((a) => `stooq: ${a.status ? `HTTP ${a.status}` : ''} ${a.message}`.trim()));
+  } catch (e) {
+    errors.push(`stooq: ${String(e?.message || e).slice(0, 90)}`);
+  }
+
+  ctx.__lastHistoryError = errors[errors.length - 1] || 'no provider answered';
   return null;
 }
 

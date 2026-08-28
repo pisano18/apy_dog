@@ -434,6 +434,16 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
   display: flex; align-items: center; gap: 9px; padding: 7px 14px; font-size: 12px;
   background: rgba(255,179,64,.08); border-bottom: 1px solid rgba(255,179,64,.2); color: var(--text-dim);
 }
+/* A dead data feed must not look like a friendly reminder. */
+.notice.warn { background: rgba(251,191,36,.13); border-bottom-color: rgba(251,191,36,.4); }
+.notice.err {
+  background: rgba(248,113,113,.14); border-bottom-color: rgba(248,113,113,.45); color: var(--text);
+}
+.notice.err b { color: var(--neg); }
+.notice code {
+  font-family: var(--mono); font-size: 11px; background: var(--panel-3); color: var(--text);
+  padding: 1px 5px; border-radius: 4px;
+}
 .notice.hidden { display: none; }
 .notice b { color: var(--brand); font-weight: 600; }
 .notice .spacer { flex: 1; }

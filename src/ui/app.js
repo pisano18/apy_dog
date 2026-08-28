@@ -39,13 +39,15 @@ function toast(title, body = '', kind = '') {
   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 250); }, kind === 'err' ? 9000 : 5000);
 }
 
-function notice(text, actionLabel, onAction) {
+function notice(text, actionLabel, onAction, tone = 'info') {
   const n = $('#notice');
   $('#notice-text').innerHTML = text;
   const btn = $('#notice-action');
   if (actionLabel) { btn.textContent = actionLabel; btn.hidden = false; btn.onclick = onAction; }
   else btn.hidden = true;
-  n.classList.remove('hidden');
+  // A dead price feed and a friendly reminder should not look the same.
+  n.classList.remove('hidden', 'err', 'warn');
+  if (tone === 'err' || tone === 'warn') n.classList.add(tone);
 }
 
 const numOrNull = (v) => {
@@ -1379,13 +1381,30 @@ function wire() {
     if (S.view === 'events') renderEvents();
     for (const a of payload.alerts || []) toast('Alert', a.message, 'warn');
 
+    // A source failing has to be loud. The old version whispered "N sources
+    // failed" in the same tone as everything else, so an app whose price feed
+    // had been dead for weeks looked exactly like one that was working — which
+    // is how somebody ends up believing a screen full of stale numbers.
     const failed = payload.health.filter((h) => h.status === 'failed');
     const snap = payload.meta.seedRows;
+    const total = payload.meta.total || (snap + (payload.meta.liveRows || 0)) || 1;
+    const mostlyStale = snap / total > 0.5;
+
     if (failed.length) {
-      notice(`<b>${failed.length} source${failed.length > 1 ? 's' : ''} failed.</b> ${esc(failed.map((f) => f.label).join(', '))} — showing bundled data for those.`,
-        'See why', () => switchView('sources'));
+      const names = failed.map((f) => f.label).join(', ');
+      const why = failed.map((f) => f.error || (f.warnings || [])[0]).filter(Boolean)[0];
+      notice(`<b>${failed.length} source${failed.length > 1 ? 's are' : ' is'} down: ${esc(names)}.</b> `
+        + `Those rows are the bundled snapshot, which can be months old. `
+        + `${why ? `First error: ${esc(String(why).slice(0, 140))}` : ''}`,
+      'Diagnose', () => switchView('sources'), 'err');
     } else if (payload.meta.offline) {
       notice('<b>Showing the bundled snapshot.</b> These are a starting point, not live quotes.', 'Scan now', () => refresh(false));
+    } else if (mostlyStale) {
+      // The case that used to slip through entirely: nothing "failed", but most
+      // of the data is bundled because the feeds returned nothing usable.
+      notice(`<b>${snap} of ${total} rows are still the bundled snapshot after a live scan.</b> `
+        + 'That usually means a feed answered but gave nothing usable. Run <code>npm run doctor</code> to see '
+        + 'exactly which one and why.', 'Open Sources', () => switchView('sources'), 'warn');
     } else if (snap > 0) {
       notice(`<b>${snap} row${snap > 1 ? 's are' : ' is'} from the bundled snapshot.</b> Verify before acting.`, null);
     } else {
