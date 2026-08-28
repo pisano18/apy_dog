@@ -457,6 +457,57 @@ describe('every row is actionable and honest', () => {
       }
     });
 
+    test('a one-off pays what it says it pays, over however long it takes', () => {
+      // The headline on a one-off is annualised — $300 on $10,000 held five
+      // years is 0.59% a year — and turning it back into dollars needs the whole
+      // term as the exponent. It was clamped to one year, so every offer running
+      // longer than a year quoted a fraction of itself: Robinhood's $300 read
+      // "$59" directly beneath its own notes saying $300.
+      //
+      // Checked against the row's own declared payout, pro-rated when the
+      // reference amount does not cover the deposit the offer requires. That is
+      // the only figure in the row that came from the provider rather than from
+      // this app's arithmetic, so it is the only honest thing to check against.
+      const declared = rows.filter((o) => o.oneTime
+        && !o.dollarsUnknown
+        && Number.isFinite(o.payout?.amount) && o.payout.amount > 0
+        && Number.isFinite(o.minInvestment) && o.minInvestment > 0
+        && Number.isFinite(o.scores?.oneTimeDollars));
+      assert.ok(declared.length >= 5, `expected one-offs with a declared payout, got ${declared.length}`);
+
+      for (const o of declared) {
+        const deployable = Math.min(REFERENCE_AMOUNT, o.maxInvestment > 0 ? o.maxInvestment : REFERENCE_AMOUNT);
+        const expected = o.payout.amount * (deployable / o.minInvestment);
+        const tol = Math.max(1, expected * 0.05);
+        assert.ok(Math.abs(o.scores.oneTimeDollars - expected) <= tol,
+          `${o.name} promises ${o.payout.amount} on ${o.minInvestment} but the app computes `
+          + `$${o.scores.oneTimeDollars} on $${deployable} (expected about $${Math.round(expected)})`);
+      }
+    });
+
+    test('a long lock cannot rank as though it paid this year', () => {
+      // The same variable that un-annualises the payment also decides how much
+      // of the coming year the offer occupies, and those are different
+      // questions. Money you cannot touch for five years must rank below the
+      // same money paid inside one.
+      // Rows the reader cannot afford are excluded: those are correctly
+      // replaced by cash in the blend, and cash may well pay more than the
+      // offer's own rate. That is the affordability rule doing its job, not a
+      // long lock ranking above its headline.
+      const long = rows.filter((o) => o.oneTime && o.term?.days > 400
+        && o.scores?.affordable !== false
+        && Number.isFinite(o.scores?.blendedYield) && Number.isFinite(o.apy?.total));
+      assert.ok(long.length >= 3, `expected multi-year one-offs, got ${long.length}`);
+      for (const o of long) {
+        assert.ok(o.scores.blendedYield <= o.apy.total + 0.01,
+          `${o.name} blends to ${o.scores.blendedYield}% from a ${o.apy.total}% headline it cannot pay in one year`);
+        // And the headline itself must already be per-year, not the whole
+        // multi-year benefit quoted as though it arrived annually.
+        assert.ok(o.apy.total < 100,
+          `${o.name} quotes ${o.apy.total}% a year for something that takes ${o.term.days} days to pay`);
+      }
+    });
+
     test('a row whose dollar size is unknowable prints no dollar figures', () => {
       // An employer match is capped at a share of a salary this app never asks
       // for. The rate is exact; every dollar figure derived from it would be

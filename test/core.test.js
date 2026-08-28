@@ -439,3 +439,47 @@ describe('dedupe', () => {
     assert.strictEqual(list.length, 3);
   });
 });
+
+/**
+ * What a one-off actually pays.
+ *
+ * The headline rate on a sign-up bonus is annualised: $300 on $10,000 held for
+ * five years is 0.59% a year. Turning that back into dollars needs the term as
+ * the exponent — and the term was clamped to a single year, because one
+ * variable was doing duty for two questions. The blend below it is a year-one
+ * figure and rightly caps at a year; the payment is not, and does not. Every
+ * offer running longer than a year reported a fraction of itself: Robinhood's
+ * $300 read "$59" directly underneath its own notes saying $300.
+ */
+describe('one-off payments over their real term', () => {
+  const annualised = (bonus, deposit, days) => (Math.pow(1 + bonus / deposit, 365 / days) - 1) * 100;
+  const offer = (bonus, deposit, days) => ({
+    id: 'x', name: 'Transfer match', oneTime: true,
+    term: { days }, maxInvestment: deposit, minInvestment: deposit,
+    apy: { total: annualised(bonus, deposit, days) }, risk: {}, section: 'deals',
+  });
+
+  test('a five-year match reports the whole payment, not one year of it', () => {
+    const s = scoreOne(offer(300, 10000, 1826), { riskFree: 4.2 });
+    assert.ok(Math.abs(s.oneTimeDollars - 300) <= 1, `expected about $300, got $${s.oneTimeDollars}`);
+  });
+
+  test('and says how long it takes, because year one is not when you get it', () => {
+    const s = scoreOne(offer(300, 10000, 1826), { riskFree: 4.2 });
+    assert.match(s.blendNote, /\$300/);
+    assert.match(s.blendNote, /5 years to be yours/);
+  });
+
+  test('a bonus inside a year is unchanged', () => {
+    const s = scoreOne(offer(200, 10000, 90), { riskFree: 4.2 });
+    assert.ok(Math.abs(s.oneTimeDollars - 200) <= 1, `expected about $200, got $${s.oneTimeDollars}`);
+    assert.ok(!/to be yours/.test(s.blendNote), 'a 90-day bonus should not be given a term caveat');
+  });
+
+  test('the year-one blend still only counts one year of a long lock', () => {
+    const long = scoreOne(offer(300, 10000, 1826), { riskFree: 4.2 });
+    const fast = scoreOne(offer(300, 10000, 365), { riskFree: 4.2 });
+    assert.ok(long.blendedYield < fast.blendedYield,
+      'money you cannot touch for five years cannot rank alongside the same money paid this year');
+  });
+});

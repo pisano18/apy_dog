@@ -1180,7 +1180,13 @@ function wire() {
     if (act === 'dismiss') { await window.apy.dismiss(id); closeDrawer(); return refresh(true); }
     if (act === 'measure') {
       toast('Measuring…', 'Fetching price history for this one.');
-      try { await window.apy.measure(id); await refresh(true); openDetail(id); }
+      try {
+        const r = await window.apy.measure(id);
+        await refresh(true); openDetail(id);
+        // A measurement that came back with a caveat says so. Silently showing
+        // numbers built on a partial series is how a guess passes for a reading.
+        if (r?.warnings?.length) toast('Measured, with a caveat', r.warnings[0], 'warn');
+      }
       catch (err) { toast('Could not measure', err.message, 'err'); }
       return;
     }
@@ -1279,7 +1285,20 @@ function wire() {
   // --- settings -----------------------------------------------------------
   document.addEventListener('change', async (e) => {
     const el = e.target;
-    if (!el.id?.startsWith('s-')) return;
+    // Both the Settings panel (s-*) and the Plan view (p-*) arrive here, and
+    // which is which is decided in src/ui/inputs.js, where it can be tested.
+    // The guard used to be `if (!el.id?.startsWith('s-')) return;`, which made
+    // the plan branch below unreachable and silently threw away every answer
+    // anyone gave the Plan view.
+    const route = window.UI_INPUTS.routeChange(el.id, el.value);
+    if (route.kind === 'none') return;
+    if (route.kind === 'plan') {
+      // Merge, never replace: each control answers one question and the other
+      // four answers have to survive it.
+      S.planFacts = window.UI_INPUTS.mergeFacts(S.planFacts, route.facts);
+      await renderPlan();
+      return;
+    }
     const map = {
       's-fedOrd': (v) => ({ tax: { federalOrdinary: Number(v) } }),
       's-fedLtcg': (v) => ({ tax: { federalLtcg: Number(v) } }),
@@ -1303,18 +1322,6 @@ function wire() {
       's-closing': (v) => ({ watchClosingDays: Number(v) }),
       's-newdeal': (v) => ({ watchNewDealsWorth: Number(v) }),
     };
-    if (el.id.startsWith('p-')) {
-      const num = (v) => (v === '' ? null : Number(v));
-      const facts = {
-        'p-match': () => ({ employerMatches: el.value === '' ? null : el.value === 'yes' }),
-        'p-card': () => ({ cardBalance: num(el.value) }),
-        'p-spend': () => ({ monthlyExpenses: num(el.value) }),
-        'p-hours': () => ({ hoursAvailable: Number(el.value) || 0 }),
-        'p-months': () => ({ bufferMonths: Number(el.value) || 0 }),
-      }[el.id];
-      if (facts) { S.planFacts = facts(); await renderPlan(); }
-      return;
-    }
     const fn = map[el.id];
     if (!fn) return;
     S.boot.settings = await window.apy.updateSettings(fn(el.value));

@@ -138,7 +138,22 @@ function scoreOne(o, opts = {}) {
   const affordable = !hasBudget ? null
     : (!Number.isFinite(o.minInvestment) || o.minInvestment <= amount);
 
+  // Two different questions, and they had one answer between them, which was
+  // wrong for one of them.
+  //
+  //   yearsHeld  — how much of the coming *year* this offer occupies. Capped at
+  //                one year, because the blend below is a year-one figure and a
+  //                five-year lock cannot pay five years of return inside one.
+  //   yearsToPay — how long the offer actually takes to pay out, uncapped. This
+  //                is the exponent that un-annualises the headline rate back
+  //                into the payment the offer is really about.
+  //
+  // Using the capped one for both understated every one-off that takes longer
+  // than a year: Robinhood's $300 five-year IRA match was reported as "$59",
+  // because one fifth of the term was all the exponent was allowed to see. The
+  // row's own notes said $300 and the line underneath said $59.
   const yearsHeld = Math.min(holdDays, 365) / 365;
+  const yearsToPay = holdDays / 365;
 
   /**
    * One annualised rate, turned into what it is worth over the coming year on
@@ -165,7 +180,7 @@ function scoreOne(o, opts = {}) {
   // The single payment a one-off actually makes, recovered by un-annualising.
   // This is the number the offer is really about: "$300", not "122% a year".
   const grossPeriodPct = o.oneTime && Number.isFinite(gross)
-    ? (Math.pow(1 + gross / 100, yearsHeld) - 1) * 100
+    ? (Math.pow(1 + gross / 100, yearsToPay) - 1) * 100
     : gross;
   const oneTimeDollars = o.oneTime && !o.dollarsUnknown && Number.isFinite(grossPeriodPct)
     ? deployable * (grossPeriodPct / 100)
@@ -187,7 +202,9 @@ function scoreOne(o, opts = {}) {
       ? 'The rate is exact. The dollars are not — the cap is a share of your pay, which this app has never been '
         + 'told — so no dollar figure is shown for this one. Multiply the rate by your own numbers.'
       : o.oneTime
-        ? `A one-off payment of about ${fmtMoney(oneTimeDollars)}, not a rate. On ${on}, with the rest at `
+        ? `A one-off payment of about ${fmtMoney(oneTimeDollars)}, not a rate${
+          yearsToPay > 1.05 ? `, and it takes ${holdDays >= 730 ? `${(Math.round(yearsToPay * 2) / 2)} years` : `${Math.round(holdDays)} days`} to be yours` : ''
+        }. On ${on}, with the rest at `
           + `${riskFree.toFixed(2)}%, year one works out to ${blended.toFixed(2)}%.${tail}`
         : `Capped at ${fmtMoney(cap)}. On ${on}, with the rest at ${riskFree.toFixed(2)}%, that blends to `
           + `${blended.toFixed(2)}%.${tail}`;

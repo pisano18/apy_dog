@@ -474,7 +474,14 @@ function registerIpc() {
     const o = dataset.opportunities.find((x) => x.id === id);
     if (!o) throw new Error('Not found in the current scan.');
     const adapter = adapters.find((a) => a.id === o.source);
-    if (typeof adapter?.fetchOne !== 'function') throw new Error(`${o.sourceLabel || o.source} cannot measure a single row.`);
+    // Two adapters export a fetchOne and they are not the same contract: the
+    // equities one measures a row, the filings one fetches a company's filing
+    // history and takes its arguments the other way round. `measuresRow` is the
+    // opt-in, so a source that happens to share the method name is turned away
+    // here rather than called with the wrong shape and failing obscurely.
+    if (typeof adapter?.fetchOne !== 'function' || adapter.measuresRow !== true) {
+      throw new Error(`${o.sourceLabel || o.source} cannot measure a single row.`);
+    }
     const ctx = {
       http: require('../src/core/http'),
       cache,
@@ -485,12 +492,12 @@ function registerIpc() {
       now: Date.now(),
       log: () => {},
     };
-    const fresh = await adapter.fetchOne(o.symbol || o.id, ctx);
-    if (!fresh) throw new Error('No data came back for that one.');
+    const res = await adapter.fetchOne(o.symbol || o.id, ctx);
+    const { row, warnings } = require('../src/core/views').mergeMeasured(o, res);
     const i = dataset.opportunities.findIndex((x) => x.id === id);
-    if (i >= 0) dataset.opportunities[i] = { ...dataset.opportunities[i], ...fresh, measured: true };
+    if (i >= 0) dataset.opportunities[i] = row;
     rescore();
-    return true;
+    return { ok: true, warnings };
   });
 
   handle('settings:get', () => store.settings);
@@ -1043,6 +1050,23 @@ async function runSmokeTest() {
     report.planSteps = await js("document.querySelectorAll('#view-plan .planstep').length");
     report.planTiers = await js("document.querySelectorAll('#view-plan section h3').length");
     if (!report.planSteps) failuresLate.push('the plan produced no steps');
+
+    // The plan's five questions were wired to a branch that could not be
+    // reached, so every answer was discarded and the plan was rebuilt from
+    // defaults every time. It looked completely normal on screen — steps
+    // rendered, tiers rendered, nothing threw — which is why this now answers
+    // one of the questions for real and insists the plan changes.
+    report.planMatchStepsBefore = await js(
+      "document.querySelectorAll('#view-plan .planstep[data-tier=\"match\"], #view-plan [data-tier=\"match\"] .planstep').length"
+      + " || [...document.querySelectorAll('#view-plan section')].filter(s => /match/i.test(s.querySelector('h3')?.textContent || '')).length");
+    await js("const s=document.querySelector('#p-match'); s.value='no'; s.dispatchEvent(new Event('change',{bubbles:true})); true");
+    await wait(900);
+    report.planStepsAfterNoMatch = await js("document.querySelectorAll('#view-plan .planstep').length");
+    report.planAnswerHeld = await js("document.querySelector('#p-match')?.value === 'no'");
+    if (report.planMatchStepsBefore && report.planStepsAfterNoMatch === report.planSteps) {
+      failuresLate.push('answering the plan\'s questions changed nothing — the inputs are not reaching it');
+    }
+    if (!report.planAnswerHeld) failuresLate.push('the plan forgot the answer it was just given');
   } catch (err) {
     failuresLate.push(`plan check failed: ${err.message}`);
   }

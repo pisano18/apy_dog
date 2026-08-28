@@ -239,4 +239,65 @@ function signalsPayload(dataset, calibration = null) {
     };
 }
 
-module.exports = { radarPayload, signalsPayload };
+/**
+ * Fold a freshly-measured row back into the one already on screen.
+ *
+ * An adapter's fetchOne does not return a row. It returns a SourceResult
+ * envelope — { opportunities, status, notes, warnings } — and the difference
+ * matters, because the measure handler used to spread the envelope over the
+ * existing row. Every field the measurement was for (price, series, apy, risk,
+ * movementStats) stayed exactly as it was; what changed instead was that the
+ * row grew `opportunities`, `status` and `warnings` keys it has no business
+ * having, its `notes` turned from a string into an array, and the "not
+ * measured" badge disappeared because `measured: true` was the one part of the
+ * spread that landed. Pressing Measure appeared to work and measured nothing.
+ *
+ * So: unwrap deliberately, take the row, and keep the identity fields that
+ * belong to the row already on screen.
+ *
+ * @param {object} existing  the row currently in the dataset
+ * @param {object} res       whatever the adapter's fetchOne returned
+ * @returns {{row: object, notes: string[], warnings: string[]}}
+ * @throws  {Error} with a message fit to show a user, if nothing usable came back
+ */
+function mergeMeasured(existing, res) {
+  if (!existing || typeof existing !== 'object') throw new Error('Not found in the current scan.');
+  if (!res || typeof res !== 'object') throw new Error('No data came back for that one.');
+
+  const list = Array.isArray(res.opportunities) ? res.opportunities.filter(Boolean) : [];
+  const warnings = Array.isArray(res.warnings) ? res.warnings.filter(Boolean) : [];
+  const notes = Array.isArray(res.notes) ? res.notes.filter(Boolean) : [];
+
+  if (!list.length) {
+    // The adapter's own warning is a better explanation than any we could write.
+    throw new Error(warnings[0] || `No price history came back for ${existing.symbol || existing.name || 'that one'}.`);
+  }
+
+  // Prefer the row that is actually this one. A fetchOne that returns several
+  // (an ETF and its index, say) must not silently overwrite one with the other.
+  const fresh = list.find((r) => r && (r.id === existing.id || (r.symbol && r.symbol === existing.symbol))) || list[0];
+
+  const row = { ...existing, ...fresh };
+
+  // Identity is the dataset's, not the adapter's. The id is what the open
+  // detail pane, the watchlist and every alert already hold; a re-keyed row
+  // would deselect itself the moment it was measured.
+  row.id = existing.id;
+  row.source = existing.source;
+  if (existing.sourceLabel) row.sourceLabel = existing.sourceLabel;
+  if (existing.section && !fresh.section) row.section = existing.section;
+  row.measured = true;
+
+  // Envelope diagnostics are not row content. `notes` on a row is prose the
+  // user reads; the envelope's notes are a fetch log, and assigning one to the
+  // other is how the schema's string field became an array.
+  // Only keys the envelope owns and a row never has. `fetchedAt` is deliberately
+  // not in this list: rows carry one too, and `fresh` is a row, so it is the
+  // measurement's own timestamp and exactly what should win here.
+  for (const k of ['opportunities', 'status', 'warnings']) delete row[k];
+  if (Array.isArray(row.notes)) row.notes = row.notes.filter(Boolean).join(' ');
+
+  return { row, notes, warnings };
+}
+
+module.exports = { radarPayload, signalsPayload, mergeMeasured };

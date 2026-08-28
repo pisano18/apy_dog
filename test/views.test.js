@@ -5,7 +5,7 @@ const assert = require('node:assert');
 
 const { loadAdapters } = require('../src/sources');
 const { aggregate } = require('../src/core/aggregate');
-const { radarPayload, signalsPayload } = require('../src/core/views');
+const { radarPayload, signalsPayload, mergeMeasured } = require('../src/core/views');
 
 /**
  * The payloads the interface runs on.
@@ -155,5 +155,86 @@ describe('the Signals payload', () => {
   test('an empty or broken dataset is survivable', () => {
     assert.doesNotThrow(() => signalsPayload({ opportunities: [], events: [], health: [], meta: {} }, null));
     assert.doesNotThrow(() => signalsPayload({}, null));
+  });
+});
+
+
+/**
+ * Folding a measurement back into a row.
+ *
+ * The bug this covers: fetchOne returns a SourceResult envelope, and the
+ * handler spread the envelope over the row. Nothing that the measurement was
+ * for actually changed — price, series, apy, risk and movementStats all stayed
+ * as they were — while the row picked up `opportunities`, `status` and
+ * `warnings` keys, its `notes` turned into an array, and the "not measured"
+ * badge vanished because `measured: true` was the one part of the spread that
+ * landed. Pressing Measure looked like it worked and measured nothing.
+ */
+describe('mergeMeasured', () => {
+  const existing = {
+    id: 'equities:AAPL', symbol: 'AAPL', source: 'equities', sourceLabel: 'US equities',
+    section: 'movement', measured: false, notes: 'Indexed but not analysed.',
+    price: null, apy: { total: null }, risk: { volatility: null }, movementStats: null,
+  };
+  const envelope = () => ({
+    opportunities: [{
+      id: 'equities:AAPL', symbol: 'AAPL', source: 'equities',
+      price: 214.3, apy: { total: 0.44 }, risk: { volatility: 21.6 },
+      movementStats: { bars: 500, vol: 21.6 }, series: [1, 2, 3],
+      notes: 'Measured from 500 daily closes.', fetchedAt: '2026-08-28T00:00:00.000Z',
+    }],
+    status: 'ok',
+    notes: ['AAPL measured on demand: 500 daily closes, 1 HTTP request(s).'],
+    warnings: [],
+    fetchedAt: '2026-08-28T00:00:00.000Z',
+  });
+
+  test('the measured fields actually change', () => {
+    const { row } = mergeMeasured(existing, envelope());
+    assert.strictEqual(row.price, 214.3, 'price did not update');
+    assert.strictEqual(row.apy.total, 0.44, 'apy did not update');
+    assert.strictEqual(row.risk.volatility, 21.6, 'risk did not update');
+    assert.ok(row.movementStats, 'movementStats did not update');
+    assert.ok(Array.isArray(row.series), 'series did not update');
+    assert.strictEqual(row.measured, true);
+  });
+
+  test('the envelope does not become part of the row', () => {
+    const { row } = mergeMeasured(existing, envelope());
+    for (const k of ['opportunities', 'status', 'warnings']) {
+      assert.ok(!(k in row), `row picked up the envelope's ${k}`);
+    }
+    assert.strictEqual(typeof row.notes, 'string', 'notes must stay the string the schema promises');
+  });
+
+  test('identity stays with the row that is already on screen', () => {
+    const res = envelope();
+    res.opportunities[0].id = 'equities:AAPL:measured';   // an adapter re-keying itself
+    const { row } = mergeMeasured(existing, res);
+    assert.strictEqual(row.id, 'equities:AAPL', 'a re-keyed row would deselect itself');
+    assert.strictEqual(row.sourceLabel, 'US equities');
+    assert.strictEqual(row.section, 'movement');
+  });
+
+  test('measuring true is never set without a measurement', () => {
+    const empty = { opportunities: [], status: 'failed', notes: [], warnings: ['No usable price history came back for AAPL.'] };
+    assert.throws(() => mergeMeasured(existing, empty), /No usable price history/);
+    // and the adapter's own words are used rather than a generic message
+    assert.throws(() => mergeMeasured(existing, { opportunities: [], warnings: [] }), /No price history came back for AAPL/);
+  });
+
+  test('the right row is taken when several come back', () => {
+    const res = envelope();
+    res.opportunities.unshift({ id: 'equities:SPY', symbol: 'SPY', price: 1 });
+    const { row } = mergeMeasured(existing, res);
+    assert.strictEqual(row.price, 214.3, 'took the wrong row out of the envelope');
+  });
+
+  test('warnings are handed back rather than buried in the row', () => {
+    const res = envelope();
+    res.warnings = ['Series is not dividend-adjusted.'];
+    const { row, warnings } = mergeMeasured(existing, res);
+    assert.deepStrictEqual(warnings, ['Series is not dividend-adjusted.']);
+    assert.ok(!('warnings' in row));
   });
 });

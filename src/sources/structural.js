@@ -786,6 +786,30 @@ function buildRow(item, { dataAsOf, schema, C, profile, nowMs }) {
   const minInvestment = toNum(item.minInvestment) ?? 0;
   const termDays = toNum(item.termDays);
 
+  /**
+   * The rate these rows compute is a FLAT percentage of the amount, collected
+   * once — "your long-term capital gains rate plus state", not a rate per year.
+   * Everywhere else in the app a one-off's headline is an annualised figure
+   * (bonuses and deals both divide by their holding period to get one), and
+   * score.js un-annualises it back into dollars on that assumption.
+   *
+   * For a tax action taken and collected inside the same year the two are the
+   * same number and nothing was ever wrong. For one that takes five years to
+   * pay — QSBS — they are not: 15% of a gain realised after five years is a
+   * 2.8%-a-year return, and quoting it at 15% ranks it alongside a savings
+   * account paying 15% every year, which is the exact category error the whole
+   * blending section of score.js exists to prevent.
+   *
+   * So the rate is annualised here, once, at the source that knows it is flat.
+   * The flat figure is not lost: it is what the notes and the payout basis
+   * quote, because it is the number the rule is actually about.
+   */
+  const oneTime = item.oneTime !== false;
+  const yearsToPay = Number.isFinite(termDays) && termDays > 365 ? termDays / 365 : 1;
+  const headlineRate = (oneTime && yearsToPay > 1 && Number.isFinite(computed.rate) && computed.rate > -100)
+    ? (Math.pow(1 + computed.rate / 100, 1 / yearsToPay) - 1) * 100
+    : computed.rate;
+
   const liquidity = Object.values(C.LIQUIDITY).includes(item.liquidity)
     ? item.liquidity
     : C.LIQUIDITY.INSTANT;
@@ -852,7 +876,7 @@ function buildRow(item, { dataAsOf, schema, C, profile, nowMs }) {
     region: 'US',
     currency: 'USD',
 
-    apy: { total: computed.rate },
+    apy: { total: headlineRate },
     yieldKind: item.yieldKind || kind.yieldKind,
     payoutFrequency: item.payoutFrequency || (item.oneTime === false ? 'annual' : 'one-time'),
     compounding: 1,
@@ -888,7 +912,7 @@ function buildRow(item, { dataAsOf, schema, C, profile, nowMs }) {
     // A tax action is collected once for the year it is taken; it does not
     // compound at its own rate. Rows whose benefit genuinely recurs on a balance
     // year after year say so by setting oneTime false.
-    oneTime: item.oneTime !== false,
+    oneTime,
     series: Array.isArray(item.series) ? item.series : null,
 
     url,

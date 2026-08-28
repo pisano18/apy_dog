@@ -1816,6 +1816,9 @@ module.exports = {
   fetch,
   loadSeed,
   fetchOne,
+  // Opted in to the on-demand measure contract: fetchOne(symbol, ctx) returning
+  // a SourceResult whose single opportunity replaces the indexed row.
+  measuresRow: true,
 
   // Exported for the tests, for the UI's on-demand measure, and for anyone
   // extending the universe.
