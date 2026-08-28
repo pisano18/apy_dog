@@ -81,6 +81,22 @@ describe('the backtest reaches its own logic before it reaches the network', () 
   });
 });
 
+describe('the analysis path is covered without a network', () => {
+  test('backtest.js delegates its analysis rather than inlining it', () => {
+    // Three crashes shipped from this file, every one of them downstream of a
+    // hundred-symbol fetch and therefore invisible to CI. The rule now is that
+    // the script fetches and prints; everything else is a pure function tested
+    // in test/report.test.js against synthetic paths.
+    const src = fs.readFileSync(path.join(ROOT, 'scripts', 'backtest.js'), 'utf8');
+    assert.ok(/require\('\.\.\/src\/core\/report'\)/.test(src),
+      'the script must delegate analysis to the testable module');
+    // No direct reach into a harness result shape, which is what broke twice.
+    const afterFetch = src.slice(src.indexOf('const built = buildReport'));
+    assert.ok(!/res\.(train|test)\./.test(afterFetch),
+      'the script is reading harness internals again instead of the report');
+  });
+});
+
 describe('the doctor reports rather than throws', () => {
   test('it exits non-zero when no history provider answers, without crashing', () => {
     const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'doctor.js')], {
