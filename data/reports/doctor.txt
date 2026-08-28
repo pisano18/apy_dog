@@ -1,0 +1,25 @@
+Checking every feed this app depends on. Nothing is written and no key is needed.
+
+ ok   SEC company index            10,391 issuers
+ ok   US Treasury yield curve      165 rows of curve
+ ok   CoinGecko markets            5 assets, top is BTC at $79704
+ ok   DefiLlama pools              17,238 pools
+ ok   SEC EDGAR filings feed       feed parsed
+
+Price history — the one that decides whether Signals can ever be calibrated:
+
+ ok   AAPL   via Yahoo Finance (cookie + crumb) 251 daily bars, last close 314.5799865722656
+FAIL  AAPL   via Stooq (CSV, no key)          Stooq served a JavaScript bot challenge instead of data — it does not answer non-browser clients
+      server said: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>This site requires JavaScript to verify y
+ ok   SPY    via Yahoo Finance (cookie + crumb) 251 daily bars, last close 771.0999755859375
+FAIL  SPY    via Stooq (CSV, no key)          Stooq served a JavaScript bot challenge instead of data — it does not answer non-browser clients
+      server said: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>This site requires JavaScript to verify y
+ ok   GME    via Yahoo Finance (cookie + crumb) 251 daily bars, last close 18.25
+FAIL  GME    via Stooq (CSV, no key)          Stooq served a JavaScript bot challenge instead of data — it does not answer non-browser clients
+      server said: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"></head><body><noscript>This site requires JavaScript to verify y
+
+────────────────────────────────────────────────────────────────────────────
+• Stooq is serving a JavaScript bot challenge and Yahoo is answering. This is the normal state and nothing is wrong: the app tries Yahoo first and only falls back to Stooq if Yahoo is down. Price history works, and the backtest will run.
+────────────────────────────────────────────────────────────────────────────
+
+5/5 feeds reachable · 3/6 history fetches succeeded

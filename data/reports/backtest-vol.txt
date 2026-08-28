@@ -1,0 +1,43 @@
+Fetching 5y of daily history for 101 symbols…
+  8/101  (8 ok, 0 failed)
+  16/101  (16 ok, 0 failed)
+  24/101  (24 ok, 0 failed)
+  32/101  (32 ok, 0 failed)
+  40/101  (40 ok, 0 failed)
+  48/101  (48 ok, 0 failed)
+  56/101  (56 ok, 0 failed)
+  64/101  (64 ok, 0 failed)
+  72/101  (72 ok, 0 failed)
+  80/101  (80 ok, 0 failed)
+  88/101  (88 ok, 0 failed)
+  96/101  (96 ok, 0 failed)
+  101/101  (101 ok, 0 failed)
+
+History sources used: yahoo 101
+
+──────────────────────────────────────────────────────────────────────────────
+Out-of-sample results · 101 symbols · 5y · 21-day horizon
+Predicting: volatility rising to at least 1.25x this instrument's own long-run normal within 21 trading days
+Parameters fitted: 19 configurations searched on a validation slice, reported on a holdout neither the fitting nor the choosing ever saw.
+Base rate: 24.8% of 1110 independent observations
+──────────────────────────────────────────────────────────────────────────────
+signal              verdict       fires   hit    base   lift   recall  FP
+coil                failed          263  18.3%  24.8%   0.74   17.5%  20.8%
+range_compression   failed          175  22.9%  24.8%   0.92   14.5%  22.1%
+quiet_accumulation  insufficient     16  37.5%  24.8%   1.51    2.2%   0.6%
+extension           validated       167  35.3%  24.8%   1.43   21.5%   7.8%
+──────────────────────────────────────────────────────────────────────────────
+composite (cutoff 55): validated · 35.3% vs 24.8% base · lift 1.43 · n=167
+
+Validated: extension
+Failed:    coil, range_compression
+
+Parameters the data chose:
+  coil                 {"recent":5,"baseline":60,"loose":0.7,"tight":0.3}
+  range_compression    {"recent":5,"baseline":60,"pctCut":0.25}
+  quiet_accumulation   {"recent":10,"baseline":60,"volFloor":1.25,"driftCap":0.08}
+  extension            {"window":30,"zFloor":1,"zSpan":2}
+
+Written to C:\apy_dog\data\calibration.json — the app reads this and stops calling itself uncalibrated.
+A verdict of "failed" is a real result, not a bug. It means that detector does not work,
+and it will be given zero weight rather than quietly kept because it sounded plausible.

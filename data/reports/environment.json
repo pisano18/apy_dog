@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-08-28T05:31:16.052Z",
+  "node": "v24.18.0",
+  "platform": "win32 x64",
+  "appVersion": "1.0.0",
+  "proxy": {
+    "HTTPS_PROXY": null,
+    "HTTP_PROXY": null
+  }
+}
