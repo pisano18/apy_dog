@@ -227,6 +227,9 @@ function normalize(raw, ctx = {}) {
     // how much there is to harvest. Such a row ranks on its rate and prints no
     // dollar figures at all, rather than dollar figures computed from a guess.
     dollarsUnknown: raw.dollarsUnknown === true,
+    // { ts, daysAway, cadence, certainty } where a dividend schedule could be
+    // projected from actual payments; null everywhere else, never guessed.
+    exDividend: raw.exDividend && Number.isFinite(raw.exDividend.ts) ? raw.exDividend : null,
     series: Array.isArray(raw.series) ? raw.series.filter(Number.isFinite).slice(-180) : null,
     // 'measured' = recorded closes. 'illustrative' = a shape drawn to agree
     // with the statistics beside it. Default to illustrative when a source

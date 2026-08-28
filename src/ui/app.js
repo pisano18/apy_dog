@@ -360,9 +360,19 @@ async function renderRadar() {
     }));
   };
 
-  card('⏳', 'Closing soon', 'Windows that shut. The one thing a sorted table can never show you.',
-    g.closing, (o) => window.R.countdownChip(o), sub.withCountdown,
-    'Nothing with a published deadline right now.');
+  // Offers that expire and deadlines you can miss are the same thing to the
+  // person holding the money, so they share a card. Keeping them apart is why
+  // this used to read "3" while a hundred and fifty dated things sat one tab
+  // away in the Calendar.
+  cards.push(window.R.radarCard({
+    icon: '⏳',
+    title: 'On the clock',
+    blurb: 'Everything with a date after which it is gone — offers that expire and deadlines you can miss.',
+    items: (d.onTheClock || []).slice(0, 8).map((x) => window.R.clockItem(x)),
+    count: d.onTheClockCount || 0,
+    query: { expiringWithinDays: 45, sortBy: 'closingSoon', hideTraps: false },
+    emptyText: 'Nothing with a published deadline in the next six weeks.',
+  }));
   // Built from the calendar rather than from rows, because most of what is
   // scheduled in a week belongs to no ticker.
   cards.push(window.R.radarCard({

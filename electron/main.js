@@ -462,14 +462,93 @@ function registerIpc() {
       if (weekEvents.length >= 6) break;
     }
 
+    /**
+     * Everything with a clock on it, in one list.
+     *
+     * An offer that expires and a deadline after which an action is no longer
+     * possible are the same thing to the person holding the money, and keeping
+     * them in separate views is why "Closing soon" could show three items while
+     * a hundred and fifty dated things sat one tab away.
+     */
+    const clockRows = applyQuery(rows, {
+      ...DEFAULT_QUERY, expiringWithinDays: 45, hideTraps: false, watchlist: store.watchlistIds(), limit: 40,
+    }).map((o) => ({
+      type: 'opportunity',
+      id: o.id,
+      name: o.name,
+      sub: [o.provider || o.sourceLabel, o.section].filter(Boolean).join(' · '),
+      daysLeft: o.daysLeft,
+      value: Number.isFinite(o.scores?.oneTimeDollars) ? o.scores.oneTimeDollars : null,
+      grade: o.rating?.grade || null,
+    }));
+
+    // Ex-dividend dates: the most under-served deadline there is. Every
+    // dividend payer has a date you must own it by, it recurs visibly in the
+    // payment record, and no screener lists it as something that runs out.
+    // Only present on rows whose actual payment history supports projecting
+    // one, so this is empty until a live refresh has fetched dividends.
+    const exDiv = rows
+      .filter((o) => o.exDividend && o.exDividend.daysAway >= 0 && o.exDividend.daysAway <= 45)
+      .sort((a, b) => a.exDividend.daysAway - b.exDividend.daysAway)
+      .slice(0, 8)
+      .map((o) => ({
+        type: 'opportunity',
+        id: o.id,
+        name: `${o.name} goes ex-dividend`,
+        sub: `Own it before this date to collect the ${o.exDividend.cadence} payment · estimated from its last ${o.exDividend.basedOn} payments`,
+        daysLeft: o.exDividend.daysAway,
+        value: null,
+        grade: o.rating?.grade || null,
+      }));
+
+    const clockEvents = (dataset.events || [])
+      .filter((e) => Number.isFinite(e.daysAway) && e.daysAway >= 0 && e.daysAway <= 45)
+      // Earnings for a single ticker is a catalyst, not a deadline you can miss.
+      // Money deadlines, maturities and expiries genuinely close.
+      .filter((e) => ['money_deadline', 'maturity', 'call_date', 'token_unlock', 'lockup_expiry', 'opex', 'index_rebalance', 'treasury_auction'].includes(e.kind))
+      .map((e) => ({
+        type: 'event',
+        id: `event:${e.kind}:${e.dateMs}`,
+        name: e.title || e.label,
+        sub: `${e.label}${e.certainty === 'estimated' ? ' · estimated date' : ''}`,
+        daysLeft: e.daysAway,
+        value: null,
+        grade: null,
+        url: e.url || null,
+      }));
+
+    // Treasury auctions run weekly and options expire monthly, so a naive
+    // merge fills the card with the most routine dates on the calendar and
+    // buries the offer that genuinely disappears on Friday. Two per kind keeps
+    // the recurring ones represented without letting them dominate; scarcity is
+    // most of what makes a deadline worth showing.
+    const clockPerKind = new Map();
+    const onTheClock = [...clockRows, ...exDiv, ...clockEvents]
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .filter((x) => {
+        if (x.type !== 'event') return true;
+        const kind = String(x.id).split(':')[1];
+        const n = clockPerKind.get(kind) || 0;
+        if (n >= 2) return false;
+        clockPerKind.set(kind, n + 1);
+        return true;
+      })
+      .slice(0, 40);
+
     return {
       budget,
       meta: dataset.meta,
+      onTheClock,
+      onTheClockCount: onTheClock.length,
       weekEvents,
       weekEventCount: upcoming.length,
       groups: {
-        // What a flat table can never show you: things with a deadline.
-        closing: spec({ expiringWithinDays: 30, sortBy: 'closingSoon', hideTraps: false }),
+        // What a flat table can never show you: things with a deadline. Note
+        // this is opportunities only — the card below merges these with dated
+        // events, because "three things closing in the next month" was never
+        // true of the world, only of the subset the app happened to model as
+        // an offer with an expiry date.
+        closing: spec({ expiringWithinDays: 45, sortBy: 'closingSoon', hideTraps: false }),
         // What is coming, for what you already hold or might.
         thisWeek: spec({ track: 'movement', catalystWithinDays: 7, sortBy: 'soonest' }),
         // The three shelves.

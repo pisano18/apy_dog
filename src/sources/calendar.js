@@ -587,6 +587,125 @@ function calendricalEvents(opts) {
   return events;
 }
 
+/**
+ * Dates after which a specific action is no longer available to you.
+ *
+ * These are the deadlines an investment app never lists and a person actually
+ * misses — not because they are hard to find, but because nothing puts them
+ * next to the thing they gate. The app already carries rows for tax-loss
+ * harvesting, IRA contributions, FSA elections and Roth conversions; every one
+ * of them has a date after which it is simply gone for that year.
+ *
+ * All of them are fixed by statute or by convention, so they are computed from
+ * the calendar rather than fetched. Where a statutory date falls on a weekend
+ * the IRS shifts it to the next business day, which is done here too — being a
+ * day wrong about a filing deadline is the one kind of wrong that matters.
+ */
+const MONEY_DEADLINES = [
+  {
+    month: 1, day: 15, title: 'Q4 estimated tax payment due',
+    text: 'The final estimated payment for the year just ended. Missing it is an underpayment penalty even if '
+      + 'you pay the full balance in April — the penalty is for paying late, not for paying short.',
+    url: 'https://www.irs.gov/businesses/small-businesses-self-employed/estimated-taxes',
+  },
+  {
+    month: 4, day: 15, title: 'Tax filing deadline — and the last day for last year\'s IRA and HSA',
+    text: 'Also the final day to make a prior-year IRA or HSA contribution, which is a whole extra year of '
+      + 'tax-advantaged room that disappears at midnight. Q1 estimated payment is due the same day.',
+    url: 'https://www.irs.gov/filing/individuals/when-to-file',
+  },
+  {
+    month: 6, day: 15, title: 'Q2 estimated tax payment due',
+    text: 'Covers April and May income. Anyone with dividends, interest or realised gains outside a paycheck '
+      + 'is expected to pay as they go, and the penalty for not doing so accrues quietly from this date.',
+    url: 'https://www.irs.gov/businesses/small-businesses-self-employed/estimated-taxes',
+  },
+  {
+    month: 9, day: 15, title: 'Q3 estimated tax payment due',
+    text: 'Covers June through August. The last estimated payment before the year is effectively set, so it is '
+      + 'the natural moment to check whether withholding has kept up with a good year in the market.',
+    url: 'https://www.irs.gov/businesses/small-businesses-self-employed/estimated-taxes',
+  },
+  {
+    month: 10, day: 15, title: 'Extended filing deadline',
+    text: 'The last day for anyone who filed an extension in April. An extension moved the filing date and never '
+      + 'moved the payment date, so any balance has been accruing interest since the spring.',
+    url: 'https://www.irs.gov/filing/individuals/when-to-file',
+  },
+  {
+    month: 12, day: 31, title: 'Last day to harvest losses, convert to Roth, or take an RMD',
+    text: 'The single biggest deadline in the year for anything done inside a taxable account. Tax-loss harvesting, '
+      + 'Roth conversions, charitable giving and required minimum distributions all have to settle by the close, '
+      + 'and brokerages stop processing well before it. Not shiftable — 31 December is 31 December.',
+    url: 'https://www.irs.gov/retirement-plans/retirement-plan-and-ira-required-minimum-distributions-faqs',
+    noShift: true,
+  },
+  {
+    month: 12, day: 31, title: 'FSA money is forfeited tonight',
+    text: 'Health FSA balances beyond any carryover your plan allows simply vanish. Some plans grant a grace '
+      + 'period into March; most do not.',
+    url: 'https://www.healthcare.gov/have-job-based-coverage/flexible-spending-accounts/',
+    noShift: true,
+  },
+  {
+    month: 12, day: 15, title: 'Last practical day to change this year\'s 401(k) deferral',
+    text: 'Payroll needs lead time, so the final paycheck of the year is usually the last chance to top up to the '
+      + 'annual limit or to capture the rest of an employer match. The exact cut-off is your payroll provider\'s, '
+      + 'not the IRS\'s.',
+    url: 'https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits',
+  },
+];
+
+/** IRS convention: a deadline landing on a weekend moves to the next weekday. */
+function shiftForWeekend(year, month, day) {
+  const d = new Date(Date.UTC(year, month - 1, day));
+  const dow = d.getUTCDay();
+  if (dow === 6) d.setUTCDate(d.getUTCDate() + 2);
+  else if (dow === 0) d.setUTCDate(d.getUTCDate() + 1);
+  return d;
+}
+
+function moneyDeadlineEvents(opts) {
+  const { now = Date.now(), months = 15 } = opts || {};
+  if (!Number.isFinite(now)) return [];
+  const events = [];
+  const start = new Date(now);
+  const y0 = start.getUTCFullYear();
+
+  for (const year of [y0, y0 + 1, y0 + 2]) {
+    for (const d of MONEY_DEADLINES) {
+      const when = d.noShift
+        ? new Date(Date.UTC(year, d.month - 1, d.day))
+        : shiftForWeekend(year, d.month, d.day);
+      // Midday UTC, and neither 23:59 nor an Eastern time.
+      //
+      // These are all-day deadlines: what matters is that the DATE survives
+      // being formatted in the reader's own timezone, and 23:59 Eastern is
+      // already 1 January in London — so "31 December" reached the screen as
+      // 1 January, which is the single worst thing a deadline can do. Midday
+      // Eastern fixed Europe and still broke at UTC+8. Midday UTC is the only
+      // choice that renders as the right calendar date from UTC-11 through
+      // UTC+11, which covers everywhere anyone actually is. The text carries
+      // the end-of-day meaning; the timestamp only has to survive formatting.
+      const ts = Date.UTC(when.getUTCFullYear(), when.getUTCMonth(), when.getUTCDate(), 12, 0);
+      if (!Number.isFinite(ts)) continue;
+      const daysOut = (ts - now) / 86400000;
+      if (daysOut < -3 || daysOut > months * 31) continue;
+      const e = catalyst.makeEvent({
+        kind: catalyst.EVENT_KIND.MONEY_DEADLINE,
+        date: ts,
+        title: d.title,
+        text: d.text,
+        certainty: 'confirmed',
+        source: 'calendar',
+        url: d.url,
+      }, now);
+      if (e) events.push(e);
+    }
+  }
+  return events;
+}
+
 // ---------------------------------------------------------------------------
 // Seed
 // ---------------------------------------------------------------------------
@@ -923,7 +1042,7 @@ const adapter = {
     try {
       const now = Number.isFinite(ctx?.now) ? ctx.now : Date.now();
       const { events: bundled, skipped, meta } = seedEvents({ ...ctx, now });
-      const computed = calendricalEvents({ now });
+      const computed = [...calendricalEvents({ now }), ...moneyDeadlineEvents({ now })];
       const events = mergeEvents([bundled, computed], { now });
 
       if (!events.length) {
@@ -941,8 +1060,9 @@ const adapter = {
       // exactly why a missing seed file has to be said out loud rather than
       // quietly presented as a bundled calendar.
       const warnings = bundled.length ? [] : [
-        `seed file data/seed/${SEED_FILE} is missing or unreadable — only the computed expiry and rebalance dates `
-          + 'are available, with no Fed, BLS, Treasury or earnings schedule behind them',
+        `seed file data/seed/${SEED_FILE} is missing or unreadable — only the dates this app computes for `
+          + 'itself (options expiry, index rebalances and the statutory money deadlines) are available, with no '
+          + 'Fed, BLS, Treasury or earnings schedule behind them',
       ];
       const byKind = {};
       for (const e of events) byKind[e.kind] = (byKind[e.kind] || 0) + 1;
@@ -973,5 +1093,11 @@ const adapter = {
     }
   },
 };
+
+// Exposed for tests: statutory deadlines must be exactly right, and a
+// weekend-shift bug is invisible until the one year it matters.
+adapter._moneyDeadlineEvents = moneyDeadlineEvents;
+adapter._shiftForWeekend = shiftForWeekend;
+adapter._MONEY_DEADLINES = MONEY_DEADLINES;
 
 module.exports = adapter;

@@ -53,6 +53,7 @@ const EVENT_KIND = {
   FILING_13D: 'filing_13d',
   MATURITY: 'maturity',
   CALL_DATE: 'call_date',
+  MONEY_DEADLINE: 'money_deadline',
 };
 
 const EVENT_INFO = {
@@ -79,6 +80,7 @@ const EVENT_INFO = {
   filing_13d: { label: '13D filed', volMultiple: 2.0, scope: 'symbol', forward: false, text: 'Someone took a large activist stake and intends to influence the company.' },
   maturity: { label: 'Matures', volMultiple: 0, scope: 'symbol', forward: true, text: 'Principal is returned on this date.' },
   call_date: { label: 'Call date', volMultiple: 0, scope: 'symbol', forward: true, text: 'The issuer may redeem early from this date, which ends the yield.' },
+  money_deadline: { label: 'Money deadline', volMultiple: 1, scope: 'market', forward: true, text: 'A date after which a specific action is no longer available to you at all.' },
 };
 
 /**

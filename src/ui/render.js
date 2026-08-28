@@ -1175,6 +1175,36 @@ R.onboard = (step, draft, ctx) => {
   { next: 'Open it', skip: false });
 };
 
+
+/**
+ * One thing with a clock on it.
+ *
+ * Deliberately renders an expiring offer and a dated deadline identically apart
+ * from a type marker: to someone deciding what to do this week the difference
+ * between "this bonus ends Friday" and "you cannot harvest losses after
+ * Friday" is not worth a separate view.
+ */
+R.clockItem = (x) => {
+  const d = Math.round(x.daysLeft);
+  const col = d <= 3 ? 'var(--neg)' : d <= 14 ? 'var(--warn)' : 'var(--text-dim)';
+  const bg = d <= 3 ? 'var(--neg-soft)' : d <= 14 ? 'var(--warn-soft)' : 'var(--panel-3)';
+  const when = d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `${d} days`;
+  const act = x.type === 'event'
+    ? 'data-act="goto-view" data-val="events"'
+    : `data-act="goto" data-id="${esc(x.id)}"`;
+  return `<li class="ritem" ${act}>
+    <span class="clocktype ${x.type === 'event' ? 'ev' : 'op'}" title="${x.type === 'event' ? 'A dated deadline' : 'An offer that expires'}">${x.type === 'event' ? '◷' : '★'}</span>
+    <span class="body">
+      <span class="nm">${esc(x.name)}</span>
+      <span class="sub">${esc(x.sub || '')}</span>
+    </span>
+    <span class="val">
+      <span class="countdown" style="color:${col};background:${bg}">${esc(when)}</span>
+      ${Number.isFinite(x.value) ? `<span class="u">${esc(window.F.money(x.value, { dp: 0 }))}</span>` : ''}
+    </span>
+  </li>`;
+};
+
 R.kindLabel = kindLabel;
 R.radarEventItem = radarEventItem;
 

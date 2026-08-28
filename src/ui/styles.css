@@ -898,6 +898,12 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 .oncepay { display: block; font-size: 9.5px; color: var(--text-faint); font-weight: 600; margin-top: 1px; }
 .refmark { color: var(--text-faint); font-weight: 500; }
 
+.clocktype {
+  flex: 0 0 auto; width: 18px; text-align: center; font-size: 12px; color: var(--text-faint);
+}
+.clocktype.ev { color: var(--info); }
+.clocktype.op { color: var(--brand); }
+
 .countdown {
   font-family: var(--mono); font-size: 10.5px; font-weight: 650; padding: 1px 6px;
   border-radius: 4px; white-space: nowrap;

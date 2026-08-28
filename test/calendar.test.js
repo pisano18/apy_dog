@@ -537,7 +537,7 @@ test('loadSeed never throws, whatever it is handed', () => {
   // With no seed file the computed expiries survive on their own — and the
   // source says so rather than passing them off as a bundled calendar.
   const bare = adapter.loadSeed({ seedDir: __dirname, now: SEED_NOW });
-  assert.ok(bare.events.every((e) => ['opex', 'index_rebalance'].includes(e.kind)));
+  assert.ok(bare.events.every((e) => ['opex', 'index_rebalance', 'money_deadline'].includes(e.kind)));
   assert.ok(bare.warnings.some((w) => /missing or unreadable/.test(w)));
 });
 

@@ -1243,6 +1243,10 @@ function buildMeasured(entry, series, opts = {}) {
     minInvestment: num(entry.min) ?? price,
     volume: dollarVolume,
 
+    // The next date you must already own this to collect a payment. Only ever
+    // present where the payment record actually supports projecting one.
+    exDividend: nextExDividend(series?.dividends, nowMs),
+
     movementStats: stats || null,
     series: chart.length ? chart : null,
     // Where the chart came from. A drawn shape and a recorded price history
@@ -1402,6 +1406,56 @@ async function fetchMeasuredTier(ctx, entries, counter) {
   }
 
   return { series, failedBatches, viaChart, unavailable, batchCount: batches.length };
+}
+
+/**
+ * When this thing next goes ex-dividend, from its own payment record.
+ *
+ * The most under-served category of deadline there is. Every dividend payer has
+ * a date you must own it by to collect the next payment, it recurs on a
+ * schedule that is visible in the payment history, and no screener surfaces it
+ * as a deadline — it is simply a fact people are expected to already know.
+ *
+ * Derived from the observed gaps between actual payments rather than from an
+ * assumed quarterly cadence, because plenty of funds pay monthly, several pay
+ * irregularly, and a confident wrong date is worse than none. Anything that
+ * does not look like a regular schedule returns null and says nothing.
+ */
+function nextExDividend(dividends, nowMs) {
+  if (!Array.isArray(dividends) || dividends.length < 4) return null;
+  const ts = dividends.map((d) => d.ts).filter((t) => Number.isFinite(t)).sort((a, b) => a - b);
+  if (ts.length < 4) return null;
+
+  const gaps = [];
+  for (let i = 1; i < ts.length; i += 1) gaps.push(ts[i] - ts[i - 1]);
+  const recent = gaps.slice(-6);
+  const sorted = recent.slice().sort((a, b) => a - b);
+  const medianGap = sorted[Math.floor(sorted.length / 2)];
+  if (!Number.isFinite(medianGap) || medianGap < 20 * 86400000 || medianGap > 400 * 86400000) return null;
+
+  // Irregular payers get nothing. If the spread of recent gaps is wide the
+  // schedule is not a schedule and projecting it forward is invention.
+  const spread = (sorted[sorted.length - 1] - sorted[0]) / medianGap;
+  if (spread > 0.6) return null;
+
+  const last = ts[ts.length - 1];
+  let next = last + medianGap;
+  // Roll forward if the record is stale rather than reporting a past date.
+  let guard = 0;
+  while (next < nowMs && guard < 24) { next += medianGap; guard += 1; }
+  const daysAway = (next - nowMs) / 86400000;
+  if (daysAway > 200) return null;
+
+  const perYear = Math.round(365 / (medianGap / 86400000));
+  return {
+    ts: next,
+    daysAway,
+    cadence: perYear >= 11 ? 'monthly' : perYear >= 3 ? 'quarterly' : perYear >= 2 ? 'twice a year' : 'yearly',
+    // Estimated, always: the exact date is declared by the issuer and this is
+    // a projection from the last several payments.
+    certainty: 'estimated',
+    basedOn: ts.length,
+  };
 }
 
 /**
@@ -1723,6 +1777,7 @@ function loadSeed(ctx) {
 // ---------------------------------------------------------------------------
 
 module.exports = {
+  nextExDividend,
   id: ID,
   label: LABEL,
   description: 'Every US-listed issuer from the SEC ticker file, searchable by name, with a few hundred liquid '
