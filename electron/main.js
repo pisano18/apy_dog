@@ -553,6 +553,68 @@ function registerIpc() {
     });
   });
 
+  /**
+   * The signals view payload.
+   *
+   * Ranked by pressure, but the calibration status is part of the payload
+   * rather than a footnote: an uncalibrated ranking and a measured one are
+   * different products, and the interface has to say which one it is showing.
+   */
+  handle('data:signals', () => {
+    const { loadCalibration } = require('../src/core/calibration');
+    const cal = loadCalibration({ maxAgeMs: 0 });
+    const rows = dataset.opportunities.filter((o) => o.signals);
+    const readable = rows.filter((o) => !o.signals.unreadable);
+    const ranked = readable
+      .filter((o) => o.signals.fired.length > 0)
+      .sort((a, b) => (b.signals.pressure || 0) - (a.signals.pressure || 0))
+      .slice(0, 60)
+      .map((o) => ({
+        id: o.id,
+        name: o.name,
+        symbol: o.symbol || null,
+        section: o.section,
+        subType: o.subType || null,
+        price: o.price ?? null,
+        grade: o.rating?.grade || null,
+        gradeColor: o.rating?.gradeColor || null,
+        series: o.series || null,
+        seriesBasis: o.seriesBasis || null,
+        pressure: o.signals.pressure,
+        lean: o.signals.lean,
+        fired: o.signals.fired.map((f) => ({
+          key: f.key, strength: f.strength, value: f.value ?? null, evidence: f.evidence || [],
+        })),
+        missing: o.signals.missing || [],
+        expected: o.movement?.expected || null,
+        catalyst: o.movement?.catalyst?.event || null,
+      }));
+
+    return {
+      rows: ranked,
+      calibration: cal ? {
+        generatedAt: cal.generatedAt,
+        universe: (cal.universe || []).length,
+        years: cal.years,
+        horizon: cal.horizon,
+        definition: cal.definition,
+        baseRate: cal.testBaseRate,
+        bars: cal.testBars,
+        scores: cal.scores,
+        composite: cal.composite,
+        validated: cal.validated,
+        failed: cal.failedSignals,
+        weights: cal.weights,
+      } : null,
+      counts: {
+        total: rows.length,
+        readable: readable.length,
+        unreadable: rows.length - readable.length,
+        firing: readable.filter((o) => o.signals.fired.length).length,
+      },
+    };
+  });
+
   handle('app:checkUpdates', () => checkForUpdates({ interactive: false }));
   handle('app:installUpdate', () => {
     try {
@@ -951,7 +1013,7 @@ async function runSmokeTest() {
   }
 
   // Every other view. A pane that throws on render is invisible from Find alone.
-  for (const view of ['plan', 'learn', 'events', 'sources', 'settings', 'watch']) {
+  for (const view of ['signals', 'plan', 'learn', 'events', 'sources', 'settings', 'watch']) {
     try {
       await js(`document.querySelector('.tab[data-view="${view}"]').click(); true`);
       await wait(view === 'plan' ? 900 : 500);
@@ -962,6 +1024,26 @@ async function runSmokeTest() {
     } catch (err) {
       failuresLate.push(`${view} pane failed: ${err.message}`);
     }
+  }
+
+  // The signals view is correctly empty offline: every bundled chart is drawn
+  // rather than recorded, so no signal can honestly be read off one. The
+  // populated layout is unit-tested in test/signals-view.test.js, which runs
+  // render.js in plain Node; here we only confirm the empty state explains
+  // itself rather than looking like a crash.
+  try {
+    await js("document.querySelector('.tab[data-view=\"signals\"]').click(); true");
+    await wait(600);
+    report.signalCards = await js("document.querySelectorAll('#view-signals .sigcard').length");
+    report.signalBanner = await js("!!document.querySelector('#view-signals .calbanner')");
+    report.signalEmptyExplained = await js(
+      "/recorded price history|measured rows/.test(document.querySelector('#view-signals').innerText)",
+    );
+    await shot('signals');
+    if (!report.signalBanner) failuresLate.push('the signals view did not state its calibration status');
+    if (!report.signalEmptyExplained) failuresLate.push('the signals view is empty and does not say why');
+  } catch (err) {
+    failuresLate.push(`signals check failed: ${err.message}`);
   }
 
   // Help must be reachable from where the jargon is, not only from the Learn

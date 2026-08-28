@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('apy', {
   measure: (id) => invoke('data:measure', id),
   radar: () => invoke('data:radar'),
   plan: (facts) => invoke('data:plan', facts),
+  signals: () => invoke('data:signals'),
 
   getSettings: () => invoke('settings:get'),
   updateSettings: (patch) => invoke('settings:update', patch),

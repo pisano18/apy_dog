@@ -6,6 +6,25 @@
    and filing titles are all attacker-controllable strings. */
 
 const R = {};
+
+/**
+ * "in 6 days", "tomorrow", "3 weeks ago".
+ *
+ * Lives here rather than being assigned onto window during boot in app.js:
+ * render.js calls it from four places, so a global defined later in another
+ * file is a load-order bug waiting to happen — and it was one, until the view
+ * tests ran render.js on its own and it threw.
+ */
+window.CATALYST_WHEN = (d) => {
+  if (!Number.isFinite(d)) return '';
+  const n = Math.round(d);
+  if (n === 0) return 'today';
+  if (n === 1) return 'tomorrow';
+  if (n === -1) return 'yesterday';
+  if (n > 0) return n < 14 ? `in ${n} days` : n < 60 ? `in ${Math.round(n / 7)} weeks` : `in ${Math.round(n / 30.44)} months`;
+  const a = Math.abs(n);
+  return a < 14 ? `${a} days ago` : a < 60 ? `${Math.round(a / 7)} weeks ago` : `${Math.round(a / 30.44)} months ago`;
+};
 const { esc } = window.F;
 
 /* ═══════════════════════════════════════════════════════════ small pieces ══ */
@@ -861,6 +880,119 @@ R.drawer = (detail, ctx) => {
     </div>
   </div>`;
 };
+
+
+/* ═══════════════════════════════════════════════════════════════ signals ══ */
+
+const SIGNAL_LABELS = {
+  coil: 'Compression', quiet_accumulation: 'Quiet accumulation', range_compression: 'Tight range',
+  extension: 'Stretched', squeeze: 'Squeeze mechanics', catalyst: 'Dated catalyst', unlock: 'Token unlock',
+};
+const SIGNAL_HELP = {
+  coil: 'coil', quiet_accumulation: 'quietAccumulation', range_compression: 'coil',
+  extension: 'volatility', squeeze: 'squeeze', catalyst: 'catalyst', unlock: 'unlock',
+};
+
+/**
+ * The signals view, as a pure function of its payload.
+ *
+ * Kept here rather than in app.js so it can be tested in plain Node without an
+ * Electron window. That is not tidiness: the populated layout cannot appear
+ * offline — every bundled chart is drawn rather than recorded, and no signal
+ * can honestly be read off one — so without this the first time the card
+ * rendering ever ran would be on somebody's machine after their first refresh.
+ */
+R.signalsView = (d) => {
+  const cal = d.calibration;
+  const c = d.counts;
+
+  const banner = cal
+    ? `<div class="calbanner ok">
+        <b>Calibrated.</b> Measured on ${cal.universe} symbols over ${cal.years} years, out of sample.
+        Base rate ${(cal.baseRate * 100).toFixed(1)}% across ${cal.bars} independent observations.
+        Validated: ${cal.validated.length ? cal.validated.map((k) => esc(SIGNAL_LABELS[k] || k)).join(', ') : '<i>none — see the table below</i>'}.
+        ${cal.failed.length ? `Failed and given zero weight: ${cal.failed.map((k) => esc(SIGNAL_LABELS[k] || k)).join(', ')}.` : ''}
+        <span class="calwhen">Run ${window.F.ago(cal.generatedAt)}</span>
+      </div>`
+    : `<div class="calbanner warn">
+        <b>Uncalibrated — this is a ranking, not a probability.</b>
+        Nothing here has been checked against what actually happened next, so the ORDER is meaningful and the
+        NUMBER is not. To measure it against real history, quit and run
+        <code>npm run backtest</code> — it fetches five years of daily data, scores every detector out of sample
+        against the base rate, and gives failing signals zero weight rather than keeping them because they sound
+        plausible. ${window.helpChip ? window.helpChip('calibration') : ''}
+      </div>`;
+
+  const evidence = (f) => `<li class="sigline">
+    <span class="signame">${esc(SIGNAL_LABELS[f.key] || f.key)}${window.helpChip && SIGNAL_HELP[f.key] ? window.helpChip(SIGNAL_HELP[f.key]) : ''}</span>
+    <span class="sigbar"><i style="width:${Math.round((f.strength || 0) * 100)}%"></i></span>
+    <span class="sigwhy">${(f.evidence || []).map(esc).join(' ')}</span>
+  </li>`;
+
+  const card = (o) => `<section class="sigcard" data-act="goto" data-id="${esc(o.id)}">
+    <header>
+      <span class="pnum" style="--p:${o.pressure}">${o.pressure}</span>
+      <span class="sighead">
+        <span class="signm">${esc(o.name)}${o.symbol ? ` <b>${esc(o.symbol)}</b>` : ''}</span>
+        <span class="sigsub">
+          ${o.grade ? `<span class="grade" style="color:${esc(o.gradeColor || 'var(--text-dim)')};background:${esc((o.gradeColor || '#888') + '18')}">${esc(o.grade)}</span>` : ''}
+          ${o.expected ? `${esc(window.F.pct(Math.abs(o.expected.typicalPct ?? 0), 1))} would be a normal move` : ''}
+          ${o.catalyst ? ` · ${esc(o.catalyst.label)} ${esc(window.CATALYST_WHEN(o.catalyst.daysAway))}` : ''}
+        </span>
+      </span>
+      ${o.series?.length ? window.R.sparkline(o.series, 90, 28, o.seriesBasis) : ''}
+      <span class="siglean ${esc(o.lean.direction)}">
+        ${o.lean.direction === 'none' ? 'no direction' : o.lean.direction === 'up' ? '▲ leans up' : '▼ leans down'}
+      </span>
+    </header>
+    <ul class="siglines">${o.fired.map(evidence).join('')}</ul>
+    ${o.lean.direction === 'none'
+    ? `<div class="signote">${esc(o.lean.why)}</div>`
+    : `<div class="signote lean">${esc(o.lean.why)}</div>`}
+    ${o.missing.length ? `<div class="sigmissing">Not measured for this row: ${o.missing.slice(0, 3).map(esc).join('; ')}.</div>` : ''}
+  </section>`;
+
+  return `<div class="wrap">
+    <h2>What is about to do something</h2>
+    <p class="lead">Direction is not forecastable, and anything claiming otherwise is selling something. Size is a
+      different question: volatility clusters and mean-reverts, so unusual quiet genuinely says something about how
+      big the next move will be — while saying nothing about which way. These are ranked by how many pre-move
+      conditions are firing at once ${window.helpChip ? window.helpChip('pressure') : ''}, with the evidence for
+      each one so you can disagree with it.</p>
+
+    ${banner}
+
+    ${c.readable === 0 ? `<div class="infobox" style="margin-top:14px">
+      <b>No row has recorded price history yet.</b> ${c.unreadable} rows carry a chart drawn from their own
+      statistics rather than real closes, and a compression signal read off a curve that was generated from a
+      volatility number would just be that number handed back as evidence. Hit <b>Refresh</b> to fetch real
+      history, then come back. ${window.helpChip ? window.helpChip('illustrative') : ''}
+    </div>` : `
+      <div class="sigmeta">${c.firing} of ${c.readable} measured rows are firing at least one signal.
+        ${c.unreadable ? `${c.unreadable} more have no recorded history yet and are excluded.` : ''}</div>
+      <div class="siggrid">${d.rows.map(card).join('')}</div>`}
+
+    ${cal ? `<section style="margin-top:26px"><h3>What was measured</h3>
+      <div class="sectionnote">${esc(cal.definition)}. A verdict of <b>failed</b> is a real result: it means the
+        detector does not work, and it is given zero weight rather than kept because it sounded plausible.</div>
+      <table class="caltable">
+        <thead><tr><th>Signal</th><th>Verdict</th><th class="num">Fired</th><th class="num">Hit rate</th>
+          <th class="num">Base rate</th><th class="num">Lift ${window.helpChip ? window.helpChip('lift') : ''}</th><th class="num">Weight</th></tr></thead>
+        <tbody>${(cal.scores || []).map((sc) => `<tr>
+          <td>${esc(SIGNAL_LABELS[sc.key] || sc.key)}</td>
+          <td><span class="verdict v-${esc(sc.verdict)}">${esc(sc.verdict)}</span></td>
+          <td class="num">${sc.fires}</td>
+          <td class="num">${(sc.hitRate * 100).toFixed(1)}%</td>
+          <td class="num">${(sc.baseRate * 100).toFixed(1)}%</td>
+          <td class="num">${Number.isFinite(sc.lift) ? sc.lift.toFixed(2) : '—'}</td>
+          <td class="num">${(cal.weights?.[sc.key] ?? 0).toFixed(2)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </section>` : ''}
+  </div>`;
+};
+
+R.SIGNAL_LABELS = SIGNAL_LABELS;
 
 R.kindLabel = kindLabel;
 R.radarEventItem = radarEventItem;

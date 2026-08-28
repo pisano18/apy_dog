@@ -390,6 +390,28 @@ async function renderRadar() {
   $('#view-radar').innerHTML = window.R.radar({ cards, meta: d.meta, budget: d.budget }, renderCtx());
 }
 
+/* ---------------------------------------------------------------- signals - */
+
+/**
+ * What is showing the conditions that precede a large move.
+ *
+ * The calibration banner is not decoration. An uncalibrated ranking and a
+ * measured one are different products and the interface has to say which it is
+ * showing, every time, at the top — otherwise a number that has never been
+ * checked against an outcome gets read as a probability.
+ */
+async function renderSignals() {
+  const el = $('#view-signals');
+  let d;
+  try {
+    d = await window.apy.signals();
+  } catch (err) {
+    el.innerHTML = `<div class="wrap"><h2>Signals</h2><div class="infobox">${esc(err.message)}</div></div>`;
+    return;
+  }
+  el.innerHTML = window.R.signalsView(d);
+}
+
 /* ------------------------------------------------------------------- help - */
 
 /**
@@ -870,8 +892,9 @@ function switchView(view) {
   $('#view-find').style.display = view === 'find' ? 'flex' : 'none';
   $('#view-radar').style.display = view === 'radar' ? 'flex' : 'none';
   $('#drawer').classList.toggle('hidden', view !== 'find' || !S.detail);
-  for (const v of ['plan', 'learn', 'events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
+  for (const v of ['signals', 'plan', 'learn', 'events', 'watch', 'sources', 'settings']) $(`#view-${v}`).hidden = view !== v;
   if (view === 'radar') renderRadar().catch(() => {});
+  if (view === 'signals') renderSignals().catch(() => {});
   if (view === 'plan') renderPlan().catch(() => {});
   if (view === 'learn') renderLearn();
   if (view === 'events') renderEvents();
@@ -1361,16 +1384,6 @@ async function main() {
   window.RATING_AXES = S.boot.constants.RATING_AXES;
   window.EFFORT_INFO = S.boot.constants.EFFORT_INFO;
   window.EVENT_INFO = S.boot.constants.EVENT_INFO;
-  window.CATALYST_WHEN = (d) => {
-    if (!Number.isFinite(d)) return '';
-    const n = Math.round(d);
-    if (n === 0) return 'today';
-    if (n === 1) return 'tomorrow';
-    if (n === -1) return 'yesterday';
-    if (n > 0) return n < 14 ? `in ${n} days` : n < 60 ? `in ${Math.round(n / 7)} weeks` : `in ${Math.round(n / 30.44)} months`;
-    const a = Math.abs(n);
-    return a < 14 ? `${a} days ago` : a < 60 ? `${Math.round(a / 7)} weeks ago` : `${Math.round(a / 30.44)} months ago`;
-  };
 
   if (S.boot.platform === 'darwin') document.body.classList.add('mac');
   $('#ver').textContent = `v${S.boot.version}`;

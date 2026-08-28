@@ -8,6 +8,8 @@ const { scoreAll } = require('./score');
 const { peerMedians } = require('./traps');
 const { rate } = require('./rating');
 const { readMovement } = require('./movement');
+const { readSignals } = require('./signals');
+const { loadCalibration } = require('./calibration');
 const { vehiclesFor, outOfReach } = require('./vehicles');
 const T = require('./tracks');
 
@@ -284,6 +286,10 @@ async function aggregate(adapters, opts = {}) {
   const broadEvents = events.filter((e) => e.scope === 'rates');
   const marketEvents = events.filter((e) => e.scope === 'market');
 
+  // Read once per run rather than per row: it is a file read, and eight hundred
+  // of them per scan for a file that changes after a backtest is wasteful.
+  const calibration = loadCalibration();
+
   const enriched = scored.map((o) => {
     const own = [
       ...(o.symbol ? bySymbol.get(String(o.symbol).toUpperCase()) || [] : []),
@@ -308,10 +314,42 @@ async function aggregate(adapters, opts = {}) {
       ? null
       : readMovement(withEvents, { events: own2, now, horizonDays: settings.movementHorizonDays ?? 30 });
 
+    // Pre-move signals, evaluated at the LAST bar of whatever history the row
+    // carries. Everything the detectors need is already on the row; what they
+    // add is the reading of it, plus evidence a person can argue with.
+    let signals = null;
+    if (movement && Array.isArray(withEvents.series) && withEvents.series.length >= 30) {
+      try {
+        signals = readSignals(
+          { closes: withEvents.series, volumes: withEvents.volumeSeries || [], highs: [], lows: [] },
+          withEvents.series.length - 1,
+          {
+            events: own2,
+            horizonDays: settings.movementHorizonDays ?? 30,
+            weights: calibration?.weights || null,
+            shortPercentFloat: withEvents.shortPercentFloat,
+            daysToCover: withEvents.daysToCover,
+            borrowFeePct: withEvents.borrowFeePct,
+            floatShares: withEvents.floatShares,
+            unlockPercentOfFloat: withEvents.unlockPercentOfFloat,
+            unlockDaysAway: withEvents.unlockDaysAway,
+            priceVsHigh: Number.isFinite(withEvents.maxDrawdown) ? -withEvents.maxDrawdown / 100 : null,
+          },
+        );
+        // A chart that was drawn rather than recorded cannot support a signal.
+        // Reading compression off a curve derived from a volatility number and
+        // then reporting it as evidence about volatility is circular.
+        if (withEvents.seriesBasis === 'illustrative') {
+          signals = { ...signals, unreadable: 'This row has no recorded price history yet — its chart is drawn from its own statistics, so no signal can honestly be read off it. Refresh to measure it.' };
+        }
+      } catch { signals = null; }
+    }
+
     return {
       ...withEvents,
       rating,
       movement,
+      signals,
       vehicles,
       vehiclesOutOfReach: outOfReach(vehicles).length,
     };
