@@ -799,6 +799,8 @@ R.drawer = (detail, ctx) => {
     </div>
   </div>` : ''}
 
+  ${detail.expectations ? R.expectations(detail.expectations) : ''}
+
   <div class="dsection">
     <h4>Safety — grade ${esc(r?.grade || '?')}</h4>
     <div class="infobox" style="margin-bottom:10px"><b>${esc(r?.gradeHeadline || '')}.</b> ${esc(r?.gradeDetail || '')}</div>
@@ -993,6 +995,64 @@ R.signalsView = (d) => {
 };
 
 R.SIGNAL_LABELS = SIGNAL_LABELS;
+
+
+/**
+ * What to actually expect, as a band rather than a number.
+ *
+ * A single figure invites you to plan on that figure. The bad end is the one
+ * that decides whether you can hold on, so it gets equal billing, and the kind
+ * of uncertainty is named — losing rate and losing principal are different
+ * things and putting both in a column headed "yield" is what makes them look
+ * comparable.
+ */
+R.expectations = (e) => {
+  if (!e) return '';
+  const money = window.F.money;
+  const pc = (v) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
+
+  const inc = e.income;
+  const mv = e.movement;
+
+  const row = (label, key, tone) => {
+    const p = inc.pct[key];
+    const d = inc.dollars?.[key];
+    return `<div class="exprow ${tone}">
+      <span class="expl">${esc(label)}</span>
+      <span class="expp">${esc(pc(p))}</span>
+      <span class="expd">${d === undefined || d === null ? '' : esc(`${d >= 0 ? '+' : '−'}${money(Math.abs(d), { dp: 0 })}`)}</span>
+    </div>`;
+  };
+
+  return `<div class="dsection">
+    <h4>What to expect${window.helpChip ? window.helpChip('expectedMove') : ''}</h4>
+    ${inc ? `
+      <div class="exphead ${inc.kind === 'principal' ? 'risky' : ''}">${esc(inc.headline)}</div>
+      <div class="expband">
+        ${row('A good year', 'good', 'good')}
+        ${row('Typical', 'typical', 'typ')}
+        ${row('A bad year', 'bad', 'bad')}
+        ${row('The bad case that is not supposed to happen', 'tail', 'tail')}
+      </div>
+      ${inc.unbounded ? `<div class="expwarn">${esc(inc.unbounded)}</div>` : ''}
+      <div class="expassume">${inc.assumptions.map(esc).join(' ')}</div>` : ''}
+    ${mv ? `
+      <div class="exphead" style="margin-top:${inc ? '14px' : '0'}">${esc(mv.headline)}</div>
+      <div class="expband">
+        ${mv.bands.map((b) => `<div class="exprow">
+          <span class="expl">${esc(b.label)}</span>
+          <span class="expp">±${(b.pct * 100).toFixed(1)}%</span>
+          <span class="expd">${esc(b.odds)}</span>
+        </div>`).join('')}
+        ${Number.isFinite(mv.worstOnRecord) ? `<div class="exprow tail">
+          <span class="expl">Worst on record</span>
+          <span class="expp">${(mv.worstOnRecord * 100).toFixed(0)}%</span>
+          <span class="expd">it has actually happened</span>
+        </div>` : ''}
+      </div>
+      <div class="expassume">${mv.assumptions.map(esc).join(' ')} <b>${esc(mv.direction)}</b></div>` : ''}
+  </div>`;
+};
 
 R.kindLabel = kindLabel;
 R.radarEventItem = radarEventItem;

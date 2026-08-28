@@ -415,7 +415,16 @@ function registerIpc() {
     if (!o) return null;
     let series = [];
     try { series = history.seriesFor(id, { days: 365 }); } catch { /* optional */ }
-    return { opportunity: o, series };
+    let expectations = null;
+    try {
+      const { expectationsFor } = require('../src/core/expectations');
+      expectations = expectationsFor(o, {
+        amount: Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null,
+        riskFree: dataset.meta?.riskFree ?? 4,
+        horizonDays: store.settings.movementHorizonDays ?? 30,
+      });
+    } catch (e) { console.warn('[expectations]', e.message); }
+    return { opportunity: o, series, expectations };
   });
 
   /**
