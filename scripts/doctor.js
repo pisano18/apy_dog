@@ -185,6 +185,38 @@ async function main() {
     if (!r.ok && r.sample) log(`      server said: ${r.sample}`);
   }
 
+  // What the Signals view will actually be able to say, which is the question
+  // behind almost every "why is this empty". A feed being reachable and a row
+  // being readable are different facts: the detectors need recorded daily
+  // closes, and a bundled row carries a drawn shape with no timescale at all.
+  log('\nSignals — what the detectors can and cannot read:\n');
+  try {
+    const { loadAdapters } = require('../src/sources');
+    const { aggregate } = require('../src/core/aggregate');
+    const { signalsPayload } = require('../src/core/views');
+    const { loadCalibration } = require('../src/core/calibration');
+    const SIG = require('../src/core/signals');
+
+    const { adapters } = loadAdapters();
+    const data = await aggregate(adapters, { offline: true });
+    const cal = loadCalibration({ maxAgeMs: 0 });
+    const pay = signalsPayload(data, cal);
+
+    log(` ok   calibration            ${cal
+      ? `present — measured on ${(cal.universe || []).length} symbols over ${cal.years} years`
+      : 'none — run npm run backtest; every pressure reading is labelled uncalibrated until you do'}`);
+    log(`${pay.counts.readable ? ' ok ' : 'FAIL'}  readable rows          ${pay.counts.readable} of `
+      + `${pay.counts.total} rows carry price history the detectors can use`);
+    for (const r of pay.unreadableReasons || []) log(`      ${String(r.count).padStart(5)} — ${r.why}`);
+    log(` ok   running on a guess     ${pay.onPriors.length
+      ? `${pay.onPriors.join(', ')} — a backtest over closes cannot measure these either way`
+      : 'nothing; every detector in play has been measured'}`);
+    log(`      note: this reads the BUNDLED data. Rows only become readable after a live refresh in the app, `
+      + `which is why 0 here is normal and 0 in the app after a refresh is not.`);
+  } catch (err) {
+    log(`FAIL  signals check          ${err?.message || err}`);
+  }
+
   const tips = advise(feeds, hist);
   log('\n' + '─'.repeat(76));
   for (const t of tips) log(`• ${t}`);

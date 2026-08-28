@@ -240,6 +240,47 @@ describe('mergeMeasured', () => {
 });
 
 /**
+ * The caveat has to survive an empty screen.
+ *
+ * Squeeze, catalyst and unlock are not measurable by a backtest over historical
+ * closes, so a calibration never mentions them and they run on their prior
+ * weight. That was worked out from the readable rows — which meant that with no
+ * price history fetched yet there were no readable rows, so the banner said
+ * "Calibrated" with nothing beside it and the caveat was invisible on exactly
+ * the launch where the reader has least reason to doubt it.
+ *
+ * Which detectors a calibration failed to measure is a fact about the
+ * calibration file. It is answerable with zero rows loaded.
+ */
+describe('what the calibration could not measure', () => {
+  const CAL = {
+    generatedAt: new Date().toISOString(), universe: ['A'], years: 5,
+    testBaseRate: 0.103, testBars: 1110, scores: {}, validated: ['extension'],
+    failedSignals: ['coil', 'range_compression', 'quiet_accumulation'],
+    weights: { coil: 0, range_compression: 0, quiet_accumulation: 0, extension: 0.31 },
+  };
+
+  test('is named even when nothing on screen could be read', () => {
+    const p = signalsPayload(dataset, CAL);
+    assert.strictEqual(p.counts.readable, 0, 'this test needs the no-history case');
+    assert.deepStrictEqual(p.onPriors, ['squeeze', 'catalyst', 'unlock'],
+      'the caveat disappeared exactly when there was nothing to check it against');
+  });
+
+  test('a detector measured at zero is not called unmeasured', () => {
+    const p = signalsPayload(dataset, CAL);
+    for (const k of ['coil', 'range_compression', 'quiet_accumulation', 'extension']) {
+      assert.ok(!p.onPriors.includes(k), `${k} was measured and is being reported as a guess`);
+    }
+  });
+
+  test('with no calibration at all, everything is a guess', () => {
+    const p = signalsPayload(dataset, null);
+    assert.strictEqual(p.onPriors.length, 7);
+  });
+});
+
+/**
  * How busy the next six weeks are is a fact about the calendar.
  *
  * The clock card counts what falls inside a 45-day window, and that count is

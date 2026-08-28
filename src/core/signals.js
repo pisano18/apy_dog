@@ -609,6 +609,10 @@ module.exports = {
   pressureFrom,
   leanFrom,
   PRIOR_WEIGHTS,
+  // The full roster, in the order detectAt runs them. Exported because
+  // "which detectors did this calibration never measure" is a question about
+  // the calibration file, answerable with no rows loaded at all.
+  DETECTOR_KEYS: Object.keys(PRIOR_WEIGHTS),
   DEFAULT_HORIZON,
   DEFAULT_MOVE_THRESHOLD,
 };

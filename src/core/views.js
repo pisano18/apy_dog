@@ -2,6 +2,7 @@
 
 const { applyQuery } = require('./filters');
 const { DEFAULT_QUERY } = require('./constants');
+const { DETECTOR_KEYS } = require('./signals');
 
 /**
  * The payloads the interface asks for, as pure functions of the dataset.
@@ -224,7 +225,15 @@ function signalsPayload(dataset, calibration = null) {
       // unlock schedule — none of which a run over historical closes can
       // reconstruct — so the file never mentions them, and a reader deserves to
       // know which half of the reading was measured.
-      onPriors: [...new Set(readable.flatMap((o) => o.signals.onPriors || []))],
+      //
+      // Read off the calibration itself, not off the rows. Deriving it from
+      // rows meant it vanished exactly when it mattered most: with no price
+      // history fetched yet there are no readable rows, so the banner said
+      // "Calibrated" with nothing beside it and the caveat was invisible on
+      // every first launch.
+      onPriors: cal
+        ? DETECTOR_KEYS.filter((k) => !Number.isFinite((cal.weights || {})[k]))
+        : DETECTOR_KEYS.slice(),
       calibration: cal ? {
         generatedAt: cal.generatedAt,
         universe: (cal.universe || []).length,
