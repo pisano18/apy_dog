@@ -65,6 +65,9 @@ const MAX_TIME = 8.64e15;          // the widest instant Date can represent
  * is thinned to this before it is stored.
  */
 const MAX_SERIES_POINTS = 120;
+// Measured rows keep real daily bars rather than a thinned chart, because the
+// signal engine reads this series and counts every bar as one trading day.
+const MAX_MEASURED_SERIES = 180;
 
 /**
  * The SEC blocks requests without a descriptive User-Agent naming a contact.
@@ -1200,7 +1203,16 @@ function buildMeasured(entry, series, opts = {}) {
   // hands over a pre-thinned shape instead, because the bundled snapshot holds
   // statistics rather than a price history.
   const seedChart = Array.isArray(opts.series) && opts.series.length > 0;
-  const chart = downsample(priceSeries(seedChart ? opts.series : series?.closes), MAX_SERIES_POINTS);
+  // Measured rows keep their bars at one trading day and simply trim the count.
+  // Thinning to 120 points made every third or so close disappear, and since
+  // the signal engine reads this field and annualises with sqrt(252), one bar
+  // silently became 2.1 trading days and every volatility it printed came out
+  // about half again too high — while risk.volatility, two fields away on the
+  // same row, carried the right number all along. 180 daily closes draw a chart
+  // perfectly well and are a price history the detectors can honestly read.
+  const chart = seedChart
+    ? downsample(priceSeries(opts.series), MAX_SERIES_POINTS)
+    : priceSeries(series?.closes).slice(-MAX_MEASURED_SERIES);
   // Volume only exists on the per-symbol chart path. Null everywhere else, so a
   // batch-measured row says "unknown" rather than "thin".
   const dollarVolume = num(opts.dollarVolume) ?? medianDollarVolume(series?.volumes, price);
@@ -1252,6 +1264,9 @@ function buildMeasured(entry, series, opts = {}) {
     // Where the chart came from. A drawn shape and a recorded price history
     // look identical on screen, and only one of them is evidence.
     seriesBasis: chart.length ? (seedChart ? 'illustrative' : 'measured') : null,
+    // Daily closes, straight from the 1d chart endpoint. The bundled snapshot
+    // is a drawn shape with no timescale at all, so it declares none.
+    seriesInterval: chart.length && !seedChart ? 'day' : null,
     reach: classifyReach({ group: entry.group, measured: true, dollarVolume }),
 
     risk: {

@@ -596,16 +596,32 @@ test('downsample refuses to invent a chart out of junk', () => {
   assert.deepEqual(adapter.downsample([1, 2, 3], 1), [3]);
 });
 
-test('a measured row carries a thinned copy of the closes it was measured from', () => {
+test('a measured row keeps real daily closes, not a thinned chart', () => {
+  // It used to keep 120 evenly-spaced samples, which draws the same picture and
+  // is not a price history: one bar became about 2.1 trading days, and the
+  // signal engine — which reads this field and annualises every window with
+  // sqrt(252) — reported volatility around half again too high, while
+  // risk.volatility two fields away on the same row carried the right number.
   const series = adapter.parseSpark(SPARK).get('VOO');
   const row = adapter.buildMeasured({ symbol: 'VOO', name: 'Vanguard S&P 500 ETF', group: 'core_index' },
     series, { schema, C, now: NOW });
   assert.ok(series.closes.length > adapter.MAX_SERIES_POINTS, 'the fixture must be long enough to need thinning');
-  assert.equal(row.series.length, adapter.MAX_SERIES_POINTS);
-  assert.equal(row.series[0], series.closes[0]);
-  assert.equal(row.series[row.series.length - 1], series.closes[series.closes.length - 1]);
+
+  const tail = series.closes.slice(-row.series.length);
+  assert.deepEqual(row.series, tail, 'the series is not the closes it was measured from');
+  assert.ok(row.series.length <= 180, 'the kept history is unbounded');
+  assert.equal(row.seriesInterval, 'day', 'a measured row must declare its bars are days');
+  assert.equal(row.seriesBasis, 'measured');
   // The chart's last point and the row's price are the same measurement.
   assert.equal(row.series[row.series.length - 1], row.movementStats.lastClose);
+});
+
+test('a bundled row declares no timescale, because a drawn shape has none', () => {
+  const row = adapter.buildMeasured({ symbol: 'VOO', name: 'Vanguard S&P 500 ETF', group: 'core_index' },
+    { price: 640, closes: [], volumes: [] },
+    { schema, C, now: NOW, series: [630, 632, 635, 640], movementStats: { vol: 14, lastClose: 640, bars: 250 } });
+  assert.equal(row.seriesBasis, 'illustrative');
+  assert.equal(row.seriesInterval, null, 'a drawn chart must not claim to be daily bars');
 });
 
 test('a corrupt bundled series costs the chart, not the row', () => {

@@ -968,9 +968,10 @@ R.signalsView = (d) => {
     ${banner}
 
     ${c.readable === 0 ? `<div class="infobox err" style="margin-top:14px">
-      <b>No row has recorded price history yet.</b> ${c.unreadable} rows carry a chart drawn from their own
-      statistics rather than real closes, and a compression signal read off a curve generated from a volatility
-      number would just be that number handed back as evidence.
+      <b>Nothing here can be read yet.</b> ${c.unreadable} rows carry no price history the detectors can
+      honestly use, for the reasons below.
+      ${(d.unreadableReasons || []).map((r) => `<div class="diagline"><b>${r.count.toLocaleString()}</b>
+        ${r.count === 1 ? 'row' : 'rows'}: ${esc(r.why)}</div>`).join('')}
       ${window.helpChip ? window.helpChip('illustrative') : ''}
       ${(() => {
     const g = d.diagnosis;
@@ -994,7 +995,8 @@ R.signalsView = (d) => {
   })()}
     </div>` : `
       <div class="sigmeta">${c.firing} of ${c.readable} measured rows are firing at least one signal.
-        ${c.unreadable ? `${c.unreadable} more have no recorded history yet and are excluded.` : ''}</div>
+        ${c.unreadable ? `${c.unreadable} more carry no history the detectors can read and are excluded — `
+    + `${esc(((d.unreadableReasons || [])[0] || {}).why || '')}` : ''}</div>
       <div class="siggrid">${d.rows.map(card).join('')}</div>`}
 
     ${cal ? `<section style="margin-top:26px"><h3>What was measured</h3>

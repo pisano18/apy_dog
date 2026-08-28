@@ -215,6 +215,19 @@ function signalsPayload(dataset, calibration = null) {
         unreadable: rows.length - readable.length,
         firing: readable.filter((o) => o.signals.fired.length).length,
       },
+      // Not one reason any more. A row can be unreadable because its chart was
+      // drawn rather than recorded, or because its bars are not the trading days
+      // every detector here was measured on — crypto's history is hourly — and
+      // an empty screen that names the wrong reason is worse than one that names
+      // none. Most common first, since that is the one worth reading.
+      unreadableReasons: Object.entries(
+        rows.filter((o) => o.signals.unreadable)
+          .reduce((acc, o) => {
+            const why = o.signals.unreadable;
+            acc[why] = (acc[why] || 0) + 1;
+            return acc;
+          }, {}),
+      ).sort((a, b) => b[1] - a[1]).map(([why, count]) => ({ why, count })),
       // Why there is nothing to show, in terms of what actually happened rather
       // than a generic instruction to press Refresh. "Hit refresh" is useless
       // advice to somebody who already did.

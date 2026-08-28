@@ -730,6 +730,13 @@ function buildRow(rec, opts = {}) {
     // illustration and not a price history — the difference has to reach the
     // screen, because on screen the two are indistinguishable.
     seriesBasis: chart.length ? (liveSpark ? 'measured' : 'illustrative') : null,
+    // The live sparkline is seven days of HOURLY prices. Saying so is what stops
+    // the signal engine reading it as seven months of daily bars — which it did,
+    // annualising 1.4-hour moves with sqrt(252) and reporting volatility about
+    // five times too low. There is no daily history here to give it, and a
+    // detector calibrated on daily bars has nothing honest to say about hourly
+    // ones, so crypto carries no signals rather than invented ones.
+    seriesInterval: chart.length && liveSpark ? 'hour' : null,
     reach: classifyReach({ rank, marketCap, volume }),
     // This feed carries prices, not calendars. Token unlocks, upgrade dates and
     // halvings are dated events that genuinely belong on these rows, and they

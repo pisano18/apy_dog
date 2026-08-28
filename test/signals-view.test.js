@@ -138,7 +138,7 @@ describe('the empty state explains itself rather than looking broken', () => {
 
   test('before any scan, it says to refresh', () => {
     const html = empty({ everScanned: false, offline: true, sources: [] });
-    assert.ok(html.includes('No row has recorded price history yet'));
+    assert.ok(html.includes('Nothing here can be read yet'));
     assert.ok(html.includes('236'));
     assert.ok(/Refresh/.test(html), 'must say what action fixes it');
     assert.strictEqual(count(html, /class="sigcard"/g), 0);
@@ -176,7 +176,25 @@ describe('the empty state explains itself rather than looking broken', () => {
     const html = R.signalsView({
       counts: { total: 5, readable: 0, unreadable: 5, firing: 0 }, calibration: null, rows: [],
     });
-    assert.ok(html.includes('No row has recorded price history yet'));
+    assert.ok(html.includes('Nothing here can be read yet'));
+  });
+
+  test('it names the actual reasons rather than assuming one', () => {
+    // There is more than one way to be unreadable — a chart that was drawn
+    // rather than recorded, and bars that are not the trading days every
+    // detector was measured on — and an empty screen naming the wrong one is
+    // worse than one naming none.
+    const html = R.signalsView({
+      counts: { total: 236, readable: 0, unreadable: 236, firing: 0 },
+      calibration: null,
+      rows: [],
+      unreadableReasons: [
+        { why: 'This row has no recorded price history yet.', count: 180 },
+        { why: "This row's history is hourly, and every detector here was measured on daily bars.", count: 56 },
+      ],
+    });
+    assert.ok(html.includes('180') && html.includes('56'), 'the breakdown must show both counts');
+    assert.ok(/hourly/.test(html), 'the second reason never reached the screen');
   });
 });
 

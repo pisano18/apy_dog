@@ -278,6 +278,23 @@ function normalize(raw, ctx = {}) {
     seriesBasis: Array.isArray(raw.series) && raw.series.length
       ? (raw.seriesBasis === 'measured' ? 'measured' : 'illustrative')
       : null,
+    // How far apart those points are, which the signal engine has to know and
+    // could not previously ask.
+    //
+    // Every detector's window is counted in bars — "recent 10", "baseline 60" —
+    // and realisedVol annualises with sqrt(252), so all of it assumes one bar is
+    // one trading day. The series being fed in was the CHART: equities thinned
+    // to 120 points, so a bar was 2.1 trading days and volatility came out about
+    // 1.5x too high; crypto's is a seven-day hourly sparkline, so a bar was
+    // 1.4 HOURS and volatility came out roughly five times too low. The same
+    // row carried the correct figure two fields away in risk.volatility, so it
+    // displayed two contradictory volatilities and the detectors used the wrong
+    // one. Worse, the calibration was measured on true daily bars, so the hit
+    // rate the app advertises described a detector it was not running.
+    //
+    // Unknown is the default and unknown means no signals: a source that does
+    // not say what its bars are does not get read as though they were days.
+    seriesInterval: ['day', 'hour', 'week'].includes(raw.seriesInterval) ? raw.seriesInterval : null,
 
     // A return you can only collect once. An opening bonus annualises to a huge
     // number and is still a single fixed payment, so ranking it as a rate puts

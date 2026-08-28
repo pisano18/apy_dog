@@ -330,8 +330,35 @@ async function aggregate(adapters, opts = {}) {
     // Pre-move signals, evaluated at the LAST bar of whatever history the row
     // carries. Everything the detectors need is already on the row; what they
     // add is the reading of it, plus evidence a person can argue with.
+    //
+    // Daily bars only, and the row has to say so. Every window the detectors use
+    // is counted in bars and realisedVol annualises with sqrt(252), so a series
+    // whose bars are not trading days produces numbers that look like
+    // volatility and are not: the thinned equity chart ran about 1.5x high, the
+    // hourly crypto sparkline about 5x low, and the calibration being applied
+    // had been measured on real daily bars, so the advertised hit rate
+    // described a detector the app was not running. A source that will not
+    // state its timescale does not get read as though it were days.
     let signals = null;
-    if (movement && Array.isArray(withEvents.series) && withEvents.series.length >= 30) {
+
+    // Why a row cannot be read, in the words the interface will use. Saying
+    // nothing would be worse than saying no: a blank signal column reads as "no
+    // setup here" when the truth is "nobody looked".
+    const bars = Array.isArray(withEvents.series) ? withEvents.series.length : 0;
+    const unreadable = !movement ? null
+      : withEvents.seriesBasis === 'illustrative'
+        ? 'This row has no recorded price history yet — its chart is drawn from its own statistics, so no signal can '
+          + 'honestly be read off it. Refresh to measure it.'
+        : !bars ? 'No price history has been pulled for this row yet. Open it and choose Measure.'
+          : withEvents.seriesInterval !== 'day'
+            ? `This row's history is ${withEvents.seriesInterval ? `${withEvents.seriesInterval}ly` : 'of an unstated'} `
+              + 'resolution, and every detector here was measured on daily bars. Reading it anyway would report a '
+              + 'number that looks like volatility and is not, so nothing is claimed.'
+            : bars < 30 ? `Only ${bars} closes on record — the detectors need at least 30 before they say anything.`
+              : null;
+
+    const seriesIsDaily = withEvents.seriesInterval === 'day' && withEvents.seriesBasis === 'measured';
+    if (movement && !unreadable && seriesIsDaily && bars >= 30) {
       try {
         signals = readSignals(
           { closes: withEvents.series, volumes: withEvents.volumeSeries || [], highs: [], lows: [] },
@@ -353,13 +380,15 @@ async function aggregate(adapters, opts = {}) {
             priceVsHigh: Number.isFinite(withEvents.maxDrawdown) ? -withEvents.maxDrawdown / 100 : null,
           },
         );
-        // A chart that was drawn rather than recorded cannot support a signal.
-        // Reading compression off a curve derived from a volatility number and
-        // then reporting it as evidence about volatility is circular.
-        if (withEvents.seriesBasis === 'illustrative') {
-          signals = { ...signals, unreadable: 'This row has no recorded price history yet — its chart is drawn from its own statistics, so no signal can honestly be read off it. Refresh to measure it.' };
-        }
       } catch { signals = null; }
+    } else if (unreadable) {
+      // A chart that was drawn rather than recorded cannot support a signal —
+      // reading compression off a curve derived from a volatility number and
+      // reporting it as evidence about volatility is circular — and neither can
+      // one whose bars are not the days the detectors were measured on.
+      signals = {
+        signals: [], fired: [], pressure: null, lean: null, calibrated: false, missing: [], unreadable,
+      };
     }
 
     return {
