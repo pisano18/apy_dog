@@ -143,14 +143,32 @@ async function main() {
   if (!built.ok) { console.error(built.reason); process.exit(2); }
   const { report } = built;
 
-  const out = path.join(__dirname, '..', 'data', 'calibration.json');
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, JSON.stringify(report, null, 2));
+  // Two files, deliberately. Each run writes its own outcome-tagged result, and
+  // only the primary outcome updates the file the app actually reads.
+  //
+  // Without the split, running both outcomes in sequence left the app holding
+  // whichever finished last — so a session that had genuinely validated a
+  // detector against volatility expansion ended up reporting "validated: none",
+  // because the price-move run overwrote it on the way past.
+  const dir = path.join(__dirname, '..', 'data');
+  fs.mkdirSync(dir, { recursive: true });
+  const tagged = path.join(dir, `calibration-${outcome}.json`);
+  fs.writeFileSync(tagged, JSON.stringify(report, null, 2));
+
+  const PRIMARY = 'vol_expansion';
+  const out = path.join(dir, 'calibration.json');
+  if (outcome === PRIMARY) {
+    fs.writeFileSync(out, JSON.stringify(report, null, 2));
+  }
 
   if (asJson) { process.stdout.write(JSON.stringify(report, null, 2)); return; }
 
   for (const line of renderReport(report, { symbols: instruments.length })) console.log(line);
-  console.log(`\nWritten to ${out} — the app reads this and stops calling itself uncalibrated.`);
+  console.log(`\nWritten to ${tagged}.`);
+  console.log(outcome === PRIMARY
+    ? `The app reads ${out} and stops calling itself uncalibrated.`
+    : `The app keeps reading ${out}, which holds the ${PRIMARY} run — a secondary outcome does not `
+      + 'overwrite the primary one.');
   console.log('A verdict of "failed" is a real result, not a bug. It means that detector does not work,');
   console.log('and it will be given zero weight rather than quietly kept because it sounded plausible.');
 }

@@ -72,14 +72,16 @@ console.log(`environment -> data/reports/environment.json`);
 run('doctor', [path.join(ROOT, 'scripts', 'doctor.js')], 'doctor.txt');
 
 if (!quick) {
-  run('backtest (volatility expansion)', [path.join(ROOT, 'scripts', 'backtest.js')], 'backtest-vol.txt');
+  // Price move first, volatility expansion second, so the primary outcome is
+  // the one left in data/calibration.json when both have run.
   run('backtest (price move)', [path.join(ROOT, 'scripts', 'backtest.js'), '--outcome', 'move'], 'backtest-move.txt');
+  run('backtest (volatility expansion)', [path.join(ROOT, 'scripts', 'backtest.js')], 'backtest-vol.txt');
 } else {
   console.log('skipping the backtests (--quick)');
 }
 
 console.log('\nDone. Send it over with:\n');
-console.log('  git add data/reports data/calibration.json');
+console.log('  git add data/reports data/calibration*.json');
 console.log('  git commit -m "share: diagnostics"');
 console.log('  git push origin claude/investment-opportunity-finder-tyyj0s');
 }

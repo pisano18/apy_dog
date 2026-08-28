@@ -113,6 +113,26 @@ describe('the analysis path is covered without a network', () => {
   });
 });
 
+describe('a secondary backtest never overwrites the primary calibration', () => {
+  test('only the primary outcome writes data/calibration.json', () => {
+    // Running both outcomes in sequence left the app holding whichever finished
+    // last, so a session that had genuinely validated a detector reported
+    // "validated: none" because the second run overwrote it on the way past.
+    const src = fs.readFileSync(path.join(ROOT, 'scripts', 'backtest.js'), 'utf8');
+    assert.ok(/calibration-\$\{outcome\}\.json/.test(src), 'each run must write its own tagged file');
+    assert.ok(/if \(outcome === PRIMARY\)/.test(src),
+      'the file the app reads must only be written by the primary outcome');
+  });
+
+  test('share runs the primary outcome last, so it wins either way', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts', 'share.js'), 'utf8');
+    const move = src.indexOf("'--outcome', 'move'");
+    const vol = src.indexOf("'backtest-vol.txt'");
+    assert.ok(move > 0 && vol > 0 && move < vol,
+      'the price-move run must come first so the primary outcome is written last');
+  });
+});
+
 describe('the doctor reports rather than throws', () => {
   test('it exits non-zero when no history provider answers, without crashing', () => {
     const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'doctor.js')], {
