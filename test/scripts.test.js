@@ -199,3 +199,55 @@ describe('a calibration is earned, never shipped', () => {
       'a missing calibration must read as uncalibrated, not as an empty one');
   });
 });
+
+/**
+ * Reading back what was measured, without measuring it again.
+ *
+ * A backtest takes twenty minutes and writes its verdict to a file, and the
+ * only way to read that verdict back was to run it again. That is a bad trade
+ * for a question people ask often — which detectors survived, and how sure is
+ * it — and a worse one when the answer is the reason to trust or distrust every
+ * pressure number in the app.
+ */
+describe('the stored calibration can be read back', () => {
+  const fs2 = require('node:fs');
+  const path2 = require('node:path');
+  const os = require('node:os');
+  const { execFileSync, spawnSync } = require('node:child_process');
+  const ROOT2 = path2.join(__dirname, '..');
+
+  test('npm run calibration is wired up', () => {
+    const pkg = JSON.parse(fs2.readFileSync(path2.join(ROOT2, 'package.json'), 'utf8'));
+    assert.strictEqual(pkg.scripts.calibration, 'node scripts/calibration.js');
+  });
+
+  test('it renders a real report rather than dumping JSON', () => {
+    const r = spawnSync(process.execPath, [path2.join(ROOT2, 'scripts', 'calibration.js')], {
+      encoding: 'utf8', timeout: 30000,
+    });
+    const out = `${r.stdout || ''}${r.stderr || ''}`;
+    assert.ok(!/ReferenceError|TypeError|SyntaxError/.test(out), `it crashed:\n${out.slice(0, 400)}`);
+    if (fs2.existsSync(path2.join(ROOT2, 'data', 'calibration.json'))) {
+      assert.ok(/signal\s+verdict/.test(out), 'no results table');
+      assert.ok(/Nothing was re-run/.test(out), 'it must be explicit that it measured nothing');
+      // The three the backtest cannot reach are named, because a reader looking
+      // at a results table will otherwise assume it covers everything.
+      assert.ok(/squeeze, catalyst, unlock/.test(out),
+        'the detectors this run could not measure are not named');
+    } else {
+      assert.ok(/Nothing measured yet/.test(out), 'with no file it must say so plainly');
+      assert.notStrictEqual(r.status, 0, 'no calibration is a non-zero exit');
+    }
+  });
+
+  test('a missing file is an explanation, not a stack trace', () => {
+    // Run it against an outcome that cannot exist.
+    const r = spawnSync(process.execPath,
+      [path2.join(ROOT2, 'scripts', 'calibration.js'), '--outcome', 'no_such_outcome'],
+      { encoding: 'utf8', timeout: 30000 });
+    const out = `${r.stdout || ''}${r.stderr || ''}`;
+    assert.ok(/Nothing measured yet/.test(out), `expected an explanation, got:\n${out.slice(0, 300)}`);
+    assert.ok(/npm run backtest/.test(out), 'it must say what would fix it');
+    assert.ok(!/Error:/.test(out), 'it threw instead of explaining');
+  });
+});

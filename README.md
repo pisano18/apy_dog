@@ -83,8 +83,14 @@ failed signal into a confident-looking number.
 ```bash
 npm run doctor              # what this machine can reach, and what each feed says when it refuses
 npm run backtest            # 5y of real daily history, out of sample
-npm run backtest --years 10 --horizon 42
+npm run backtest -- --years 10 --horizon 42
+npm run calibration         # what the last backtest found, without re-running it
 ```
+
+A backtest takes twenty minutes. `npm run calibration` prints its stored verdict in exactly the form it was
+printed the first time, plus the three detectors a backtest over closes cannot reach at all — squeeze mechanics,
+dated catalysts and token unlocks need short interest, an event calendar and an unlock schedule, so they are
+never in the file and are running on a weight somebody chose by hand. The Signals banner says the same thing.
 
 **To send results back:** `npm run share` runs the diagnostics and writes their full output into
 `data/reports/`, so one commit hands over the complete picture instead of whatever fitted on screen. It contains

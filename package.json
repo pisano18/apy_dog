@@ -21,7 +21,8 @@
     "probe": "node scripts/probe.js",
     "backtest": "node scripts/backtest.js",
     "doctor": "node scripts/doctor.js",
-    "share": "node scripts/share.js"
+    "share": "node scripts/share.js",
+    "calibration": "node scripts/calibration.js"
   },
   "devDependencies": {
     "electron": "^33.2.0",
