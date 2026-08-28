@@ -156,7 +156,7 @@ built.
 Every other view ranks. Ranking is the wrong shape for the real question, which is not "what pays the most" but
 "given this much money and this much patience, what do I do first" — and the answer is frequently not the top row.
 
-A dollar-for-dollar employer match is a 100% return the day you make it. Comparing a 5.4% CD against a 4.9% one
+An employer match returns 50 cents on the dollar in most plans and a full dollar in some. Comparing a 5.4% CD against a 4.9% one
 while leaving a match on the table is optimising the wrong decimal by two orders of magnitude, and a sorted table
 cannot say so because both are just numbers in one column.
 
@@ -390,7 +390,7 @@ npm run probe       # which upstream feeds are reachable, and still the right sh
 is telling the truth. What it does is narrower and
 real: it finds bounded, time-limited money that no screener lists, tells you before the window shuts rather than
 after, puts the moves in the order that actually matters, and is honest about the size of each one. A $300 bonus
-is $300. A 100% employer match on 3% of your pay is worth exactly 3% of your pay. Those add up to a materially
+is $300. A half-match on 6% of your pay is worth exactly 3% of your pay. Those add up to a materially
 better year, not a different life, and an app that blurred that line would be the most expensive thing on your
 computer.
 

@@ -799,6 +799,8 @@ R.drawer = (detail, ctx) => {
     </div>
   </div>` : ''}
 
+  ${detail.verdict ? R.verdict(detail.verdict) : ''}
+
   ${detail.expectations ? R.expectations(detail.expectations) : ''}
 
   <div class="dsection">
@@ -1224,6 +1226,37 @@ R.clockItem = (x) => {
       ${Number.isFinite(x.value) ? `<span class="u">${esc(window.F.money(x.value, { dp: 0 }))}</span>` : ''}
     </span>
   </li>`;
+};
+
+
+/**
+ * The plain read, before any of the panels.
+ *
+ * Deliberately the first thing in the drawer. Everything below it is true and
+ * none of it is an answer — a grade, five axes, a band, some flags — and asking
+ * somebody to assemble "is this worth doing and what am I risking" out of six
+ * boxes, for every row, is how a tool ends up being used for its sort order
+ * only.
+ */
+R.verdict = (v) => {
+  if (!v) return '';
+  const tone = { high: 'bad', medium: 'warn', low: 'ok' }[v.risk?.severity] || 'warn';
+  return `<div class="dsection verdict">
+    <div class="vhead">${esc(v.headline)}</div>
+    ${(v.theCase || []).length ? `<ul class="vcase">${v.theCase.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+    <div class="vrisk ${tone}">
+      <span class="vlabel">The main risk</span>
+      <span>${esc(v.risk?.text || '')}</span>
+    </div>
+    <div class="vfor">
+      <div><span class="vlabel">Best for</span> ${esc(v.bestFor || '')}</div>
+      <div><span class="vlabel not">Not for</span> ${esc(v.notFor || '')}</div>
+    </div>
+    ${(v.changesIt || []).length ? `<div class="vchange">
+      <span class="vlabel">What would change this</span>
+      <ul>${v.changesIt.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    </div>` : ''}
+  </div>`;
 };
 
 R.kindLabel = kindLabel;

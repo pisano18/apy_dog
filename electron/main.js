@@ -431,7 +431,16 @@ function registerIpc() {
         horizonDays: store.settings.movementHorizonDays ?? 30,
       });
     } catch (e) { console.warn('[expectations]', e.message); }
-    return { opportunity: o, series, expectations };
+    let verdict = null;
+    try {
+      const { verdictFor } = require('../src/core/verdict');
+      verdict = verdictFor(o, {
+        amount: Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null,
+        riskFree: dataset.meta?.riskFree ?? 4,
+        expectations,
+      });
+    } catch (e) { console.warn('[verdict]', e.message); }
+    return { opportunity: o, series, expectations, verdict };
   });
 
   /**

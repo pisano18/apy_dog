@@ -20,7 +20,10 @@
       "kind": "employer_promise",
       "name": "Employer 401(k) match — 50% on the first 6% of pay",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "fixed", "rate": 50 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 50
+      },
       "rateOn": "every dollar you defer, up to 6% of your pay",
       "maxInvestment": 24500,
       "liquidity": "locked",
@@ -46,7 +49,10 @@
       "kind": "employer_promise",
       "name": "Employer 401(k) match — dollar for dollar on the first 3%",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "fixed", "rate": 100 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 100
+      },
       "rateOn": "every dollar you defer, up to 3% of your pay",
       "maxInvestment": 24500,
       "liquidity": "locked",
@@ -69,7 +75,10 @@
       "kind": "employer_promise",
       "name": "Safe-harbor basic match — 100% on 3%, then 50% on the next 2%",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "fixed", "rate": 80 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 80
+      },
       "rateOn": "the first 5% of pay you defer, blending to 4% of pay from the employer",
       "maxInvestment": 24500,
       "liquidity": "locked",
@@ -92,14 +101,19 @@
       "kind": "employer_promise",
       "name": "The front-loading trap — match forfeited by hitting the limit early",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "fixed", "rate": 50 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 50
+      },
       "rateOn": "the deferrals you would have made in the paychecks after you hit the annual limit",
       "maxInvestment": 24500,
       "liquidity": "locked",
       "termLabel": "Locked until 59½",
       "effort": "light",
       "reach": "obscure",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits",
       "appliesTo": "high earners who max their 401(k) before December, in a plan that computes the match per pay period and does NOT true up at year end.",
       "accessNotes": "Find out whether your plan trues up. If it does, front-load freely — you get the whole match regardless of timing. If it does not, work backwards from the annual limit and set a deferral percentage that lands you exactly at the cap with the final paycheck of the year.",
@@ -116,7 +130,10 @@
       "kind": "employer_promise",
       "name": "Timing a job change around the vesting cliff",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "fixed", "rate": 100 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 100
+      },
       "rateOn": "whatever employer money is currently unvested in your account",
       "uncappedNote": "There is no cap on this one because it is not a contribution — it is the employer balance you already have, which becomes yours in full the day you cross the schedule.",
       "liquidity": "locked",
@@ -139,7 +156,9 @@
       "kind": "tax_deferral",
       "name": "403(b) and 457(b) together — two full deferral limits in one year",
       "provider": "Public-sector and non-profit employers",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "the second full deferral limit you can shelter, which almost nobody realises is available",
       "maxInvestment": 24500,
       "liquidity": "locked",
@@ -162,7 +181,10 @@
       "kind": "tax_deferral",
       "name": "Governmental 457(b) — no 10% penalty after you leave",
       "provider": "State and local government employers",
-      "benefit": { "type": "fixed", "rate": 10 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 10
+      },
       "rateOn": "any money you withdraw before 59½ after separating from service",
       "uncappedNote": "Not capped as a contribution: this is the penalty you avoid on whatever you withdraw early, so its value scales with how much you take out before 59½.",
       "liquidity": "notice",
@@ -185,7 +207,10 @@
       "kind": "employer_promise",
       "name": "SIMPLE IRA — the match a small employer is legally required to make",
       "provider": "Small employers (100 or fewer employees)",
-      "benefit": { "type": "fixed", "rate": 100 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 100
+      },
       "rateOn": "your deferrals up to 3% of pay, matched dollar for dollar",
       "maxInvestment": 17000,
       "liquidity": "locked",
@@ -210,7 +235,9 @@
       "kind": "tax_deferral",
       "name": "Solo 401(k) — the employer contribution on self-employment income",
       "provider": "Self-employed individuals with no employees",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "the employer-side contribution you make to yourself, roughly 20% of net self-employment income",
       "maxInvestment": 72000,
       "liquidity": "locked",
@@ -233,7 +260,9 @@
       "kind": "tax_deferral",
       "name": "HSA — the only triple-tax-advantaged account there is",
       "provider": "Any HSA custodian",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "every dollar you contribute, up to roughly $4,400 individual or $8,750 family",
       "maxInvestment": 4400,
       "liquidity": "notice",
@@ -256,7 +285,10 @@
       "kind": "tax_rule",
       "name": "Fund the HSA through payroll, not from your bank account",
       "provider": "Your employer's cafeteria plan",
-      "benefit": { "type": "fixed", "rate": 7.65 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 7.65
+      },
       "rateOn": "every dollar routed through payroll instead of contributed directly",
       "maxInvestment": 4400,
       "liquidity": "notice",
@@ -279,7 +311,11 @@
       "kind": "tax_shelter",
       "name": "The HSA receipt shoebox — reimburse yourself decades later",
       "provider": "Any HSA custodian",
-      "benefit": { "type": "drag", "assumedYield": 6, "gainsAreLtcg": true },
+      "benefit": {
+        "type": "drag",
+        "assumedYield": 6,
+        "gainsAreLtcg": true
+      },
       "rateOn": "the balance you leave invested instead of spending, compounding entirely untaxed",
       "uncappedNote": "Not capped, because this is not a contribution: the annual limit applies to what you put in, and this row is about what the whole accumulated balance does once it is in there.",
       "oneTime": false,
@@ -302,7 +338,10 @@
       "kind": "provider_policy",
       "name": "Move the HSA to a custodian that does not charge you",
       "provider": "HSA custodians",
-      "benefit": { "type": "fixed", "rate": 0.4 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 0.4
+      },
       "rateOn": "the whole HSA balance, every year, as fees you stop paying",
       "uncappedNote": "Uncapped: a percentage fee is charged on the whole balance, so the bigger the account the more this is worth in dollars.",
       "oneTime": false,
@@ -326,14 +365,18 @@
       "kind": "tax_deferral",
       "name": "Traditional IRA deduction — and the April deadline nobody uses",
       "provider": "Any IRA custodian",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "every deductible dollar you contribute, up to roughly $7,500",
       "maxInvestment": 7500,
       "liquidity": "locked",
       "termLabel": "Locked until 59½",
       "effort": "light",
       "reach": "common",
-      "window": { "type": "filing_deadline" },
+      "window": {
+        "type": "filing_deadline"
+      },
       "url": "https://www.irs.gov/retirement-plans/ira-deduction-limits",
       "appliesTo": "people with earned income who are either not covered by a workplace retirement plan, or are covered and fall under the income phase-out. Above the phase-out with a workplace plan, the contribution is allowed but NOT deductible, and this row is worth nothing to you.",
       "accessNotes": "Open an IRA anywhere, contribute, and tell the custodian which tax year the contribution is for — this is the step people get wrong. Until the April filing deadline both the prior year and the current year are open at once, so a contribution made in March can be a deduction on the return you are filing that week.",
@@ -350,14 +393,20 @@
       "kind": "tax_shelter",
       "name": "Roth IRA — no deduction, and never taxed again",
       "provider": "Any IRA custodian",
-      "benefit": { "type": "drag", "assumedYield": 7, "gainsAreLtcg": true },
+      "benefit": {
+        "type": "drag",
+        "assumedYield": 7,
+        "gainsAreLtcg": true
+      },
       "rateOn": "the balance you shelter, as tax you never pay on its growth",
       "maxInvestment": 7500,
       "oneTime": false,
       "liquidity": "notice",
       "effort": "light",
       "reach": "everyone",
-      "window": { "type": "filing_deadline" },
+      "window": {
+        "type": "filing_deadline"
+      },
       "url": "https://www.irs.gov/retirement-plans/roth-iras",
       "appliesTo": "people with earned income below the Roth phase-out — roughly $150,000 to $165,000 single and $240,000 to $250,000 married filing jointly, indexed annually. Above it you cannot contribute directly, and the backdoor row is the route instead.",
       "accessNotes": "Contribute anywhere, specify the tax year, and invest it — an uninvested Roth is the most common way people waste this. Your own contributions (not the earnings) can be withdrawn at any age with no tax and no penalty, which quietly makes a Roth a usable emergency fund as well as a retirement account.",
@@ -374,7 +423,11 @@
       "kind": "tax_shelter",
       "name": "Backdoor Roth — the route above the income limit",
       "provider": "Any IRA custodian",
-      "benefit": { "type": "drag", "assumedYield": 7, "gainsAreLtcg": true },
+      "benefit": {
+        "type": "drag",
+        "assumedYield": 7,
+        "gainsAreLtcg": true
+      },
       "rateOn": "the balance you get into a Roth that you were not allowed to contribute to directly",
       "maxInvestment": 7500,
       "oneTime": false,
@@ -398,7 +451,11 @@
       "kind": "tax_shelter",
       "name": "Mega-backdoor Roth — after-tax 401(k) money converted in-plan",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "drag", "assumedYield": 7, "gainsAreLtcg": true },
+      "benefit": {
+        "type": "drag",
+        "assumedYield": 7,
+        "gainsAreLtcg": true
+      },
       "rateOn": "the very large balance this can move into a Roth in a single year",
       "maxInvestment": 47500,
       "oneTime": false,
@@ -422,13 +479,17 @@
       "kind": "tax_deferral",
       "name": "HSA contributions for last year, made in the spring",
       "provider": "Any HSA custodian",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "a prior-year HSA contribution made after the calendar year has already closed",
       "maxInvestment": 4400,
       "liquidity": "notice",
       "effort": "light",
       "reach": "obscure",
-      "window": { "type": "filing_deadline" },
+      "window": {
+        "type": "filing_deadline"
+      },
       "url": "https://www.irs.gov/publications/p969",
       "appliesTo": "anyone who had qualifying HDHP coverage last year and did not use the whole HSA limit. If you were not HDHP-covered last year there is nothing to claim.",
       "accessNotes": "Contribute directly to the custodian and mark it as a prior-year contribution — the custodian's web form has a tax-year selector and defaults to the current year, which is how people lose this by accident. It is deductible on the return you are about to file.",
@@ -445,14 +506,19 @@
       "kind": "tax_rule",
       "name": "Convert to Roth in a low-income year",
       "provider": "Any IRA custodian",
-      "benefit": { "type": "bracket_delta", "lowerRate": 12 },
+      "benefit": {
+        "type": "bracket_delta",
+        "lowerRate": 12
+      },
       "rateOn": "every dollar you convert while your income is temporarily low",
       "uncappedNote": "There is no limit on how much you can convert. The practical cap is the top of the bracket you are willing to fill, because a conversion that pushes you into the next bracket is taxed there.",
       "liquidity": "locked",
       "termLabel": "Five-year clock on each conversion",
       "effort": "hoops",
       "reach": "niche",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/retirement-plans/ira-faqs-rollovers-and-roth-conversions",
       "appliesTo": "people with pre-tax retirement money who are having an unusually low-income year — a sabbatical, a redundancy, a business loss, or the gap between retiring and claiming Social Security. It is worth nothing, and possibly negative, in a normal earning year.",
       "accessNotes": "Convert only as much as fills the bracket you are content to pay, and stop there. Compute it in December when the year's income is actually known, not in January when it is a guess. Pay the tax from outside the account if you possibly can, so the whole converted balance keeps compounding.",
@@ -469,14 +535,19 @@
       "kind": "tax_rule",
       "name": "Saver's Credit — a credit, not a deduction, for lower incomes",
       "provider": "Internal Revenue Service",
-      "benefit": { "type": "fixed", "rate": 50 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 50
+      },
       "rateOn": "the first $2,000 you contribute to any retirement account, at the top 50% tier",
       "maxInvestment": 2000,
       "liquidity": "locked",
       "termLabel": "Locked until 59½",
       "effort": "light",
       "reach": "obscure",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-savings-contributions-savers-credit",
       "appliesTo": "lower-income savers only. The 50% tier requires adjusted gross income of roughly $24,000 or less filing single and $48,000 or less married filing jointly; above that it steps to 20% and then 10%, and it disappears entirely at roughly $40,000 single or $80,000 joint. Anyone above those figures gets nothing.",
       "accessNotes": "Contribute to any 401(k), IRA or ABLE account, then file Form 8880 with your return. It is a credit against tax owed, not a deduction from income, so at the top tier a $2,000 contribution cuts your tax bill by $1,000 — on top of any deduction the contribution itself earns.",
@@ -493,14 +564,20 @@
       "kind": "tax_rule",
       "name": "Saver's Match — the credit becomes cash in the account",
       "provider": "Internal Revenue Service",
-      "benefit": { "type": "fixed", "rate": 50 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 50
+      },
       "rateOn": "the first $2,000 you contribute, paid as a federal deposit into the account rather than as a credit",
       "maxInvestment": 2000,
       "liquidity": "locked",
       "termLabel": "Locked until 59½",
       "effort": "light",
       "reach": "obscure",
-      "window": { "type": "fixed_start", "date": "2027-01-01" },
+      "window": {
+        "type": "fixed_start",
+        "date": "2027-01-01"
+      },
       "url": "https://www.irs.gov/retirement-plans/secure-2-0-act-changes-affecting-retirement-plans",
       "appliesTo": "lower and middle income savers, from tax years beginning after 2026. The income phase-out is higher than the old credit's, so some people who never qualified for the Saver's Credit will qualify for this.",
       "accessNotes": "Nothing to do yet. The point of knowing now is to have an eligible account open and a contribution habit running when it starts, because the match is paid into a retirement account and you need one to receive it.",
@@ -517,13 +594,17 @@
       "kind": "tax_rule",
       "name": "Tax-loss harvesting — $3,000 against ordinary income",
       "provider": "Any taxable brokerage account",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "the $3,000 of realised net loss you can deduct from ordinary income each year",
       "maxInvestment": 3000,
       "liquidity": "instant",
       "effort": "light",
       "reach": "common",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/taxtopics/tc409",
       "appliesTo": "anyone holding a losing position in a TAXABLE account. Losses inside an IRA or 401(k) are worth nothing at all — there is nothing to deduct them from.",
       "accessNotes": "Sell the losing position before the last trading day of the year, and immediately buy something similar but not substantially identical so you stay invested — a different index fund tracking a different index is the standard move. The loss nets against gains first; up to $3,000 of what is left comes off ordinary income, and the rest carries forward forever.",
@@ -542,13 +623,17 @@
       "kind": "tax_rule",
       "name": "Harvest losses to erase realised gains — no cap at all",
       "provider": "Any taxable brokerage account",
-      "benefit": { "type": "ltcg" },
+      "benefit": {
+        "type": "ltcg"
+      },
       "rateOn": "every dollar of realised capital gain you cancel out with a realised loss",
       "uncappedNote": "Uncapped: losses offset gains dollar for dollar without limit. Only the leftover that comes off ordinary income is capped at $3,000, and that is the separate row.",
       "liquidity": "instant",
       "effort": "light",
       "reach": "common",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/taxtopics/tc409",
       "appliesTo": "anyone who has realised capital gains this year and also holds losing positions in a taxable account. If you have no gains to offset, the $3,000 ordinary-income row is the one that applies to you.",
       "accessNotes": "Before the year ends, total your realised gains, then sell enough losers to cancel them. Short-term losses offset short-term gains first, which is the more valuable pairing because short-term gains are taxed as ordinary income. Rebalancing a drifted portfolio is usually free while you have a loss bank to absorb the gains.",
@@ -566,13 +651,17 @@
       "kind": "tax_rule",
       "name": "Harvesting digital-asset losses without the 30-day wait",
       "provider": "Any taxable crypto account",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "the loss you realise and deduct, up to the same $3,000 ordinary-income cap",
       "maxInvestment": 3000,
       "liquidity": "instant",
       "effort": "light",
       "reach": "niche",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/filing/digital-assets",
       "appliesTo": "holders of digital assets at a loss in a taxable account. Not applicable to crypto held inside a retirement account, and not applicable to tokenised securities, which are securities.",
       "accessNotes": "Sell at a loss and, on the current reading of the law, buy back immediately — the position is unchanged and the loss is banked. Keep the trade records: exchange reporting has improved but the basis tracking is still largely your problem.",
@@ -591,13 +680,17 @@
       "kind": "tax_rule",
       "name": "Donate appreciated shares instead of cash",
       "provider": "Any public charity or donor-advised fund",
-      "benefit": { "type": "ltcg" },
+      "benefit": {
+        "type": "ltcg"
+      },
       "rateOn": "the unrealised gain in the shares you donate, which is never taxed to anyone",
       "uncappedNote": "Not capped in dollars, but the deduction for appreciated property is limited to 30% of adjusted gross income in a year, with a five-year carryforward of the excess.",
       "liquidity": "instant",
       "effort": "light",
       "reach": "niche",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/charities-non-profits/charitable-organizations/charitable-contribution-deductions",
       "appliesTo": "people who already intend to give to charity, itemise their deductions, and hold appreciated shares held more than a year in a taxable account. If you take the standard deduction, only the avoided capital gain is worth anything to you.",
       "accessNotes": "Transfer the shares in kind to the charity or to a donor-advised fund rather than selling them first. The charity sells free of tax, you deduct the full market value if you itemise, and the embedded gain simply disappears. Give the shares with the largest gain and the longest holding period.",
@@ -616,13 +709,17 @@
       "kind": "tax_rule",
       "name": "Qualified charitable distribution straight from an IRA",
       "provider": "Any IRA custodian",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "the amount you send directly from the IRA to charity, which never enters your income at all",
       "maxInvestment": 108000,
       "liquidity": "instant",
       "effort": "light",
       "reach": "niche",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/retirement-plans/retirement-plans-faqs-regarding-iras-distributions-withdrawals",
       "appliesTo": "IRA owners aged 70½ or older who give to charity. Not available before 70½, not available from a 401(k), and worth nothing to someone who does not give anyway.",
       "accessNotes": "Instruct the IRA custodian to send the money directly to the charity — it must never touch your bank account. It counts towards your required minimum distribution and is excluded from income entirely, which beats a deduction because it lowers adjusted gross income rather than taxable income.",
@@ -641,13 +738,17 @@
       "kind": "tax_rule",
       "name": "Harvest gains at the 0% capital gains rate",
       "provider": "Any taxable brokerage account",
-      "benefit": { "type": "ltcg" },
+      "benefit": {
+        "type": "ltcg"
+      },
       "rateOn": "the long-term gains you deliberately realise while your taxable income is low enough to be taxed at zero",
       "uncappedNote": "Capped by the bracket, not by a dollar limit: gains are free until your taxable income reaches roughly $48,000 single or $97,000 married filing jointly, then taxed at 15% above that.",
       "liquidity": "instant",
       "effort": "hoops",
       "reach": "obscure",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/taxtopics/tc409",
       "appliesTo": "people whose taxable income falls in the 0% long-term capital gains band — early retirees before Social Security starts, students, people between jobs, and low-earning years generally. It is worth nothing in a normal high-earning year.",
       "accessNotes": "Sell appreciated long-term holdings up to the top of the 0% band and immediately buy them back. There is no wash-sale rule on GAINS, only on losses, so the position is unchanged and your cost basis is permanently reset higher, at no tax cost whatsoever.",
@@ -666,7 +767,10 @@
       "kind": "tax_rule",
       "name": "Net unrealised appreciation on company stock in a 401(k)",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "bracket_delta", "lowerRate": 15 },
+      "benefit": {
+        "type": "bracket_delta",
+        "lowerRate": 15
+      },
       "rateOn": "the appreciation in employer stock held inside the plan, taxed as capital gain instead of ordinary income",
       "uncappedNote": "Uncapped, and its value scales with how much the stock has appreciated: the play is worth nothing on stock with little gain and a great deal on decades of it.",
       "liquidity": "settled",
@@ -689,7 +793,10 @@
       "kind": "tax_rule",
       "name": "The rule of 55 — penalty-free 401(k) access after leaving at 55",
       "provider": "Your employer's retirement plan",
-      "benefit": { "type": "fixed", "rate": 10 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 10
+      },
       "rateOn": "whatever you withdraw from that plan between 55 and 59½",
       "uncappedNote": "Not a contribution and so not capped: this is the 10% penalty you avoid on whatever you withdraw, so it is worth 10% of however much you take.",
       "liquidity": "notice",
@@ -712,7 +819,9 @@
       "kind": "tax_rule",
       "name": "Qualified small business stock — gain excluded under section 1202",
       "provider": "Qualifying C corporations",
-      "benefit": { "type": "ltcg" },
+      "benefit": {
+        "type": "ltcg"
+      },
       "rateOn": "the gain on qualifying shares, up to the greater of $10 million or ten times your basis",
       "maxInvestment": 10000000,
       "liquidity": "illiquid",
@@ -738,7 +847,10 @@
       "kind": "tax_rule",
       "name": "Pay the safe harbor, not a penny more, and keep the carry",
       "provider": "Internal Revenue Service",
-      "benefit": { "type": "fixed", "rate": 4.2 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 4.2
+      },
       "rateOn": "the tax you would have prepaid early, left in Treasury bills until it is actually due",
       "uncappedNote": "Uncapped, and worth the short-term rate on whatever you would otherwise have handed over months ahead of the deadline.",
       "liquidity": "instant",
@@ -761,7 +873,10 @@
       "kind": "treasury_program",
       "name": "Series I bonds — buying before the rate reset",
       "provider": "TreasuryDirect",
-      "benefit": { "type": "fixed", "rate": 4.0 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 4.0
+      },
       "rateOn": "the bond you buy, locked at the current composite for a full six months from purchase",
       "minInvestment": 25,
       "maxInvestment": 10000,
@@ -773,8 +888,19 @@
       "oneTime": false,
       "effort": "light",
       "reach": "common",
-      "window": { "type": "ibond_reset" },
-      "series": [7.12, 9.62, 6.89, 4.3, 5.27, 4.28, 3.11, 3.98],
+      "window": {
+        "type": "ibond_reset"
+      },
+      "series": [
+        7.12,
+        9.62,
+        6.89,
+        4.3,
+        5.27,
+        4.28,
+        3.11,
+        3.98
+      ],
       "url": "https://www.treasurydirect.gov/savings-bonds/i-bonds/",
       "appliesTo": "anyone with a Social Security number and a bank account. This is one of the few rows here with no eligibility test at all.",
       "accessNotes": "Open a TreasuryDirect account — the process is clunky and can require a signature guarantee, so start it well before a deadline you care about. The composite rate is fixed for six months from your purchase MONTH, not from the calendar year, so a purchase made days before a reset locks the old rate for six months and only then moves to the new one.",
@@ -794,7 +920,10 @@
       "kind": "treasury_program",
       "name": "The I-bond annual allowance resets on 1 January",
       "provider": "TreasuryDirect",
-      "benefit": { "type": "fixed", "rate": 4.0 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 4.0
+      },
       "rateOn": "the $10,000 per person allowance that expires unused at the end of every calendar year",
       "minInvestment": 25,
       "maxInvestment": 10000,
@@ -805,8 +934,19 @@
       "oneTime": false,
       "effort": "light",
       "reach": "niche",
-      "window": { "type": "year_end" },
-      "series": [7.12, 9.62, 6.89, 4.3, 5.27, 4.28, 3.11, 3.98],
+      "window": {
+        "type": "year_end"
+      },
+      "series": [
+        7.12,
+        9.62,
+        6.89,
+        4.3,
+        5.27,
+        4.28,
+        3.11,
+        3.98
+      ],
       "url": "https://www.treasurydirect.gov/savings-bonds/buy-a-bond/",
       "appliesTo": "anyone wanting more than $10,000 of I bonds. The limit is per person per calendar year and it does not carry forward.",
       "accessNotes": "The limit is per Social Security number, so a couple can buy $20,000 a year, and each child with their own number is another $10,000 held in a custodial-style linked account. A trust or a business entity with its own taxpayer identification number gets its own separate $10,000 allowance, which is how larger positions are legitimately built.",
@@ -825,7 +965,10 @@
       "kind": "treasury_program",
       "name": "The fifteen-month I-bond hold",
       "provider": "TreasuryDirect",
-      "benefit": { "type": "fixed", "rate": 3.2 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 3.2
+      },
       "rateOn": "the bond, after deliberately forfeiting the three lowest-rate months on the way out",
       "minInvestment": 25,
       "maxInvestment": 10000,
@@ -855,7 +998,10 @@
       "kind": "treasury_program",
       "name": "Series EE bonds — guaranteed to double at twenty years",
       "provider": "TreasuryDirect",
-      "benefit": { "type": "fixed", "rate": 3.53 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 3.53
+      },
       "rateOn": "the purchase price, as a guaranteed compound rate if and only if you hold exactly twenty years",
       "minInvestment": 25,
       "maxInvestment": 10000,
@@ -885,7 +1031,9 @@
       "kind": "tax_rule",
       "name": "Savings bond interest excluded when spent on tuition",
       "provider": "TreasuryDirect",
-      "benefit": { "type": "ordinary" },
+      "benefit": {
+        "type": "ordinary"
+      },
       "rateOn": "the accrued interest you redeem in a year you pay qualified higher-education expenses",
       "uncappedNote": "Uncapped in dollars, but phased out entirely at moderate incomes and limited to the amount of qualified expenses you actually paid that year.",
       "liquidity": "notice",
@@ -909,7 +1057,10 @@
       "kind": "tax_rule",
       "name": "Treasury interest is exempt from state income tax",
       "provider": "US Department of the Treasury",
-      "benefit": { "type": "state_only", "assumedYield": 4.2 },
+      "benefit": {
+        "type": "state_only",
+        "assumedYield": 4.2
+      },
       "rateOn": "the yield on Treasury bills and notes, as state tax you never pay on it",
       "uncappedNote": "Uncapped: the exemption applies to every dollar of Treasury interest you receive, at any size.",
       "oneTime": false,
@@ -933,7 +1084,11 @@
       "kind": "tax_rule",
       "name": "Municipal bond interest — federally exempt, and in-state doubly so",
       "provider": "State and local issuers",
-      "benefit": { "type": "muni", "inState": true, "assumedYield": 3.6 },
+      "benefit": {
+        "type": "muni",
+        "inState": true,
+        "assumedYield": 3.6
+      },
       "rateOn": "municipal interest, as federal and in-state tax you never pay on it",
       "uncappedNote": "Uncapped, and worth more the higher your bracket — which is precisely why munis are priced for high earners and are usually a poor deal for everyone else.",
       "oneTime": false,
@@ -958,7 +1113,9 @@
       "kind": "tax_rule",
       "name": "529 contributions — the state deduction, which varies enormously",
       "provider": "State 529 plans",
-      "benefit": { "type": "state_529" },
+      "benefit": {
+        "type": "state_529"
+      },
       "rateOn": "the contribution your state lets you deduct, returned immediately as a lower state tax bill",
       "uncappedNote": "No cap applies for you: either your state deducts the whole contribution, or it offers nothing at all and there is nothing to cap. The row above says which.",
       "liquidity": "locked",
@@ -966,7 +1123,9 @@
       "earlyExitPenalty": "10% federal penalty on the earnings portion of a non-qualified withdrawal, plus income tax and often state recapture of the deduction",
       "effort": "light",
       "reach": "common",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.savingforcollege.com/compare-529-plans/state-tax-deductions",
       "appliesTo": "residents of states offering a 529 deduction or credit, which is most but not all of them. Nine states have no income tax and a handful more — California and North Carolina among them — tax income and give nothing for 529 contributions.",
       "accessNotes": "Contribute to your own state's plan before 31 December and claim the deduction on the state return. In a parity state the deduction follows contributions to ANY state's plan, so you can take your home deduction while holding a cheaper plan elsewhere. Several states allow contributions right up to the April filing deadline instead — the rest are strictly calendar-year.",
@@ -984,7 +1143,10 @@
       "kind": "tax_rule",
       "name": "Roll leftover 529 money into the beneficiary's Roth IRA",
       "provider": "State 529 plans",
-      "benefit": { "type": "fixed", "rate": 10 },
+      "benefit": {
+        "type": "fixed",
+        "rate": 10
+      },
       "rateOn": "the leftover balance you move to a Roth instead of withdrawing it non-qualified",
       "maxInvestment": 35000,
       "liquidity": "notice",
@@ -1007,7 +1169,11 @@
       "kind": "tax_shelter",
       "name": "Superfund a 529 with five years of gifts at once",
       "provider": "State 529 plans",
-      "benefit": { "type": "drag", "assumedYield": 6, "gainsAreLtcg": true },
+      "benefit": {
+        "type": "drag",
+        "assumedYield": 6,
+        "gainsAreLtcg": true
+      },
       "rateOn": "the whole balance, compounding untaxed for years longer than it otherwise would have",
       "maxInvestment": 95000,
       "oneTime": false,
@@ -1032,13 +1198,18 @@
       "kind": "tax_rule",
       "name": "Health FSA — pre-tax, and gone at year end",
       "provider": "Your employer's cafeteria plan",
-      "benefit": { "type": "ordinary", "fica": true },
+      "benefit": {
+        "type": "ordinary",
+        "fica": true
+      },
       "rateOn": "every dollar you elect, which never appears as taxable wages at all",
       "maxInvestment": 3400,
       "liquidity": "instant",
       "effort": "light",
       "reach": "everyone",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/publications/p969",
       "appliesTo": "employees whose employer offers a health FSA. Not available to the self-employed, and not compatible with contributing to an HSA except in the limited-purpose form.",
       "accessNotes": "Elect an amount at open enrollment that you are confident you will spend — the whole election is available on day one, even before you have contributed it, which is a genuine and under-appreciated feature. Then spend it: this is the one benefit here with a real use-it-or-lose-it rule.",
@@ -1057,13 +1228,18 @@
       "kind": "tax_rule",
       "name": "Dependent care FSA — childcare paid with untaxed money",
       "provider": "Your employer's cafeteria plan",
-      "benefit": { "type": "ordinary", "fica": true },
+      "benefit": {
+        "type": "ordinary",
+        "fica": true
+      },
       "rateOn": "up to $5,000 of childcare or eldercare costs you were going to pay anyway",
       "maxInvestment": 5000,
       "liquidity": "instant",
       "effort": "light",
       "reach": "common",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/publications/p503",
       "appliesTo": "employees paying for childcare or dependent care in order to work, where the employer offers the benefit. Married couples must both work, be students or be disabled to qualify at all.",
       "accessNotes": "Elect it at open enrollment and submit receipts as you pay. Unlike the health FSA, only money already contributed is available to reimburse, so it drains in step with payroll rather than being available up front.",
@@ -1081,13 +1257,18 @@
       "kind": "tax_rule",
       "name": "Commuter benefits — pre-tax transit and parking",
       "provider": "Your employer's cafeteria plan",
-      "benefit": { "type": "ordinary", "fica": true },
+      "benefit": {
+        "type": "ordinary",
+        "fica": true
+      },
       "rateOn": "roughly $340 a month of transit and the same again for parking",
       "maxInvestment": 4080,
       "liquidity": "instant",
       "effort": "light",
       "reach": "niche",
-      "window": { "type": "month_end" },
+      "window": {
+        "type": "month_end"
+      },
       "url": "https://www.irs.gov/publications/p15b",
       "appliesTo": "employees who commute by public transport or pay to park, at an employer offering a qualified transportation plan. Not available to the self-employed, and worth nothing if you work from home.",
       "accessNotes": "Elect it in the benefits portal — it is usually a monthly election you can change month to month, unlike the annual FSA lock. Transit and parking are separate limits and you can use both, so a park-and-ride commute gets roughly $680 a month of pre-tax room.",
@@ -1105,13 +1286,18 @@
       "kind": "tax_rule",
       "name": "Limited-purpose FSA alongside an HSA",
       "provider": "Your employer's cafeteria plan",
-      "benefit": { "type": "ordinary", "fica": true },
+      "benefit": {
+        "type": "ordinary",
+        "fica": true
+      },
       "rateOn": "dental and vision costs, paid pre-tax without touching HSA eligibility",
       "maxInvestment": 3400,
       "liquidity": "instant",
       "effort": "light",
       "reach": "obscure",
-      "window": { "type": "year_end" },
+      "window": {
+        "type": "year_end"
+      },
       "url": "https://www.irs.gov/publications/p969",
       "appliesTo": "people with an HSA-qualifying high-deductible plan whose employer also offers a limited-purpose FSA. Most people believe an FSA and an HSA cannot coexist, and for a general-purpose FSA that is correct.",
       "accessNotes": "Elect the limited-purpose version at open enrollment. It covers dental and vision only, which is precisely why it does not disqualify you from contributing to an HSA — so you can run both, protect the HSA balance for long-term compounding, and pay this year's dental bills with untaxed money.",
@@ -1129,13 +1315,18 @@
       "kind": "tax_rule",
       "name": "Open enrollment — the only weeks these elections are possible",
       "provider": "Your employer's benefits administrator",
-      "benefit": { "type": "ordinary", "fica": true },
+      "benefit": {
+        "type": "ordinary",
+        "fica": true
+      },
       "rateOn": "the whole stack of pre-tax elections — HSA, FSA, dependent care and commuter — you can only start now",
       "maxInvestment": 12480,
       "liquidity": "instant",
       "effort": "light",
       "reach": "everyone",
-      "window": { "type": "open_enrollment" },
+      "window": {
+        "type": "open_enrollment"
+      },
       "url": "https://www.dol.gov/general/topic/health-plans",
       "appliesTo": "every employee with a benefits package. The dates are your employer's and typically fall between mid-October and the end of November — check your own, because this row uses the common window, not yours.",
       "accessNotes": "Do the whole stack in one sitting: HSA if you are on a high-deductible plan, health or limited-purpose FSA, dependent care FSA, commuter, and confirm the 401(k) deferral is at least at the full match. Outside this window most of these cannot be started or changed at all without a qualifying life event.",
@@ -1153,7 +1344,11 @@
       "kind": "provider_policy",
       "name": "Chase 5/24 — the sequencing rule nobody publishes",
       "provider": "JPMorgan Chase Bank, N.A.",
-      "benefit": { "type": "spend_bonus", "bonusValue": 750, "requiredSpend": 5000 },
+      "benefit": {
+        "type": "spend_bonus",
+        "bonusValue": 750,
+        "requiredSpend": 5000
+      },
       "rateOn": "the required spending on a card bonus you can only get if you applied in the right order",
       "liquidity": "instant",
       "effort": "hoops",
@@ -1177,7 +1372,11 @@
       "kind": "provider_policy",
       "name": "American Express once-per-lifetime — check before you apply",
       "provider": "American Express",
-      "benefit": { "type": "spend_bonus", "bonusValue": 600, "requiredSpend": 6000 },
+      "benefit": {
+        "type": "spend_bonus",
+        "bonusValue": 600,
+        "requiredSpend": 6000
+      },
       "rateOn": "the required spending on a welcome offer you only ever get one of per card",
       "liquidity": "instant",
       "effort": "hoops",
@@ -1195,6 +1394,214 @@
       "notes": "The illustrative bonus figure is a typical mainstream offer at the snapshot date and will not match what you are shown; the eligibility check before submitting is the part that is always true and always worth doing.",
       "confidence": 0.3,
       "separate": false
+    },
+    {
+      "id": "espp-15-discount-lookback",
+      "kind": "employer_promise",
+      "name": "ESPP — the 15% discount, and the lookback that doubles it",
+      "provider": "Your employer's stock purchase plan",
+      "benefit": {
+        "type": "fixed",
+        "rate": 17.6
+      },
+      "rateOn": "every dollar you put through the plan",
+      "salaryBased": true,
+      "liquidity": "notice",
+      "termLabel": "Money is held until the purchase date",
+      "effort": "light",
+      "reach": "niche",
+      "oneTime": false,
+      "url": "https://www.irs.gov/taxtopics/tc427",
+      "appliesTo": "employees at companies that run a Section 423 employee stock purchase plan, which is common at public companies and rare elsewhere",
+      "accessNotes": "Enrol through your equity or payroll portal during the enrolment window — most plans open twice a year and will not let you join in between. Set a contribution percentage; payroll withholds it and buys shares on the purchase date. Selling immediately captures the discount and avoids holding a concentrated position in the company that also pays your salary.",
+      "requirements": [
+        "Employer runs a Section 423 ESPP",
+        "Enrolment window is open",
+        "Payroll deduction for the offering period"
+      ],
+      "notes": "A 15% discount is not a 15% return: you pay 85 cents for a dollar, which is a 17.6% gain the moment the shares land. Because the money goes in over a six-month offering period rather than all at once, the annualised figure on the average balance is roughly double that again. A lookback provision — where the price is the LOWER of the offering-date and purchase-date price — makes it larger still in a rising market, and never smaller. This is the highest guaranteed return available to most employees who have one, and the reason it goes unclaimed is that nobody tells you it exists. Selling on the purchase date makes the discount ordinary income and is a disqualifying disposition; holding longer can convert part of the gain to long-term rates and also exposes you to the share price. The discount is the certain part.",
+      "confidence": 0.75,
+      "maxInvestment": 25000
+    },
+    {
+      "id": "espp-no-lookback",
+      "kind": "employer_promise",
+      "name": "ESPP without a lookback — still a discount worth taking",
+      "provider": "Your employer's stock purchase plan",
+      "benefit": {
+        "type": "fixed",
+        "rate": 5.3
+      },
+      "rateOn": "every dollar you put through the plan",
+      "salaryBased": true,
+      "liquidity": "notice",
+      "termLabel": "Money is held until the purchase date",
+      "effort": "light",
+      "reach": "niche",
+      "oneTime": false,
+      "url": "https://www.irs.gov/taxtopics/tc427",
+      "appliesTo": "employees whose plan offers a smaller discount, commonly 5%, with no lookback provision",
+      "accessNotes": "Same enrolment mechanics as any ESPP. Read the plan document for two numbers: the discount percentage and whether there is a lookback. Both are in the summary plan description.",
+      "requirements": [
+        "Employer runs an ESPP",
+        "Enrolment window is open"
+      ],
+      "notes": "A 5% discount is a 5.3% gain on the money, which sounds small and is not: the money is only committed for the offering period, so the annualised figure is far higher, and the outcome does not depend on the share price if you sell on the purchase date. Worth checking the plan document rather than assuming — plans differ, and a 5% no-lookback plan and a 15% lookback plan are described identically in most benefits summaries.",
+      "confidence": 0.7,
+      "maxInvestment": 25000
+    },
+    {
+      "id": "wash-sale-avoidance",
+      "kind": "tax_rule",
+      "name": "The wash-sale rule — the 30 days that decide whether a harvested loss counts",
+      "provider": "Internal Revenue Service",
+      "benefit": {
+        "type": "ltcg"
+      },
+      "rateOn": "a harvested loss that would otherwise be disallowed",
+      "liquidity": "instant",
+      "effort": "light",
+      "reach": "common",
+      "oneTime": true,
+      "url": "https://www.irs.gov/publications/p550",
+      "appliesTo": "anyone harvesting losses in a taxable account, which is most people who hold funds outside a retirement plan",
+      "accessNotes": "After selling at a loss, do not buy the same or a substantially identical security within 30 days either side — and that includes purchases in your IRA and, in practice, automatic dividend reinvestment you forgot was switched on. Buying a different fund tracking a different index is the standard way to stay invested without triggering it.",
+      "requirements": [
+        "A realised loss in a taxable account",
+        "No repurchase within the 61-day window"
+      ],
+      "notes": "This row is worth exactly as much as the loss it protects, which is why it has no rate of its own. The commonest way people lose a harvest is not a deliberate repurchase but an automatic one: reinvested dividends inside the 30-day window disallow a proportional part of the loss, and nothing warns you. The disallowed loss is added to the basis of the replacement shares rather than destroyed, so it is deferred rather than lost — but deferred to a year you did not choose.",
+      "confidence": 0.85,
+      "uncappedNote": "There is no cap because this is not a contribution — it is a rule about timing. It is worth exactly as much as the loss it stops you forfeiting, which depends entirely on how large that loss was."
+    },
+    {
+      "id": "asset-location",
+      "kind": "tax_rule",
+      "name": "Asset location — the same portfolio, taxed less",
+      "provider": "Internal Revenue Service",
+      "benefit": {
+        "type": "drag",
+        "assumedYield": 4.2
+      },
+      "rateOn": "the tax-inefficient part of a portfolio held in the wrong account",
+      "liquidity": "instant",
+      "effort": "light",
+      "reach": "niche",
+      "oneTime": false,
+      "url": "https://www.irs.gov/taxtopics/tc409",
+      "appliesTo": "anyone holding both a taxable account and a tax-advantaged one, with a mix of bonds and equities across them",
+      "accessNotes": "Hold the things that throw off ordinary income — bond funds, REITs, high-turnover strategies — inside the IRA or 401(k), and hold broad equity index funds in the taxable account where their gains are unrealised and their dividends are qualified. Rearranging inside a retirement account triggers no tax at all, so most of this can be done in an afternoon with no consequences.",
+      "requirements": [
+        "Both a taxable and a tax-advantaged account",
+        "Assets that differ in tax efficiency"
+      ],
+      "notes": "The same holdings in the same proportions, sorted differently between accounts, and the difference is a persistent drag avoided every year rather than a one-off. It is worth most when a large bond allocation sits in a taxable account throwing off ordinary income taxed at your top rate. It is worth nothing if all your money is in one account type, and this app cannot tell which case you are in — the figure here is the tax on a typical bond yield, not a promise.",
+      "confidence": 0.6,
+      "uncappedNote": "No cap, because nothing is being contributed: the same money is simply held in a different account. The value scales with how much tax-inefficient holding you have in the wrong place."
+    },
+    {
+      "id": "sep-ira-self-employed",
+      "kind": "tax_deferral",
+      "name": "SEP IRA — a fifth of self-employment income, deductible",
+      "provider": "Any IRA custodian",
+      "benefit": {
+        "type": "ordinary"
+      },
+      "rateOn": "money contributed from self-employment income",
+      "liquidity": "locked",
+      "termLabel": "Locked until 59½",
+      "earlyExitPenalty": "10% early-distribution penalty plus ordinary income tax before 59½",
+      "effort": "light",
+      "reach": "niche",
+      "oneTime": true,
+      "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-sep-contribution-limits",
+      "appliesTo": "anyone with self-employment or freelance income, including a side business alongside a normal job",
+      "accessNotes": "Open one at any major custodian in about ten minutes. The contribution is deductible against self-employment income and can be made right up to the tax filing deadline including extensions, which makes it the rare deduction still available after the year has ended.",
+      "requirements": [
+        "Self-employment income",
+        "An account opened before the filing deadline"
+      ],
+      "notes": "Roughly a fifth of net self-employment earnings, deductible, with far less paperwork than a solo 401(k) — no plan document, no annual filing at small balances. A solo 401(k) usually allows a larger contribution at modest income because of its employee deferral, so compare the two before choosing. The deadline flexibility is the real advantage: it is one of the very few moves that still works in April for the year that has already finished.",
+      "confidence": 0.8,
+      "maxInvestment": 70000
+    },
+    {
+      "id": "hsa-catch-up-55",
+      "kind": "tax_shelter",
+      "name": "HSA catch-up at 55 — an extra $1,000 of triple-tax space",
+      "provider": "Your HSA custodian",
+      "benefit": {
+        "type": "ordinary",
+        "fica": false
+      },
+      "rateOn": "the additional catch-up contribution",
+      "maxInvestment": 1000,
+      "liquidity": "instant",
+      "effort": "light",
+      "reach": "obscure",
+      "oneTime": true,
+      "url": "https://www.irs.gov/publications/p969",
+      "appliesTo": "anyone aged 55 or over with a qualifying high-deductible health plan",
+      "accessNotes": "Add it to your existing HSA contribution — no separate account and no extra form. If both spouses are 55 or over, each catch-up needs its own HSA in that spouse's name, which is the part people miss and cannot fix retroactively.",
+      "requirements": [
+        "Age 55 or over",
+        "Enrolled in a qualifying high-deductible health plan"
+      ],
+      "notes": "The HSA is the only account that is deductible going in, untaxed while it grows, and untaxed coming out for medical costs. The catch-up adds a further slice of that space every year from 55, and unlike the 401(k) catch-up almost nobody uses it. The two-spouse detail matters: a married couple can make two catch-up contributions only if there are two HSAs, and opening the second one in December does not recover the years it did not exist.",
+      "confidence": 0.8
+    },
+    {
+      "id": "student-loan-interest-deduction",
+      "kind": "tax_rule",
+      "name": "Student loan interest — deductible without itemising",
+      "provider": "Internal Revenue Service",
+      "benefit": {
+        "type": "ordinary"
+      },
+      "rateOn": "up to $2,500 of interest paid in the year",
+      "maxInvestment": 2500,
+      "liquidity": "instant",
+      "effort": "passive",
+      "reach": "common",
+      "oneTime": true,
+      "url": "https://www.irs.gov/taxtopics/tc456",
+      "appliesTo": "anyone paying interest on a qualified student loan, subject to an income phase-out",
+      "accessNotes": "Your servicer issues a 1098-E. It is an above-the-line deduction, so it works whether or not you itemise — which is why it is missed by people who take the standard deduction and assume no deductions apply to them.",
+      "requirements": [
+        "Qualified student loan interest paid",
+        "Income below the phase-out",
+        "Not filing separately"
+      ],
+      "notes": "Small in absolute terms and almost free to claim, which is a combination that makes it worth listing. It phases out over an income range and disappears entirely for married filing separately. If somebody else can claim you as a dependent, you cannot take it.",
+      "confidence": 0.85
+    },
+    {
+      "id": "ibond-purchase-timing",
+      "kind": "treasury_program",
+      "name": "I-bond timing — a purchase on the 30th earns the whole month",
+      "provider": "TreasuryDirect",
+      "benefit": {
+        "type": "fixed",
+        "rate": 0.4
+      },
+      "rateOn": "a purchase made near the end of a month rather than the start of the next",
+      "liquidity": "locked",
+      "termDays": 365,
+      "termKind": "lockup",
+      "termLabel": "Twelve months minimum, three months of interest forfeited before five years",
+      "effort": "light",
+      "reach": "obscure",
+      "oneTime": true,
+      "url": "https://www.treasurydirect.gov/savings-bonds/i-bonds/",
+      "appliesTo": "anyone buying savings bonds at TreasuryDirect",
+      "accessNotes": "Savings bonds are dated to the first of the month in which you buy them, so a purchase settled on the 30th earns that entire month's interest. Leave a couple of business days: TreasuryDirect settles on its own schedule and a purchase started on the 31st can land in the following month.",
+      "requirements": [
+        "A TreasuryDirect account",
+        "Purchase settled before month end"
+      ],
+      "notes": "A small, certain, purely mechanical edge — close to a free extra month of interest for choosing one date over another a few days later. The figure here is the value of that month at recent composite rates, not a yield on the bond itself. It is listed because it is exactly the kind of thing that is obvious once known and invisible until then.",
+      "confidence": 0.75,
+      "maxInvestment": 10000
     }
   ]
 }

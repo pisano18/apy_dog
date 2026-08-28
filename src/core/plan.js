@@ -11,11 +11,13 @@ const { EFFORT_INFO } = require('./opportunity-kinds');
  * at the top, because personal finance has a strict ordering that dominates any
  * yield comparison.
  *
- * A dollar-for-dollar employer match is a 100% instant return. No security in
- * this app or any other beats it, and someone comparing a 5.4% CD against a
- * 4.9% one while leaving a match on the table is optimising the wrong decimal
- * by two orders of magnitude. Same for a credit card at 25%: paying it is a
- * guaranteed 25% after-tax return, which nothing here can touch.
+ * An employer match is an instant return on the money you defer — most commonly
+ * 50 cents on the dollar up to some percentage of pay, sometimes a full dollar,
+ * occasionally nothing at all. Even the common shape is a 50% return the day you
+ * make it, so someone comparing a 5.4% CD against a 4.9% one while leaving a
+ * match unclaimed is optimising the wrong decimal by two orders of magnitude.
+ * Same for a credit card at 25%: paying it is a guaranteed 25% after-tax return,
+ * which nothing here can touch.
  *
  * So the plan is tiered, and within a tier it allocates capital until the tier
  * is full and moves on. The ordering is the opinion; every number in it comes
@@ -32,9 +34,10 @@ const TIERS = [
   {
     key: 'match',
     title: 'Take the whole employer match',
-    why: 'A dollar-for-dollar match is a 100% return the day you make it, guaranteed by your employer and '
-      + 'available to nobody else. Nothing else in this app is close, and every dollar of it you leave behind '
-      + 'is gone at the end of the year.',
+    why: 'A match is an instant return on the money you defer — most plans pay 50 cents on the dollar up to '
+      + 'some share of your pay, some pay the full dollar, and about a third of employers do not match at all. '
+      + 'Even the common half-match is a 50% return the day you make it, guaranteed by your employer and '
+      + 'available to nobody else. Whatever the rate, every dollar of it you leave behind is gone at year end.',
   },
   {
     key: 'debt',

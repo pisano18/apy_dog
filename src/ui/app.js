@@ -572,7 +572,7 @@ function renderLearn() {
  * The plan view.
  *
  * Everything else in this app ranks. This orders — and the order is frequently
- * not the ranking, because a 100% employer match and a 5.4% CD are not two
+ * not the ranking, because an employer match and a 5.4% CD are not two
  * points on one scale.
  */
 async function renderPlan() {
@@ -622,8 +622,9 @@ async function renderPlan() {
   el.innerHTML = `<div class="wrap">
     <h2>What to do, in order</h2>
     <p class="lead">Every other view in this app ranks things. This one orders them — and the order is often not
-      the ranking, because a dollar-for-dollar employer match is a 100% return and no yield on this page competes
-      with that. Tell it the handful of things it cannot work out for itself and the sequence becomes yours.</p>
+      the ranking, because an employer match returns 50 cents or a dollar on every dollar you defer, and no yield
+      on this page competes with either. Tell it the handful of things it cannot work out for itself and the
+      sequence becomes yours.</p>
 
     <section><h3>What it needs from you</h3>
       <div class="grid3">
