@@ -194,8 +194,11 @@
       term: 'Quiet accumulation',
       what: 'Volume much higher than usual while the price barely moves.',
       why: 'Size changing hands without moving the tape is what building a position looks like before it is news.',
-      catch: 'Someone building a position and someone unloading one look identical from outside.',
-      see: ['pressure'],
+      catch: 'Measured on 101 symbols over five years and it did not work — 0.63 times the base rate for '
+        + 'predicting a large move. The likely reason is in the idea itself: someone building a position and '
+        + 'someone unloading one look identical from outside, and they precede opposite outcomes, so this '
+        + 'averages two opposite things together. It carries zero weight.',
+      see: ['pressure', 'baseRate', 'lift'],
     },
     squeeze: {
       term: 'Short squeeze',

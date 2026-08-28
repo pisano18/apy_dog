@@ -176,10 +176,24 @@ function coil(closes, i, opts = {}) {
 /**
  * Volume rising while price does not.
  *
- * Somebody is accumulating or distributing without moving the tape, which is
- * what building a position looks like before it becomes news. The condition is
- * deliberately conjunctive: volume alone is just a busy day, and volume WITH a
- * price move is the move itself rather than a warning of one.
+ * ── MEASURED AND FAILED. ────────────────────────────────────────────────────
+ *
+ * The idea is that somebody is accumulating without moving the tape, which is
+ * what building a position looks like before it becomes news. On 101 symbols
+ * over five years it did not hold up: 0.63 lift against a 10.3% base rate for
+ * predicting a large price move, over 31 observations. Against volatility
+ * expansion it showed 1.51 lift but fired only 16 times, which is not evidence
+ * in either direction — loosening the thresholds took it from 9 fires to 16,
+ * and it contradicted itself between the two outcomes on the way.
+ *
+ * The most likely reason it cannot work as written: accumulation and
+ * distribution are indistinguishable from outside. Both look like size changing
+ * hands while the price holds, and they precede opposite outcomes, so a
+ * detector that cannot tell them apart is averaging two opposite things
+ * together. Separating them needs order-flow data this app does not have.
+ *
+ * Zero weight. Kept with its result attached so the idea is not rebuilt from
+ * folklore later.
  */
 function quietAccumulation(closes, volumes, i, opts = {}) {
   const { recent = 10, baseline = 60, volFloor = 1.4, driftCap = 0.05 } = opts;

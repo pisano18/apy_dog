@@ -572,6 +572,20 @@ function threeWaySplit(instruments, { train = 0.5, validate = 0.25 } = {}) {
  * five chances to be fooled, so the interval widens by the size of the grid as
  * well as by the number of detectors.
  */
+/**
+ * How good a candidate configuration is, in one number that respects evidence.
+ *
+ * The lower edge of the confidence interval relative to the base rate. A
+ * configuration firing 200 times at 1.4x scores above one firing 20 times at
+ * 2.5x, which is the correct preference: the second is mostly luck and cannot
+ * be distinguished from it.
+ */
+function strengthOf(score) {
+  if (!score || !Number.isFinite(score.ci?.lo) || !Number.isFinite(score.baseRate) || score.baseRate <= 0) return -1;
+  if (score.verdict === 'unusable') return -1;
+  return score.ci.lo / score.baseRate;
+}
+
 function sweep(instruments, opts = {}) {
   const { train, validate, test } = threeWaySplit(instruments, opts);
   if (train.length < 8) {
@@ -594,7 +608,16 @@ function sweep(instruments, opts = {}) {
       const v = collect(validate, { ...opts, params: { [key]: params } });
       const score = scoreSignal(key, v.obs, v.baseRate, { ...opts, families });
       searchLog.push({ key, params, lift: score.lift, fires: score.fires, verdict: score.verdict });
-      if (!best || (score.lift ?? 0) > (best.score.lift ?? 0)) best = { params, score };
+      // Chosen on the BOTTOM of the interval, not the point estimate.
+      //
+      // Selecting on raw lift quietly prefers whichever configuration fires
+      // rarely enough to get lucky. On real data the sweep picked a setting for
+      // `extension` that fired 60 times at 1.62 lift over one that fired 167
+      // times at 1.43 — and the rarer winner then could not reach significance
+      // on the holdout, so a detector that genuinely works came back
+      // "unproven". The lower bound already contains the sample size, which is
+      // exactly the thing raw lift throws away.
+      if (!best || strengthOf(score) > strengthOf(best.score)) best = { params, score };
     }
     chosen[key] = best.params;
     trainSets[key] = best.score;
@@ -627,6 +650,7 @@ function sweep(instruments, opts = {}) {
 module.exports = {
   wilson,
   zForAlpha,
+  strengthOf,
   PARAM_GRID,
   threeWaySplit,
   sweep,

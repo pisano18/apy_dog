@@ -483,3 +483,45 @@ describe('a detector pointed the wrong way is distinguished from a useless one',
     assert.ok(w.extension > 0);
   });
 });
+
+describe('the sweep chooses on evidence, not on the prettiest number', () => {
+  test('a well-evidenced configuration beats a rarer, luckier one', () => {
+    // The real case this fixes: on 101 symbols the sweep picked a setting for
+    // `extension` that fired 60 times at 1.62 lift over one that fired 167
+    // times at 1.43 — and the rarer winner then could not reach significance on
+    // the holdout, so a detector that genuinely works came back "unproven".
+    const mk = (fires, lift, base) => ({
+      fires,
+      ci: B.wilson(Math.round(fires * lift * base), fires, B.zForAlpha(0.05 / 19)),
+      baseRate: base,
+      lift,
+      verdict: 'validated',
+    });
+    const many = mk(167, 1.43, 0.103);
+    const few = mk(60, 1.62, 0.103);
+    assert.ok(B.strengthOf(many) > B.strengthOf(few),
+      'raw lift was preferred over evidence again');
+  });
+
+  test('an unusable configuration is never chosen', () => {
+    assert.strictEqual(B.strengthOf({ verdict: 'unusable', ci: { lo: 0.9 }, baseRate: 0.01 }), -1);
+    assert.strictEqual(B.strengthOf(null), -1);
+    assert.strictEqual(B.strengthOf({ ci: {}, baseRate: 0 }), -1);
+  });
+
+  test('and the null still holds with the new criterion', () => {
+    // Changing how a winner is picked changes how many chances there are to be
+    // fooled, so the null has to be re-run rather than assumed.
+    let falseValidations = 0;
+    let runs = 0;
+    for (let k = 0; k < 8; k += 1) {
+      const r = B.sweep(syn.randomBasket({ count: 26, n: 1800, seed: 7000 + k * 293 }),
+        { horizon: 21, outcome: 'vol_expansion' });
+      if (!r.ok) continue;
+      runs += 1;
+      falseValidations += r.validated.length;
+    }
+    assert.ok(runs >= 6, `only ${runs} sweeps completed`);
+    assert.strictEqual(falseValidations, 0, 'selecting on the interval let noise through');
+  });
+});
