@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS = {
   autoRefreshMinutes: 60,
   refreshOnLaunch: true,
   offlineMode: false,
-  maxDefiPools: 4000,
+  maxDefiPools: 8000,
   extraSymbols: [],             // user-added tickers for the fund/speculative scans
   userRatesPath: null,          // filled in at runtime: userData/user-rates.json
 

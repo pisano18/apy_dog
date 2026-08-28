@@ -448,17 +448,17 @@ test('loadSeed never throws, whatever it is handed', () => {
 // --------------------------------------------------------------- live path --
 
 test('settings are clamped so a bad value cannot hammer a free endpoint', () => {
-  assert.deepEqual(adapter.resolveOptions({}), { pages: 4, perPage: 250, minVolumeUsd: 200000 });
+  assert.deepEqual(adapter.resolveOptions({}), { pages: 8, perPage: 250, minVolumeUsd: 200000 });
   assert.equal(adapter.resolveOptions({ pages: 999 }).pages, 10);
   assert.equal(adapter.resolveOptions({ pages: 0 }).pages, 1);
   assert.equal(adapter.resolveOptions({ pages: -5 }).pages, 1);
-  assert.equal(adapter.resolveOptions({ pages: 'lots' }).pages, 4);
+  assert.equal(adapter.resolveOptions({ pages: 'lots' }).pages, 8);
   assert.equal(adapter.resolveOptions({ perPage: 5000 }).perPage, 250, 'upstream page size is the ceiling');
   assert.equal(adapter.resolveOptions({ perPage: 100 }).perPage, 100);
   assert.equal(adapter.resolveOptions({ minVolumeUsd: 0 }).minVolumeUsd, 0);
   assert.equal(adapter.resolveOptions({ minVolumeUsd: -1 }).minVolumeUsd, 200000);
   for (const junk of [null, undefined, 'x', 42, []]) {
-    assert.deepEqual(adapter.resolveOptions(junk).pages, 4);
+    assert.deepEqual(adapter.resolveOptions(junk).pages, 8);
   }
 });
 

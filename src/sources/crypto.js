@@ -40,7 +40,11 @@ const LABEL = 'Crypto Assets';
 const MARKETS_URL = 'https://api.coingecko.com/api/v3/coins/markets';
 
 const PER_PAGE = 250;               // upstream maximum, and the point of using it
-const DEFAULT_PAGES = 4;            // 1,000 assets in 4 calls
+// Eight calls, 2,000 assets. The free endpoint tolerates this comfortably and
+// the difference is not cosmetic: ranks 1,000-2,000 is where the things nobody
+// has heard of yet actually live, which is the half of the market this app is
+// supposed to be for.
+const DEFAULT_PAGES = 8;
 const MAX_PAGES = 10;               // the free tier will not tolerate more
 const PAGE_PACE_MS = 2200;          // ~27 calls/min ceiling; keyless is 10-30/min
 const TTL_MS = 8 * 60 * 1000;       // prices move; the free tier does not want more

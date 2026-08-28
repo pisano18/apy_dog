@@ -344,11 +344,11 @@ test('fetch() degrades to partial when protocol enrichment fails', async () => {
 });
 
 test('the cap and the TVL floor come from user settings, and the defaults are the wide ones', async () => {
-  // Default: 4,000 pools and a $10k floor, so the whole long tail survives.
+  // Default: 8,000 pools and a $10k floor, so the whole long tail survives.
   const wide = stubCtx();
   const r = await adapter.fetch(wide.ctx);
   assert.equal(r.opportunities.length, 11);
-  assert.ok(r.notes.some((n) => /at least \$10,000 of TVL/.test(n) && /at most 4,000 pools/.test(n)), r.notes.join(' | '));
+  assert.ok(r.notes.some((n) => /at least \$10,000 of TVL/.test(n) && /at most 8,000 pools/.test(n)), r.notes.join(' | '));
   assert.ok(r.notes.some((n) => /cap did not bind/.test(n)));
 
   // settings.maxDefiPools binds and says how many it left behind.

@@ -786,6 +786,24 @@ function renderSources() {
   }).join('')}
     </section>
 
+    <section><h3>Where the limits are</h3>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin:0 0 12px;max-width:820px">
+        Every source has a ceiling, and an app that hides them lets you assume it found everything. These are the
+        current ones. Raising them costs calls and time, not accuracy.</p>
+      <div class="statgrid">
+        ${[
+    ['Crypto assets', `${((S.boot.settings.sources?.crypto?.pages ?? 8) * 250).toLocaleString()}`, 'by market cap, in 250s'],
+    ['DeFi pools', `${(S.boot.settings.maxDefiPools ?? 8000).toLocaleString()}`, 'the whole set is fetched, then capped'],
+    ['US issuers indexed', '12,000', 'identity only, from SEC'],
+    ['Fully measured', `${(S.meta?.measured ?? 0).toLocaleString()}`, 'price, volatility and chart read'],
+  ].map(([k, v, note]) => `<div class="stat"><div class="v">${esc(v)}</div><div class="k">${esc(k)}</div>
+        <div class="k" style="color:var(--text-faint);margin-top:3px">${esc(note)}</div></div>`).join('')}
+      </div>
+      <div class="sectionnote">The index tier is deliberately cheap: ten thousand price fetches per refresh is not
+        a reasonable thing to do to your machine or to a free endpoint. Rows that are indexed but not measured say
+        <b>not measured</b> and sort last — open one and it measures just that one.</div>
+    </section>
+
     <section><h3>What this does not look at</h3>
       <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin:0 0 12px;max-width:820px">
         No screener sees everything, and one that implies it does is lying by omission. These are the money-making
@@ -880,7 +898,7 @@ function renderSettings() {
     <section><h3>Scanning</h3>
       <div class="grid2">
         <div class="field"><label>Auto-refresh every (minutes, 0 = off)</label><input type="number" id="s-auto" value="${st.autoRefreshMinutes ?? 60}" step="15" min="0" /></div>
-        <div class="field"><label>Max DeFi pools</label><input type="number" id="s-maxpools" value="${st.maxDefiPools ?? 4000}" step="500" min="50" /></div>
+        <div class="field"><label>Max DeFi pools</label><input type="number" id="s-maxpools" value="${st.maxDefiPools ?? 8000}" step="500" min="50" /></div>
         <div class="field"><label class="check"><input type="checkbox" id="s-live" ${st.liveUpdates !== false ? 'checked' : ''} /> Live updating</label>
           <span style="font-size:10.5px;color:var(--text-faint)">Each feed refreshes on its own cadence — crypto every minute, the Treasury curve hourly, curated lists daily. Off falls back to one timer.</span></div>
         <div class="field"><label class="check"><input type="checkbox" id="s-launch" ${st.refreshOnLaunch ? 'checked' : ''} /> Refresh when the app opens</label></div>

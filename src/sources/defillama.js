@@ -32,7 +32,11 @@ const PROTOCOL_TTL_MS = 24 * 60 * 60 * 1000;   // protocol metadata barely moves
  * machine and the appetite: settings.maxDefiPools trades table size against
  * completeness, settings.minDefiTvl trades obscurity against exitability.
  */
-const DEFAULT_LIMIT = 4000;
+// DefiLlama publishes the whole set in one response, so the cap is about how
+// many rows are useful rather than about call cost. Raised because the tail is
+// the point: a pool nobody has found yet is uncrowded, and the app labels the
+// obscurity honestly in both directions rather than hiding it.
+const DEFAULT_LIMIT = 8000;
 const MIN_TVL_USD = 10000;                     // below this you cannot exit at size
 const MAX_APY = 100000;                        // above this it is an upstream bug, not a yield
 
