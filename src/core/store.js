@@ -140,8 +140,25 @@ class Store {
     return this.state.settings;
   }
 
+  /**
+   * Back to defaults — for the preferences, not for the wiring.
+   *
+   * `userRatesPath` is not a preference. It is filled in once at startup with
+   * a path inside the user's data directory, and it is how the app finds the
+   * rates file somebody may have been hand-maintaining for months. Resetting it
+   * to the default `null` silently disconnected that file until the next
+   * restart, because main.js only fills the path in when it is missing at boot.
+   * Nothing told the user their edits had stopped being read.
+   */
   resetSettings() {
-    this.state.settings = structuredClone(DEFAULT_SETTINGS);
+    const KEEP = ['userRatesPath'];
+    const kept = {};
+    for (const k of KEEP) {
+      if (this.state.settings?.[k] !== undefined && this.state.settings[k] !== null) {
+        kept[k] = this.state.settings[k];
+      }
+    }
+    this.state.settings = { ...structuredClone(DEFAULT_SETTINGS), ...kept };
     this.save();
     return this.state.settings;
   }
@@ -216,18 +233,36 @@ class Store {
     const freshIds = [];
     for (const o of list) if (!seen.has(o.id)) freshIds.push(o.id);
 
-    /** Fire once per (rule, opportunity) until the condition lapses. */
-    const emit = (alert, o, message, extra = {}) => {
+    /**
+     * Fire once per (rule, opportunity, stage) until the condition lapses.
+     *
+     * `stage` exists because a deadline is not one event. Keyed on the row
+     * alone, a closing alert fired once the day a window came into view —
+     * "closes in 7 days" — and then never spoke again, so "closes tomorrow" and
+     * "closes today" were unreachable and the `critical` urgency was dead code.
+     * The whole point of watching a deadline is the last day, and the last day
+     * was the one day it stayed quiet.
+     */
+    const emit = (alert, o, message, extra = {}, stage = null) => {
       const seenFor = state[alert.id] || (state[alert.id] = {});
-      const key = o?.id || '_';
+      const key = `${o?.id || '_'}${stage ? `@${stage}` : ''}`;
       if (seenFor[key]) return;
       seenFor[key] = new Date(now).toISOString();
       fired.push({ alert, opportunity: o, message, ...extra });
     };
-    /** Let a rule speak again about this row once it stops being true. */
+    /**
+     * Let a rule speak again about this row once it stops being true.
+     *
+     * Clears every stage for the row, not just the unstaged key, so a row that
+     * leaves the window and comes back gets a clean slate — and so the state
+     * cannot accumulate one entry per stage per row forever.
+     */
     const rearm = (alert, id) => {
       const seenFor = state[alert.id];
-      if (seenFor && id in seenFor) delete seenFor[id];
+      if (!seenFor) return;
+      for (const k of Object.keys(seenFor)) {
+        if (k === id || k.startsWith(`${id}@`)) delete seenFor[k];
+      }
     };
 
     const rules = [...this.state.alerts];
@@ -284,7 +319,14 @@ class Store {
           if (!Number.isFinite(o.daysLeft)) continue;
           if (o.daysLeft < 0 || o.daysLeft > within) { rearm(a, o.id); continue; }
           const when = o.daysLeft <= 0 ? 'today' : o.daysLeft === 1 ? 'tomorrow' : `in ${Math.round(o.daysLeft)} days`;
-          emit(a, o, `${o.name} closes ${when}`, { urgency: o.daysLeft <= 1 ? 'critical' : 'normal' });
+          // Speak once per band as it tightens, not once per window. Somebody
+          // who was told a week ago that something closes in seven days has
+          // long since forgotten; the message they need is the one on the day.
+          const stage = o.daysLeft <= 0 ? 'today'
+            : o.daysLeft <= 1 ? 'tomorrow'
+              : o.daysLeft <= 3 ? 'soon'
+                : 'window';
+          emit(a, o, `${o.name} closes ${when}`, { urgency: o.daysLeft <= 1 ? 'critical' : 'normal' }, stage);
         }
 
       } else if (a.kind === 'opening') {
@@ -317,6 +359,39 @@ class Store {
     // Remember every id we have now shown, whether or not it fired anything.
     if (freshIds.length) {
       this.state.seenIds = [...seen, ...freshIds].slice(-20000);
+    }
+
+    /**
+     * Forget what an alert saw about rows that no longer exist.
+     *
+     * `seenIds` beside this is capped at 20,000; `alertState` had no cap and no
+     * pruning at all. It accrues one entry per (rule, row) — and now per stage —
+     * for every row that has ever fired anything, it is written to disk on
+     * every scan, and the live equities universe rotates through thousands of
+     * symbols. Sixty scans over forty new deals each left 2,360 entries and
+     * 91KB with nothing to remove it.
+     *
+     * A row that is no longer in the dataset cannot fire and cannot lapse, so
+     * remembering that it once did is pure residue. Rows still present keep
+     * their state, which is what stops an alert repeating itself.
+     */
+    const liveIds = new Set(list.map((o) => o?.id).filter(Boolean));
+    const ALERT_STATE_CAP = 5000;
+    for (const [ruleId, seenFor] of Object.entries(state)) {
+      if (!seenFor || typeof seenFor !== 'object') continue;
+      for (const key of Object.keys(seenFor)) {
+        const rowId = key.split('@')[0];
+        if (rowId !== '_' && !liveIds.has(rowId)) delete seenFor[key];
+      }
+      // A backstop for the pathological case — a rule scoped so widely that
+      // even the live set is enormous. Oldest first, since those are the ones
+      // whose condition is least likely to still be current.
+      const keys = Object.keys(seenFor);
+      if (keys.length > ALERT_STATE_CAP) {
+        keys.sort((a, b) => String(seenFor[a]).localeCompare(String(seenFor[b])));
+        for (const k of keys.slice(0, keys.length - ALERT_STATE_CAP)) delete seenFor[k];
+      }
+      if (!Object.keys(seenFor).length) delete state[ruleId];
     }
 
     const nowISO = new Date(now).toISOString();

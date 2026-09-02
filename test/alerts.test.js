@@ -191,3 +191,129 @@ describe('openings', () => {
     assert.strictEqual(s.evaluateAlerts([open], { now: NOW + 3 * DAY }).length, 0);
   });
 });
+
+/**
+ * A deadline is not one event, and the last day is the one that matters.
+ *
+ * The closing alert fired once per (rule, row) and only rearmed when the
+ * condition LAPSED — so a watched offer spoke once the day it came into view,
+ * "closes in 7 days", and then went silent for the rest of the window. "Closes
+ * tomorrow" and "closes today" were unreachable and the `critical` urgency was
+ * dead code. The one day somebody needs to hear about a deadline is the day it
+ * closes, and that was the day it stayed quiet.
+ */
+describe('a closing window speaks more than once', () => {
+  const { Store } = require('../src/core/store');
+  const fs2 = require('node:fs');
+  const os = require('node:os');
+  const path2 = require('node:path');
+
+  const withStore = (fn) => {
+    const dir = fs2.mkdtempSync(path2.join(os.tmpdir(), 'apy-alerts-'));
+    try { return fn(new Store(dir)); } finally { fs2.rmSync(dir, { recursive: true, force: true }); }
+  };
+  const offer = (daysLeft) => ({
+    id: 'deals:x', name: 'A closing offer', section: 'deals', apy: { total: 5 },
+    scores: { oneTimeDollars: 300 }, daysLeft, startsAt: null,
+  });
+
+  test('it escalates as the deadline tightens', () => withStore((s) => {
+    s.state.watchlist = [{ id: 'deals:x' }];
+    s.state.seenIds = ['deals:x'];
+    const now = Date.now();
+    const heard = [];
+    for (const d of [7, 6, 5, 3, 2, 1, 0]) {
+      for (const f of s.evaluateAlerts([offer(d)], { now: now + (7 - d) * 86400000 })) {
+        heard.push({ d, urgency: f.urgency, message: f.message });
+      }
+    }
+    assert.ok(heard.length >= 4, `only spoke ${heard.length} times across a whole closing window`);
+    assert.ok(heard.some((h) => /closes tomorrow/.test(h.message)), 'never said "closes tomorrow"');
+    assert.ok(heard.some((h) => /closes today/.test(h.message)), 'never said "closes today"');
+    assert.ok(heard.some((h) => h.urgency === 'critical'), 'the critical urgency is unreachable');
+  }));
+
+  test('but never says the same thing twice', () => withStore((s) => {
+    s.state.watchlist = [{ id: 'deals:x' }];
+    s.state.seenIds = ['deals:x'];
+    const now = Date.now();
+    // The same day checked over and over, which is what an hourly timer does.
+    const first = s.evaluateAlerts([offer(2)], { now });
+    assert.strictEqual(first.length, 1);
+    for (let i = 1; i < 12; i += 1) {
+      assert.strictEqual(s.evaluateAlerts([offer(2)], { now: now + i * 3600000 }).length, 0,
+        'a repeated check re-announced the same deadline');
+    }
+  }));
+
+  test('and starts over if the window reopens', () => withStore((s) => {
+    s.state.watchlist = [{ id: 'deals:x' }];
+    s.state.seenIds = ['deals:x'];
+    const now = Date.now();
+    assert.strictEqual(s.evaluateAlerts([offer(3)], { now }).length, 1);
+    // Deadline pushed back out of the window entirely...
+    assert.strictEqual(s.evaluateAlerts([offer(90)], { now: now + 86400000 }).length, 0);
+    // ...and back in again: it is news a second time.
+    assert.strictEqual(s.evaluateAlerts([offer(3)], { now: now + 2 * 86400000 }).length, 1,
+      'a window that reopened stayed silent');
+  }));
+});
+
+/**
+ * What an alert remembers must not grow forever.
+ *
+ * `seenIds` beside it is capped at 20,000. `alertState` had no cap and no
+ * pruning: one entry per (rule, row) — and now per stage — for every row that
+ * ever fired anything, written to disk on every scan, against a live equities
+ * universe that rotates through thousands of symbols.
+ */
+describe('alert state does not grow forever', () => {
+  const { Store } = require('../src/core/store');
+  const fs2 = require('node:fs');
+  const os = require('node:os');
+  const path2 = require('node:path');
+
+  test('rows that are gone are forgotten, rows that remain are not', () => {
+    const dir = fs2.mkdtempSync(path2.join(os.tmpdir(), 'apy-alerts-'));
+    try {
+      const s = new Store(dir);
+      s.settings.watchNewDealsWorth = 1;
+      const now = Date.now();
+      const batch = (tag) => Array.from({ length: 40 }, (_, i) => ({
+        id: `${tag}-${i}`, name: `Deal ${i}`, section: 'deals', apy: { total: 5 },
+        scores: { oneTimeDollars: 500 }, daysLeft: null,
+      }));
+
+      for (let c = 0; c < 60; c += 1) s.evaluateAlerts(batch(`cycle${c}`), { now: now + c * 3600000 });
+      const entries = Object.values(s.state.alertState || {})
+        .reduce((n, v) => n + Object.keys(v).length, 0);
+      assert.ok(entries <= 60, `alert state kept ${entries} entries after 60 rotating scans`);
+
+      // And a catalogue that stays put must not re-announce itself.
+      const stable = batch('stable');
+      assert.strictEqual(s.evaluateAlerts(stable, { now }).length, 40);
+      assert.strictEqual(s.evaluateAlerts(stable, { now: now + 3600000 }).length, 0,
+        'pruning made a standing catalogue announce itself twice');
+    } finally {
+      fs2.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('a settings reset keeps the wiring it did not choose', () => {
+    const dir = fs2.mkdtempSync(path2.join(os.tmpdir(), 'apy-alerts-'));
+    try {
+      const s = new Store(dir);
+      // Filled in once at startup and never chosen by the user. Resetting it to
+      // null silently disconnected a hand-maintained rates file until the next
+      // restart, because main.js only fills the path in when it is missing.
+      s.updateSettings({ userRatesPath: '/somewhere/user-rates.json', riskAppetite: 80, theme: 'light' });
+      s.resetSettings();
+      assert.strictEqual(s.settings.userRatesPath, '/somewhere/user-rates.json',
+        'the reset disconnected the user rates file');
+      assert.strictEqual(s.settings.riskAppetite, 45, 'a real preference did not reset');
+      assert.strictEqual(s.settings.theme, 'dark');
+    } finally {
+      fs2.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
