@@ -195,6 +195,10 @@ function buildRow(item, { dataAsOf, schema, C }) {
     price: kind.subType === 'money_market_fund' ? 1 : null,
     minInvestment: toNum(item.minInvestment) ?? 0,
     maxInvestment: toNum(item.maxInvestment),
+    // The mirror of a cap: dollars at the bottom of the balance that earn
+    // nothing. Interactive Brokers pays only above $10,000, and with that fact
+    // living in prose the scorer credited the full rate to every dollar.
+    earningsFloor: toNum(item.earningsFloor),
     expenseRatio: toNum(item.expenseRatio),
 
     liquidity: item.liquidity || kind.liquidity,

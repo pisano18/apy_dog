@@ -1357,26 +1357,6 @@
       "notes": "The one hotel currency in this file worth more than a cent, because Hyatt still prices awards from a fixed chart rather than off the cash rate. Thirty thousand points is a smaller headline and more actual money than IHG's hundred and forty thousand."
     },
     {
-      "id": "discover-it-signup",
-      "kind": "card_signup",
-      "name": "Discover it welcome offer, first-year cash-back match",
-      "provider": "Discover Bank",
-      "bonusCash": 228,
-      "spendRequired": 12000,
-      "windowDays": 365,
-      "annualFee": 0,
-      "reach": "everyone",
-      "url": "https://www.discover.com/credit-cards/cash-back/it-card.html",
-      "accessNotes": "Apply online. There is no spend threshold to hit: Discover simply doubles all the cash back you earn in your first twelve months, paid at the end of that year.",
-      "requirements": [
-        "No minimum spend, but the value scales entirely with how much you put on the card",
-        "The match is paid at the end of the first year, so it is twelve months away",
-        "The figure here models $12,000 of annual spend at Discover's blended earn rate — scale it to your own spending",
-        "No annual fee"
-      ],
-      "notes": "Structurally different from every other row here: there is no threshold and no deadline, just a doubling. The dollar figure is a model, not a promise, and the honest way to read it is as a rate — Discover's first year is worth roughly double whatever the card would otherwise earn you."
-    },
-    {
       "id": "chase-freedom-flex-5pct-q3-2026",
       "kind": "card_category",
       "name": "Chase Freedom 5% rotating categories, current quarter",
@@ -1976,6 +1956,7 @@
       "url": "https://www.discover.com/credit-cards/cash-back/it-card.html",
       "accessNotes": "Automatic on new Discover cards: everything you earn in the first twelve months is doubled, paid as a lump statement credit at the end of that year. Nothing to activate.",
       "requirements": [
+        "No minimum spend and no deadline — the match is automatic on everything you earn in the first year, so the value scales entirely with how much you put on the card",
         "Applies to a new cardholder's first twelve months only",
         "Paid at the end of the year, not as you go",
         "Scales entirely with your own spending — the figure here models $12,000 of spend",

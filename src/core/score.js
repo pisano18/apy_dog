@@ -126,7 +126,10 @@ function scoreOne(o, opts = {}) {
   // headline APY is still shown, because it is a real fact about the product —
   // it is just not the number that decides which row is better for you.
   const cap = Number.isFinite(o.maxInvestment) && o.maxInvestment > 0 ? o.maxInvestment : basisAmount;
-  const deployable = Math.max(0, Math.min(basisAmount, cap));
+  // A floor is the mirror of a cap: the bottom slice of the balance earns
+  // nothing, so it is not deployable and the rate must not be applied to it.
+  const floor = Number.isFinite(o.earningsFloor) && o.earningsFloor > 0 ? o.earningsFloor : 0;
+  const deployable = Math.max(0, Math.min(basisAmount - floor, cap));
   const share = basisAmount > 0 ? deployable / basisAmount : 1;
   const holdDays = Number.isFinite(o.term?.days) && o.term.days > 0 ? o.term.days : 365;
 
@@ -171,9 +174,21 @@ function scoreOne(o, opts = {}) {
     if (share >= 0.999 && !o.oneTime) return rate;
     const periodPct = o.oneTime ? (Math.pow(1 + rate / 100, yearsHeld) - 1) * 100 : rate;
     const idleAfter = o.oneTime ? Math.max(0, 1 - yearsHeld) : 0;
+    // Three slices, and they do not all earn the same thing.
+    //
+    //   deployable  the part the offer actually pays its rate on
+    //   aboveCap    the part a CAP excludes, which you are free to put in cash
+    //   idleFloor   the part a FLOOR excludes, which is not free at all — it is
+    //               sitting inside this product earning nothing, and you cannot
+    //               simultaneously hold it here and in Treasuries
+    //
+    // Crediting the floor slice at the risk-free rate was the same mistake as
+    // ignoring it: it reported income on a balance that earns zero.
+    const idleFloor = Math.min(floor, basisAmount);
+    const aboveCap = Math.max(0, basisAmount - idleFloor - deployable);
     const dollars = deployable * (periodPct / 100)
       + deployable * (rf / 100) * idleAfter
-      + (basisAmount - deployable) * (rf / 100);
+      + aboveCap * (rf / 100);
     return (dollars / basisAmount) * 100;
   };
 
@@ -243,10 +258,17 @@ function scoreOne(o, opts = {}) {
   let blendNote = null;
   if (hasBudget && affordable === false) {
     blendNote = `Needs ${fmtMoney(o.minInvestment)} to enter, which is more than the ${fmtMoney(amount)} you are deploying.`;
-  } else if (Number.isFinite(chosenRaw) && (share < 0.999 || o.oneTime)) {
+  } else if (Number.isFinite(chosenRaw) && (share < 0.999 || o.oneTime || floor > 0)) {
     const on = hasBudget ? fmtMoney(amount) : `a reference ${fmtMoney(REFERENCE_AMOUNT)}`;
     const tail = hasBudget ? '' : ' Set your own amount in Settings and every figure here is recomputed on it.';
-    blendNote = o.dollarsUnknown
+    blendNote = floor > 0 && !o.oneTime
+      ? (deployable <= 0
+        ? `The first ${fmtMoney(floor)} earns nothing here — the rate applies only above it, and ${on} is not `
+          + `above it. This pays you ${fmtMoney(0)} until the balance exceeds ${fmtMoney(floor)}.${tail}`
+        : `The first ${fmtMoney(floor)} earns nothing here — the rate applies only above it. On ${on}, that `
+          + `leaves ${fmtMoney(deployable)} earning ${chosenRaw.toFixed(2)}%, so the whole balance works out `
+          + `to ${blended.toFixed(2)}%.${tail}`)
+      : o.dollarsUnknown
       ? 'The rate is exact. The dollars are not — the cap is a share of your pay, which this app has never been '
         + 'told — so no dollar figure is shown for this one. Multiply the rate by your own numbers.'
       : o.oneTime

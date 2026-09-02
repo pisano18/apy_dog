@@ -462,6 +462,66 @@ describe('every row is actionable and honest', () => {
       }
     });
 
+    test('money that earns nothing is not counted as earning', () => {
+      // The mirror of a cap, and the app had no way to say it. Interactive
+      // Brokers pays only on the balance ABOVE $10,000; that lived in prose, so
+      // the scorer credited the full 3.4% to every dollar and reported $258 of
+      // year-one income on a $10,000 balance that earns exactly zero.
+      const { scoreOne } = require('../src/core/score');
+      const row = {
+        id: 'x', name: 'Cash with a floor', apy: { total: 3.4 }, assetClass: 'cash',
+        liquidity: 'instant', taxTreatment: 'ordinary', risk: { insurance: 'sipc' },
+        earningsFloor: 10000,
+      };
+      const at = (amount) => scoreOne(row, { riskFree: 3.8, amount, budget: amount, taxProfile: {} });
+
+      assert.strictEqual(at(5000).incomeYear1, 0, 'a balance below the floor was credited with income');
+      assert.strictEqual(at(10000).incomeYear1, 0, 'a balance exactly at the floor was credited with income');
+      assert.ok(at(20000).blendedGross < 3.4 / 2 + 0.01,
+        'half the balance earning nothing should roughly halve the blended rate');
+      assert.match(at(10000).blendNote, /earns nothing/, 'the row does not explain why it pays nothing');
+
+      // And the floor money is NOT quietly credited at cash either: it is
+      // sitting inside this product, not free to be somewhere else.
+      assert.ok(at(10000).blendedYield <= 0.01,
+        `a balance entirely below the floor blended to ${at(10000).blendedYield}%`);
+    });
+
+    test('a modelling reference is never presented as a cap', () => {
+      // A reference spend is a denominator so a dollar figure can exist. Passed
+      // through as a cap it rendered "Cap $12,000" and raised a capped_balance
+      // trap on an offer whose own requirement says there is no minimum and no
+      // ceiling.
+      for (const o of rows) {
+        const ref = o.dealMath?.referenceSpend;
+        if (!Number.isFinite(ref)) continue;
+        assert.ok(!Number.isFinite(o.maxInvestment) || o.maxInvestment !== ref,
+          `${o.name} renders its ${ref} modelling reference as a real cap`);
+        assert.ok(!(o.trapFlags || []).includes('capped_balance'),
+          `${o.name} is flagged as capped on the strength of a modelling assumption`);
+      }
+    });
+
+    test('a row never demands something its own requirements deny', () => {
+      // Discover's cash-back match was encoded as a card signup with a
+      // fabricated $12,000 spend requirement, so the app told the reader
+      // "1.90% of the required spend" and "hitting $12,000 in 365 days means
+      // about $1,000 a month" on an offer whose own requirement line reads "No
+      // minimum spend". The prose a row carries and the structure it is filed
+      // under have to agree; when they do not, the structure is what the
+      // ranking uses and the prose is what the reader believes.
+      const denies = /\bno minimum spend\b|\bno threshold\b|\bno qualifying spend\b|\bnot capped\b|\bno cap\b/i;
+      for (const o of rows) {
+        const text = [...(o.requirements || []), o.notes || '', o.accessNotes || ''].join(' ');
+        if (!denies.test(text)) continue;
+        const spend = o.dealMath?.spendRequired ?? o.dealMath?.spend;
+        assert.ok(!Number.isFinite(spend) || spend <= 0,
+          `${o.name} says there is no minimum spend and is modelled as requiring ${spend}`);
+        assert.ok(!(o.trapFlags || []).includes('capped_balance'),
+          `${o.name} says it is uncapped and is flagged as capped`);
+      }
+    });
+
     test('a top grade never claims insurance the row does not have', () => {
       // The grade band carried one blanket sentence, and A+ said "Backed by the
       // US government or federally insured. You get your money back short of a

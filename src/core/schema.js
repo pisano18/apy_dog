@@ -157,6 +157,21 @@ function normalize(raw, ctx = {}) {
   const price = num(raw.price);
   const minInvestment = num(raw.minInvestment);
   const maxInvestment = num(raw.maxInvestment);      // e.g. balance cap on a HYSA teaser
+  /**
+   * Dollars at the bottom of the balance that earn nothing at all.
+   *
+   * The mirror of `maxInvestment`, and the app had no way to say it. Interactive
+   * Brokers pays its cash rate only on the balance ABOVE $10,000; that fact
+   * lived in the row's prose, so the scorer saw no cap, credited the full 3.4%
+   * to every dollar, and reported $258 of year-one income on a $10,000 balance
+   * that earns exactly zero — a clean 2x overstatement at $20,000. The opposite
+   * shape (a 7.5% account capped at $500) was handled correctly all along,
+   * which is what makes this a gap rather than a decision.
+   *
+   * Distinct from `minInvestment`, which is a gate: below it you cannot open the
+   * account at all. Below an earningsFloor you can, and the money just sits.
+   */
+  const earningsFloor = num(raw.earningsFloor);
 
   // --- risk ----------------------------------------------------------------
   const riskIn = raw.risk && typeof raw.risk === 'object' ? raw.risk : {};
@@ -223,6 +238,7 @@ function normalize(raw, ctx = {}) {
     price,
     minInvestment,
     maxInvestment,
+    earningsFloor: Number.isFinite(earningsFloor) && earningsFloor > 0 ? earningsFloor : null,
     tvl: num(raw.tvl),                                // pool TVL or fund AUM
     volume: num(raw.volume),
 

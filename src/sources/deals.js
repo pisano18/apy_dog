@@ -603,7 +603,13 @@ function valueOf(item, kind) {
         payout: { amount: rb.netAnnual, currency, basis, perYear: capBinds || rb.periodsPerYear === 1 },
         apyTotal: null,
         capitalRequired: toNum(item.minInvestment) ?? 0,
-        capDollars: rb.spendCounted,
+        // Only a REAL cap is a cap. `spendCounted` collapses two different
+        // things — an actual per-period ceiling, and a reference spend used
+        // purely as a denominator — and passing the reference through here made
+        // the app print "Cap $3,000" and raise a capped_balance trap on a row
+        // whose own requirement reads "5% applies at Amazon and Whole Foods
+        // with no cap". A modelling assumption must never harden into a claim.
+        capDollars: rb.cappedAnnualSpend,
         termDays: null,
         horizonDays: 365,
         spendDenominator: rb.spendCounted,
@@ -699,12 +705,17 @@ function valueOf(item, kind) {
         };
       }
       if (spend !== null && spend > 0) {
+        // A REFERENCE spend is a modelling denominator, not a cap. Passing it
+        // through as capDollars made the app render "Cap $12,000" and raise a
+        // capped_balance trap flag on an offer whose own requirement line says
+        // there is no minimum and no ceiling — the match doubles everything you
+        // earn, however much that is. `item.cap` is where a real cap goes.
         return {
           math: { kind: 'promo_on_spend', bonus: amountDollars, referenceSpend: spend, returnOnSpend: (amountDollars / spend) * 100 },
-          payout: { amount: amountDollars, currency, basis: String(item.payoutBasis || `${money(amountDollars)} on ${money(spend)} of qualifying spend`) },
+          payout: { amount: amountDollars, currency, basis: String(item.payoutBasis || `${money(amountDollars)} on ${money(spend)} of spend, as a reference — this offer is not capped`) },
           apyTotal: null,
           capitalRequired: 0,
-          capDollars: spend,
+          capDollars: toNum(item.cap),
           termDays: null,
           horizonDays: toNum(item.windowDays) ?? 365,
           spendDenominator: spend,

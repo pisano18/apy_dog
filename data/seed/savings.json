@@ -1044,7 +1044,6 @@
       "apy": 3.4,
       "insurance": "sipc",
       "liquidity": "daily",
-      "minInvestment": 10000,
       "url": "https://www.interactivebrokers.com/en/accounts/fees/pricing-interest-rates.php",
       "requirements": [
         "IBKR Pro account",
@@ -1053,7 +1052,8 @@
       ],
       "accessNotes": "Paid automatically on idle USD in an IBKR Pro brokerage account. Nothing to open and nothing to sweep — but IBKR Lite pays a materially lower rate on the same cash.",
       "confidence": 0.55,
-      "notes": "This is broker credit interest, not a deposit: SIPC covers the broker failing, never a loss. The blended rate on a small account is well below the headline because the first $10,000 earns nothing."
+      "notes": "This is broker credit interest, not a deposit: SIPC covers the broker failing, never a loss. The blended rate on a small account is well below the headline because the first $10,000 earns nothing.",
+      "earningsFloor": 10000
     },
     {
       "id": "alliant-high-rate-savings",
