@@ -76,7 +76,10 @@ function readRowSignals(row, { events = [], horizonDays = 30, calibration = null
         floatShares: row.floatShares,
         unlockPercentOfFloat: row.unlockPercentOfFloat,
         unlockDaysAway: row.unlockDaysAway,
-        priceVsHigh: Number.isFinite(row.maxDrawdown) ? -row.maxDrawdown / 100 : null,
+        // Under `risk`, where the schema puts it. Reading the top level made
+        // this permanently null, so the squeeze detector reported distance
+        // from the high as a missing input on every row that had one.
+        priceVsHigh: Number.isFinite(row.risk?.maxDrawdown) ? -row.risk.maxDrawdown / 100 : null,
       },
     );
   } catch {

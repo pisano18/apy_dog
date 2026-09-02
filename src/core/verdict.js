@@ -206,7 +206,10 @@ function theRisk(o, s, exp) {
     };
   }
   if (o.section === 'movement') {
-    const dd = o.maxDrawdown;
+    // `risk.maxDrawdown`, which is where schema.js puts it. Read from the top
+    // level it was always undefined, so this sentence never rendered on any of
+    // the 353 rows that carry a drawdown.
+    const dd = o.risk?.maxDrawdown;
     return {
       severity: 'high',
       text: finite(dd) && dd > 0

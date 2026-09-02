@@ -22,6 +22,36 @@ const T = require('./tracks');
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const pip = (v) => clamp(Math.round(v * 2) / 2, 0, 5);   // half-pip resolution
 
+/**
+ * The grade's sentence, corrected by what the row is actually backed by.
+ *
+ * A grade band carries one blanket explanation, and A+ says "Backed by the US
+ * government or federally insured. You get your money back short of a systemic
+ * failure." That is true of a T-bill and a bank account. It is not true of a
+ * government money market fund, which is covered by SIPC — protection against
+ * the BROKER failing, not against the fund losing money — and which can break
+ * the buck, as one did in 2008. 175 of the 355 A and A+ rows in the shipped
+ * dataset are exactly that, and every one of them told the reader their money
+ * was insured when it is not.
+ *
+ * The grade itself is defensible: a Treasury-only money fund really is about as
+ * safe as an uninsured thing gets. The sentence beside it is what was wrong.
+ */
+function gradeDetailFor(o, g) {
+  const ins = o.risk?.insurance;
+  if (ins === C.INSURANCE.US_GOV || ins === C.INSURANCE.FDIC || ins === C.INSURANCE.NCUA) return g.detail;
+  // Anything else at a top grade is safe by construction, not by guarantee, and
+  // the difference is the whole point of the axis.
+  if (['A+', 'A'].includes(g.key)) {
+    const sipc = ins === C.INSURANCE.SIPC;
+    return `As safe as an uninsured holding gets, and it is uninsured. ${sipc
+      ? 'SIPC covers the brokerage failing, not the investment losing money'
+      : 'There is no deposit insurance behind this'} — the safety here comes from what it holds, `
+      + 'not from a guarantee that you get your money back.';
+  }
+  return g.detail;
+}
+
 /** Can I lose the money I put in? */
 function principalAxis(o) {
   const ins = o.risk?.insurance;
@@ -220,7 +250,7 @@ function rate(o) {
     grade: g.key,
     gradeColor: g.color,
     gradeHeadline: g.headline,
-    gradeDetail: g.detail,
+    gradeDetail: gradeDetailFor(o, g),
     axes,
     weakestAxis: notable ? weakest[0] : null,
     weakestLabel: notable ? meta?.label : null,
@@ -228,4 +258,4 @@ function rate(o) {
   };
 }
 
-module.exports = { rate, principalAxis, payoutAxis, exitAxis, steadyAxis, knownAxis };
+module.exports = { rate, gradeDetailFor, principalAxis, payoutAxis, exitAxis, steadyAxis, knownAxis };

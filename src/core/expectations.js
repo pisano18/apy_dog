@@ -158,7 +158,10 @@ function movementOutcomes(o, { horizonDays = 30 } = {}) {
     { label: 'A shock', sigma: 3, odds: 'about 1 month in 100' },
   ].map((b) => ({ ...b, pct: scaled * b.sigma }));
 
-  const worst = finite(o.maxDrawdown) && o.maxDrawdown > 0 ? -o.maxDrawdown / 100 : null;
+  // Same field, same place: schema.js stores it under `risk`. "Worst on
+  // record" silently never appeared, on every row that had one.
+  const dd = o.risk?.maxDrawdown;
+  const worst = finite(dd) && dd > 0 ? -dd / 100 : null;
 
   return {
     horizonDays,

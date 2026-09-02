@@ -462,6 +462,81 @@ describe('every row is actionable and honest', () => {
       }
     });
 
+    test('a top grade never claims insurance the row does not have', () => {
+      // The grade band carried one blanket sentence, and A+ said "Backed by the
+      // US government or federally insured. You get your money back short of a
+      // systemic failure." True of a T-bill. Not true of a government money
+      // market fund, which is SIPC-covered — that protects against the BROKER
+      // failing, not the fund losing money — and which can break the buck, as
+      // one did in 2008. 175 of the 355 A and A+ rows are exactly that, and
+      // every one told the reader their money was insured.
+      const guaranteed = ['us_gov', 'fdic', 'ncua'];
+      for (const o of rows) {
+        const detail = o.rating?.gradeDetail || '';
+        if (!/federally insured|Backed by the US government/i.test(detail)) continue;
+        assert.ok(guaranteed.includes(o.risk?.insurance),
+          `${o.name} is graded ${o.rating.grade} with insurance "${o.risk?.insurance}" and told to expect `
+          + 'a federal guarantee it does not have');
+      }
+      // And the uninsured top grades still say something, rather than nothing.
+      const topUninsured = rows.filter((o) => ['A+', 'A'].includes(o.rating?.grade)
+        && !guaranteed.includes(o.risk?.insurance));
+      assert.ok(topUninsured.length > 50, 'expected uninsured rows at the top grades');
+      for (const o of topUninsured) {
+        assert.match(o.rating.gradeDetail, /uninsured/i,
+          `${o.name} is uninsured at grade ${o.rating.grade} and does not say so`);
+      }
+    });
+
+    test('the drawdown a row records is the drawdown it reports', () => {
+      // schema.js stores it at `risk.maxDrawdown`. Three separate readers took
+      // it from the top level, where it has never existed — so "Worst on
+      // record" silently never rendered on any of the 353 rows that carry one,
+      // every movement row fell back to a generic risk sentence, and the
+      // squeeze detector reported distance-from-high as a missing input.
+      const E = require('../src/core/expectations');
+      const V = require('../src/core/verdict');
+      const withDD = rows.filter((o) => Number.isFinite(o.risk?.maxDrawdown) && o.risk.maxDrawdown > 0);
+      assert.ok(withDD.length > 100, `expected recorded drawdowns, got ${withDD.length}`);
+      assert.strictEqual(rows.filter((o) => Number.isFinite(o.maxDrawdown)).length, 0,
+        'a row is carrying a top-level maxDrawdown again — the schema puts it under risk');
+
+      const movement = withDD.filter((o) => o.section === 'movement');
+      assert.ok(movement.length > 50);
+      for (const o of movement.slice(0, 40)) {
+        const m = E.movementOutcomes(o, { horizonDays: 30 });
+        assert.ok(Number.isFinite(m?.worstOnRecord),
+          `${o.name} records a ${o.risk.maxDrawdown}% drawdown and reports no worst-on-record`);
+        // Either it names the real drawdown, or a stronger branch fired first
+        // (a row that can go to zero gets told so, which is more useful). What
+        // it must never be is the contentless fallback that exists for rows
+        // with no drawdown on record.
+        assert.doesNotMatch(V.verdictFor(o).risk?.text || '', /the price can fall as easily as it rises/,
+          `${o.name} gives the no-drawdown-on-record sentence despite recording a ${o.risk.maxDrawdown}% drawdown`);
+      }
+    });
+
+    test('a term filter cannot return something locked indefinitely', () => {
+      // "No stated term" splits two ways: a savings account has none and you
+      // can have the money this afternoon; an employer match has none and is
+      // locked until you retire. Both read as open-ended, so dragging the term
+      // range to zero returned sixteen 401(k) matches under a heading meaning
+      // the opposite.
+      const { applyQuery } = require('../src/core/filters');
+      const indefinite = (list) => list.filter((o) => o.liquidity === 'locked' && !Number.isFinite(o.term?.days));
+      assert.ok(indefinite(rows).length > 0, 'expected indefinitely-locked rows in the dataset');
+
+      for (const q of [{ termMinDays: 0, termMaxDays: 0 }, { termMinDays: 0, termMaxDays: 30 },
+        { termMaxDays: 365 }, { termPreset: 'liquid' }]) {
+        const out = applyQuery(rows, { ...q, hideTraps: false, includeSpeculative: true, limit: 1e5 });
+        assert.strictEqual(indefinite(out).length, 0,
+          `${JSON.stringify(q)} returned ${indefinite(out).length} indefinitely-locked rows`);
+      }
+      // And with no term filter at all they are still there.
+      const all = applyQuery(rows, { hideTraps: false, includeSpeculative: true, limit: 1e5 });
+      assert.ok(indefinite(all).length > 0, 'the guard is hiding rows when nothing was filtered');
+    });
+
     test('doubting a number never makes a losing row look better', () => {
       // The trap and confidence haircuts multiply the expected return by a
       // fraction, which discounts a POSITIVE return for the chance it is not

@@ -188,6 +188,15 @@ function matches(o, q, unknownPasses) {
   const isRealTerm = o.term?.kind === 'lockup' || o.term?.kind === 'maturity';
   const days = isRealTerm ? o.term.days : null;
   const openEnded = !Number.isFinite(days) || days <= 0;
+  // "No stated term" splits two ways and only one of them is harmless. A
+  // savings account has no term and you can have the money this afternoon; an
+  // employer match has no term and is locked until you retire. Both read as
+  // open-ended, so dragging the term range down to zero returned sixteen
+  // 401(k) matches under a heading that means the opposite. Indefinite is not
+  // the absence of a term, it is the longest one there is — the same rule the
+  // lockup filter below already applies.
+  const lockedIndefinitely = openEnded && o.liquidity === C.LIQUIDITY.LOCKED;
+  if (lockedIndefinitely && has(q.termMaxDays)) return false;
   if (openEnded && !q.includeOpenEnded && (has(q.termMinDays) || has(q.termMaxDays))) return false;
   if (!openEnded) {
     if (has(q.termMinDays) && days < q.termMinDays) return false;
