@@ -811,6 +811,10 @@ table.results td.num { font-family: var(--mono); font-variant-numeric: tabular-n
 /* A measured reading and a half-measured one are different claims, so the
    part that is still a guess is set apart rather than run into the sentence
    announcing the measurement. */
+/* When rows are excluded for more than one reason, naming only the commonest
+   states something false about the rest. */
+.whynot { margin: 6px 0 0 0; padding-left: 18px; font-size: 11px; color: var(--text-faint); line-height: 1.6; }
+.whynot b { color: var(--text-dim); }
 .rcard .rfoot {
   margin: 2px 12px 10px; padding-top: 7px; border-top: 1px solid var(--line);
   font-size: 11px; color: var(--text-faint); line-height: 1.5;

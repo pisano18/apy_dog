@@ -668,6 +668,10 @@ async function renderPlan() {
         <div class="stat"><div class="v">${Math.round(p.minutesUsed / 6) / 10}h</div>
           <div class="k">Of your time, spent</div></div>
       </div>
+      ${p.beyondYearOne ? `<div class="sectionnote">A further <b>${money(p.beyondYearOne)}</b> from these same
+        steps lands after the first twelve months — a transfer match with a multi-year clawback pays in full and
+        pays slowly. The totals above count only the part that arrives inside a year; each step still shows the
+        whole payment.</div>` : ''}
       <div class="sectionnote">These two totals are deliberately not added together. A pre-tax commuter election
         saves real money and needs no capital, so it does not scale with what you have and does not belong in the
         same number as a yield on a balance.</div>

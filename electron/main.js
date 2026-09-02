@@ -324,6 +324,9 @@ function rescore() {
   if (!dataset.opportunities.length) return;
   const { rate } = require('../src/core/rating');
   const { readMovement } = require('../src/core/movement');
+  const { readRowSignals } = require('../src/core/row-signals');
+  const { loadCalibration } = require('../src/core/calibration');
+  const calibration = loadCalibration();
   dataset.opportunities = scoreAll(dataset.opportunities, {
     riskFree: dataset.meta?.riskFree ?? 4.0,
     appetite: store.settings.riskAppetite ?? 45,
@@ -331,13 +334,28 @@ function rescore() {
     basis: store.settings.rankingBasis || 'afterTax',
     horizonDays: store.settings.horizonDays ?? null,
     amount: Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null,
-  }).map((o) => ({
-    ...o,
-    rating: rate(o),
-    movement: o.track === T.TRACK.INCOME
+  }).map((o) => {
+    const movement = o.track === T.TRACK.INCOME
       ? null
-      : readMovement(o, { events: o.events || [], horizonDays: store.settings.movementHorizonDays ?? 30 }),
-  }));
+      : readMovement(o, { events: o.events || [], horizonDays: store.settings.movementHorizonDays ?? 30 });
+    return {
+      ...o,
+      rating: rate(o),
+      movement,
+      // Re-read too, not carried forward. Measuring a row on demand replaces its
+      // series with 180 recorded daily closes and then lands here — and this
+      // used to leave the old reading in place, so a freshly measured row went
+      // on saying "no price history has been pulled for this row yet"
+      // underneath a chart drawn from the history that had just been pulled,
+      // while two detectors would have fired on it.
+      signals: readRowSignals(o, {
+        events: o.events || [],
+        horizonDays: store.settings.movementHorizonDays ?? 30,
+        calibration,
+        hasMovement: !!movement,
+      }),
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -267,7 +267,7 @@
       ],
       "notes": "Someone with a modest freelance income alongside a salaried job can often shelter the whole side income here. The value shown is the deduction at your marginal rate; the money is taxed as ordinary income on the way out.",
       "window": {
-        "type": "year_end"
+        "type": "extended_filing_deadline"
       }
     },
     {
@@ -1552,7 +1552,7 @@
       "confidence": 0.8,
       "maxInvestment": 70000,
       "window": {
-        "type": "filing_deadline"
+        "type": "extended_filing_deadline"
       }
     },
     {
@@ -1639,7 +1639,7 @@
       "confidence": 0.75,
       "maxInvestment": 10000,
       "window": {
-        "type": "year_end"
+        "type": "month_end"
       }
     }
   ]

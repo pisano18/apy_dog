@@ -111,11 +111,41 @@ describe('the totals do not mix two different kinds of money', () => {
   });
 
   test('capital returns only come from steps that consumed capital', () => {
+    // Summed on `dollarsYear1`, not `dollars`. A step shows the whole payment,
+    // because "$350" is what a transfer match is about; the total is labelled
+    // "Year one" and must only carry the part that lands inside one. A
+    // five-year match used to contribute its full $350 to a twelve-month figure
+    // the same row's own incomeYear1 put at $69.
     const p = buildPlan(rows, { budget: 30000, facts: { monthlyExpenses: 2500, hoursAvailable: 6 } });
     const recomputed = p.steps
-      .filter((s) => s.capital > 0 && Number.isFinite(s.dollars))
-      .reduce((n, s) => n + s.dollars, 0);
+      .filter((s) => s.capital > 0 && Number.isFinite(s.dollarsYear1))
+      .reduce((n, s) => n + s.dollarsYear1, 0);
     assert.ok(Math.abs((p.fromCapital ?? 0) - recomputed) < 1);
+  });
+
+  test('a payment that takes years is not counted as a year of money', () => {
+    const p = buildPlan(rows, { budget: 100000, facts: { employerMatches: false, hoursAvailable: 30 } });
+    const long = p.steps.filter((s) => Number.isFinite(s.termDays) && s.termDays > 400 && Number.isFinite(s.dollars));
+    assert.ok(long.length > 0, 'expected a multi-year one-off in the plan');
+    for (const s of long) {
+      assert.ok(s.dollarsYear1 < s.dollars,
+        `${s.name}: the whole ${s.dollars} is being counted as year-one money over ${s.termDays} days`);
+      const expected = s.dollars * (365 / s.termDays);
+      assert.ok(Math.abs(s.dollarsYear1 - expected) < 1,
+        `${s.name}: year-one share ${s.dollarsYear1} does not match ${expected}`);
+    }
+    assert.ok(p.beyondYearOne > 0, 'the plan does not say what lands after the first year');
+  });
+
+  test('and a payment inside a year is counted whole', () => {
+    const p = buildPlan(rows, { budget: 100000, facts: { employerMatches: false, hoursAvailable: 30 } });
+    const short = p.steps.filter((s) => Number.isFinite(s.dollars)
+      && (!Number.isFinite(s.termDays) || s.termDays <= 365));
+    assert.ok(short.length > 0);
+    for (const s of short) {
+      assert.strictEqual(s.dollarsYear1, s.dollars,
+        `${s.name}: a payment inside a year was discounted anyway`);
+    }
   });
 });
 

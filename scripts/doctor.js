@@ -208,9 +208,22 @@ async function main() {
     log(`${pay.counts.readable ? ' ok ' : 'FAIL'}  readable rows          ${pay.counts.readable} of `
       + `${pay.counts.total} rows carry price history the detectors can use`);
     for (const r of pay.unreadableReasons || []) log(`      ${String(r.count).padStart(5)} — ${r.why}`);
+    // Two different reasons a detector is on a guess, and saying the wrong one
+    // is worse than saying nothing. With no calibration at all, every detector
+    // is on a prior because nobody has run the backtest — not because the
+    // backtest could not reach them. Only three are structurally unmeasurable.
+    const unreachable = pay.onPriors.filter((k) => !SIG.MEASURABLE_BY_BACKTEST.includes(k));
+    const unmeasured = pay.onPriors.filter((k) => SIG.MEASURABLE_BY_BACKTEST.includes(k));
     log(` ok   running on a guess     ${pay.onPriors.length
-      ? `${pay.onPriors.join(', ')} — a backtest over closes cannot measure these either way`
+      ? pay.onPriors.join(', ')
       : 'nothing; every detector in play has been measured'}`);
+    if (unreachable.length) {
+      log(`      ${unreachable.join(', ')}: a backtest over closes has no short interest, event schedule or `
+        + 'unlock calendar, so these can never be measured by it either way.');
+    }
+    if (unmeasured.length) {
+      log(`      ${unmeasured.join(', ')}: measurable, but nothing has measured them yet — run npm run backtest.`);
+    }
     log(`      note: this reads the BUNDLED data. Rows only become readable after a live refresh in the app, `
       + `which is why 0 here is normal and 0 in the app after a refresh is not.`);
   } catch (err) {

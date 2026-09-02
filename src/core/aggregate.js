@@ -8,7 +8,7 @@ const { scoreAll } = require('./score');
 const { peerMedians } = require('./traps');
 const { rate } = require('./rating');
 const { readMovement } = require('./movement');
-const { readSignals } = require('./signals');
+const { readRowSignals } = require('./row-signals');
 const { loadCalibration } = require('./calibration');
 const { vehiclesFor, outOfReach } = require('./vehicles');
 const T = require('./tracks');
@@ -331,65 +331,18 @@ async function aggregate(adapters, opts = {}) {
     // carries. Everything the detectors need is already on the row; what they
     // add is the reading of it, plus evidence a person can argue with.
     //
-    // Daily bars only, and the row has to say so. Every window the detectors use
-    // is counted in bars and realisedVol annualises with sqrt(252), so a series
-    // whose bars are not trading days produces numbers that look like
-    // volatility and are not: the thinned equity chart ran about 1.5x high, the
-    // hourly crypto sparkline about 5x low, and the calibration being applied
-    // had been measured on real daily bars, so the advertised hit rate
-    // described a detector the app was not running. A source that will not
-    // state its timescale does not get read as though it were days.
-    let signals = null;
-
-    // Why a row cannot be read, in the words the interface will use. Saying
-    // nothing would be worse than saying no: a blank signal column reads as "no
-    // setup here" when the truth is "nobody looked".
-    const bars = Array.isArray(withEvents.series) ? withEvents.series.length : 0;
-    const unreadable = !movement ? null
-      : withEvents.seriesBasis === 'illustrative'
-        ? 'This row has no recorded price history yet — its chart is drawn from its own statistics, so no signal can '
-          + 'honestly be read off it. Refresh to measure it.'
-        : !bars ? 'No price history has been pulled for this row yet. Open it and choose Measure.'
-          : withEvents.seriesInterval !== 'day'
-            ? `This row's history is ${withEvents.seriesInterval ? `${withEvents.seriesInterval}ly` : 'of an unstated'} `
-              + 'resolution, and every detector here was measured on daily bars. Reading it anyway would report a '
-              + 'number that looks like volatility and is not, so nothing is claimed.'
-            : bars < 30 ? `Only ${bars} closes on record — the detectors need at least 30 before they say anything.`
-              : null;
-
-    const seriesIsDaily = withEvents.seriesInterval === 'day' && withEvents.seriesBasis === 'measured';
-    if (movement && !unreadable && seriesIsDaily && bars >= 30) {
-      try {
-        signals = readSignals(
-          { closes: withEvents.series, volumes: withEvents.volumeSeries || [], highs: [], lows: [] },
-          withEvents.series.length - 1,
-          {
-            events: own2,
-            horizonDays: settings.movementHorizonDays ?? 30,
-            weights: calibration?.weights || null,
-            // The settings the backtest chose, so the app detects with the same
-            // configuration that was actually measured rather than the guesses
-            // the measurement rejected.
-            params: calibration?.chosenParams || null,
-            shortPercentFloat: withEvents.shortPercentFloat,
-            daysToCover: withEvents.daysToCover,
-            borrowFeePct: withEvents.borrowFeePct,
-            floatShares: withEvents.floatShares,
-            unlockPercentOfFloat: withEvents.unlockPercentOfFloat,
-            unlockDaysAway: withEvents.unlockDaysAway,
-            priceVsHigh: Number.isFinite(withEvents.maxDrawdown) ? -withEvents.maxDrawdown / 100 : null,
-          },
-        );
-      } catch { signals = null; }
-    } else if (unreadable) {
-      // A chart that was drawn rather than recorded cannot support a signal —
-      // reading compression off a curve derived from a volatility number and
-      // reporting it as evidence about volatility is circular — and neither can
-      // one whose bars are not the days the detectors were measured on.
-      signals = {
-        signals: [], fired: [], pressure: null, lean: null, calibrated: false, missing: [], unreadable,
-      };
-    }
+    // Daily bars only, and the row has to say so — every window the detectors
+    // use is counted in bars and realisedVol annualises with sqrt(252), so a
+    // series whose bars are not trading days produces numbers that look like
+    // volatility and are not. The rule and the reasons live in row-signals.js,
+    // because the on-demand Measure path needs the same reading and used not to
+    // get it.
+    const signals = readRowSignals(withEvents, {
+      events: own2,
+      horizonDays: settings.movementHorizonDays ?? 30,
+      calibration,
+      hasMovement: !!movement,
+    });
 
     return {
       ...withEvents,

@@ -151,48 +151,100 @@ describe("an offer's last day is a day it is still on", () => {
   const { calendarDaysUntil } = require('../src/core/schema');
   const schema = require('../src/core/schema');
 
+  // Fixtures built in the READER'S zone, not in UTC.
+  //
+  // These used to say `new Date().toISOString().slice(0, 10)` for "today",
+  // which is today in UTC — a different day from local today for most of the
+  // world for part of every day. The assertions then failed in Los Angeles,
+  // Tokyo, Kiritimati and Midway while passing at UTC+0, so `npm test` was red
+  // for any contributor outside one timezone and the failure looked like a bug
+  // in the code it was testing. calendarDaysUntil answers "how many sleeps",
+  // which is a question about the reader's calendar, so the fixtures have to be
+  // asked in the reader's calendar too.
+  const localDay = (offset = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  /** An instant at the given local hour today, as an ISO timestamp. */
+  const localInstant = (h, m = 0, s2 = 0, offsetDays = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    d.setHours(h, m, s2, 0);
+    return d.toISOString();
+  };
+
   test('a bare date is the whole of that day, not the first instant of it', () => {
+    assert.strictEqual(calendarDaysUntil(localDay(0)), 0, 'today read as anything but 0');
+    assert.strictEqual(calendarDaysUntil(localDay(1)), 1);
+    assert.strictEqual(calendarDaysUntil(localDay(-1)), -1);
+    // A bare date is taken at face value — it names a day and no timezone — and
+    // is counted against the reader's own calendar day. Fixing a UTC instant
+    // and asserting "0" only works where that instant is still the same date,
+    // which is why the offsets are checked properly in the last test below.
     const now = Date.parse('2026-08-31T14:00:00Z');
-    assert.strictEqual(calendarDaysUntil('2026-08-31', now), 0, 'today read as anything but 0');
-    assert.strictEqual(calendarDaysUntil('2026-09-01', now), 1);
-    assert.strictEqual(calendarDaysUntil('2026-08-30', now), -1);
+    const here = new Date(now);
+    const expected = Math.round((Date.UTC(2026, 7, 31)
+      - Date.UTC(here.getFullYear(), here.getMonth(), here.getDate())) / 86400000);
+    assert.strictEqual(calendarDaysUntil('2026-08-31', now), expected);
   });
 
   test('nothing closing tonight is ever described as closing tomorrow', () => {
-    // Elapsed-time rounding made a 23:59 deadline read "1" all morning.
-    for (const hour of ['00:30', '09:00', '13:00', '21:45']) {
-      const now = Date.parse(`2026-08-31T${hour}:00Z`);
-      assert.strictEqual(calendarDaysUntil('2026-08-31T23:59:59Z', now), 0,
-        `at ${hour} a deadline of tonight read as ${calendarDaysUntil('2026-08-31T23:59:59Z', now)}`);
+    // Elapsed-time rounding made a 23:59 deadline read "1" all morning. The
+    // deadline is tonight in the reader's own evening, whatever UTC says.
+    const tonight = localInstant(23, 59, 59);
+    for (const hour of [0, 9, 13, 21]) {
+      const now = Date.parse(localInstant(hour, 30));
+      assert.strictEqual(calendarDaysUntil(tonight, now), 0,
+        `at ${hour}:30 local, a deadline of tonight read as ${calendarDaysUntil(tonight, now)}`);
     }
   });
 
   test('a row expiring today is not marked expired', () => {
-    const today = new Date().toISOString().slice(0, 10);
     const row = schema.normalize({
       id: 'x', name: 'Closes today', source: 'deals', sourceLabel: 'Deals',
-      apy: { total: 5 }, expiresAt: today,
+      apy: { total: 5 }, expiresAt: localDay(0),
     }, { source: 'deals' });
     assert.strictEqual(row.daysLeft, 0, `a row closing today reports ${row.daysLeft} days left`);
     assert.strictEqual(row.expired, false, 'a row closing today is being hidden on its last day');
   });
 
   test('and one that closed yesterday still is', () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const row = schema.normalize({
       id: 'y', name: 'Closed', source: 'deals', sourceLabel: 'Deals',
-      apy: { total: 5 }, expiresAt: yesterday,
+      apy: { total: 5 }, expiresAt: localDay(-1),
     }, { source: 'deals' });
     assert.ok(row.daysLeft < 0 && row.expired, 'an offer that has closed is being shown as live');
   });
 
   test('an offer that opens today is open', () => {
-    const today = new Date().toISOString().slice(0, 10);
     const row = schema.normalize({
       id: 'z', name: 'Opens today', source: 'deals', sourceLabel: 'Deals',
-      apy: { total: 5 }, startsAt: today,
+      apy: { total: 5 }, startsAt: localDay(0),
     }, { source: 'deals' });
     assert.strictEqual(row.daysUntilOpen, 0);
     assert.strictEqual(row.notYetOpen, false, 'an offer that opened this morning reads as not yet open');
+  });
+
+  test('and none of this depends on where the reader is', () => {
+    // The regression guard proper: the same three answers, computed against a
+    // fixed instant, from every populated timezone offset on Earth. A bare date
+    // is a day, and "today" is today wherever you are standing.
+    const at = (iso) => Date.parse(iso);
+    for (const [tz, nowIso] of [
+      ['UTC-11', '2026-08-31T11:30:00Z'],
+      ['UTC-07', '2026-08-31T07:30:00Z'],
+      ['UTC+00', '2026-08-31T12:00:00Z'],
+      ['UTC+09', '2026-08-30T15:30:00Z'],
+      ['UTC+14', '2026-08-30T10:30:00Z'],
+    ]) {
+      // Each `nowIso` is chosen so that local time in `tz` is on 31 August.
+      const d = new Date(at(nowIso));
+      const localDate = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+      const target = Date.UTC(2026, 7, 31);
+      const expected = Math.round((target - localDate) / 86400000);
+      assert.strictEqual(calendarDaysUntil('2026-08-31', at(nowIso)), expected,
+        `${tz}: a bare date must be counted from the reader's own calendar day`);
+    }
   });
 });

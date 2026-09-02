@@ -219,10 +219,20 @@ function scoreOne(o, opts = {}) {
   // `chosenRaw` is whichever basis the ranking is set to, so it blends against
   // the matching version of cash — otherwise changing the ranking basis quietly
   // changes what the leftover money is assumed to earn.
-  const rfForChosen = chosenRaw === tax.afterTaxRealApy ? rfFor.afterTaxReal
-    : chosenRaw === tax.afterTaxApy ? rfFor.afterTax
-      : chosenRaw === tax.taxEquivalentYield ? rfFor.taxEquivalent
-        : rfFor.gross;
+  //
+  // Selected by BASIS, never by value. Matching on the number was wrong in a way
+  // that hid behind the default settings: for an ordinary-treatment row in a
+  // taxable account, `tax.grossApy === tax.taxEquivalentYield` is an arithmetic
+  // identity (tey = afterTax / (1 - benchmark) with rate === benchmark), so the
+  // headline basis fell through to the tax-equivalent arm and credited the
+  // leftover at a grossed-up 4.82% — above every cash rate in the app.
+  // 111 of 854 rows were overstated for anyone in a state with income tax, and
+  // 37 ranked above BOTH their own rate and cash. Texas has no state tax, which
+  // collapses the two rates onto each other, which is why the default profile
+  // showed nothing wrong.
+  const rfForChosen = basis === BASIS.GROSS ? rfFor.gross
+    : basis === BASIS.AFTER_TAX_REAL ? rfFor.afterTaxReal
+      : rfFor.afterTax;
 
   const blended = blend(chosenRaw, rfForChosen);
   const blendedGross = blend(gross, rfFor.gross);
@@ -243,8 +253,8 @@ function scoreOne(o, opts = {}) {
         ? `A one-off payment of about ${fmtMoney(oneTimeDollars)}, not a rate${
           yearsToPay > 1.05 ? `, and it takes ${holdDays >= 730 ? `${(Math.round(yearsToPay * 2) / 2)} years` : `${Math.round(holdDays)} days`} to be yours` : ''
         }. On ${on}, with the rest at `
-          + `${riskFree.toFixed(2)}%, year one works out to ${blended.toFixed(2)}%.${tail}`
-        : `Capped at ${fmtMoney(cap)}. On ${on}, with the rest at ${riskFree.toFixed(2)}%, that blends to `
+          + `${rfForChosen.toFixed(2)}%, year one works out to ${blended.toFixed(2)}%.${tail}`
+        : `Capped at ${fmtMoney(cap)}. On ${on}, with the rest at ${rfForChosen.toFixed(2)}%, that blends to `
           + `${blended.toFixed(2)}%.${tail}`;
   }
 

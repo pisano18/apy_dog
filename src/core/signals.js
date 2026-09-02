@@ -367,11 +367,25 @@ function squeeze({ shortPercentFloat, daysToCover, borrowFeePct, floatShares, pr
  * a move happens on a particular Tuesday rather than eventually.
  */
 function catalystProximity(events, { horizonDays = DEFAULT_HORIZON, now = Date.now() } = {}) {
-  const upcoming = (events || [])
+  // "We have no event data" and "we have event data and there is nothing
+  // scheduled" are different answers, and reporting both as a missing input
+  // conflated ignorance with evidence of absence. The second is a real reading:
+  // this row has a clean window, which is worth exactly as much as knowing it
+  // has a crowded one.
+  const haveSchedule = Array.isArray(events);
+  const upcoming = (haveSchedule ? events : [])
     .filter((e) => finite(e.daysAway) && e.daysAway >= 0 && e.daysAway <= horizonDays)
     .sort((a, b) => a.daysAway - b.daysAway);
+  if (!haveSchedule) {
+    return { key: 'catalyst', fired: false, strength: 0, inputsMissing: ['no event schedule for this row'] };
+  }
   if (!upcoming.length) {
-    return { key: 'catalyst', fired: false, strength: 0, inputsMissing: ['nothing scheduled in the window'] };
+    return {
+      key: 'catalyst',
+      fired: false,
+      strength: 0,
+      evidence: [`Nothing scheduled in the next ${horizonDays} days.`],
+    };
   }
   const e = upcoming[0];
   const mult = finite(e.volMultiple) ? e.volMultiple : 1.5;
@@ -501,6 +515,24 @@ function detectAt(bars, i, ctx = {}) {
  * a number like "68% chance of a big move" carries an authority it has not
  * earned until something has checked it against outcomes.
  */
+/**
+ * What a backtest over price history is capable of measuring.
+ *
+ * These four read closes and volumes, which is exactly what `fetchDaily` hands
+ * the backtest, so a recorded weight for them is a real measurement. The other
+ * three need short interest, an event schedule and an unlock calendar — none of
+ * which a run over historical closes can reconstruct — so they fire zero times
+ * in every backtest that has ever run, and any weight recorded for them is an
+ * artefact of that, not a finding.
+ *
+ * This is a fact about the measuring apparatus rather than about any particular
+ * file, which is why it is stated here rather than inferred from which keys a
+ * calibration happens to contain. Inferring it from key presence was wrong for
+ * every file the walk-forward path wrote, where all seven keys are present and
+ * three of them are a 0 that means "never fired" rather than "beat nothing".
+ */
+const MEASURABLE_BY_BACKTEST = ['coil', 'quiet_accumulation', 'range_compression', 'extension'];
+
 const PRIOR_WEIGHTS = {
   coil: 1.0,
   quiet_accumulation: 0.9,
@@ -521,6 +553,19 @@ function pressureFrom(signals, weights = PRIOR_WEIGHTS) {
   let num = 0;
   let den = 0;
   for (const s of signals) {
+    // A detector that could not run does not get a vote, and does not get to
+    // dilute the ones that did.
+    //
+    // It used to sit in the denominator at its full weight while contributing
+    // nothing to the numerator, which quietly deflated every reading built on
+    // the detectors that DID run. In the backtest — whose observations are
+    // closes-only and therefore can never have short interest, an event
+    // schedule or an unlock calendar — that pushed the composite's ceiling to
+    // 41 against a cutoff of 55, so it fired zero times where it had fired 286.
+    // The scale the app produces and the scale the measurement describes have
+    // to be the same scale.
+    if (s.inputsMissing && s.inputsMissing.length) continue;
+
     // A measured zero and an absent key are not the same fact.
     //
     // The backtest can only measure the four price-shape detectors — squeeze,
@@ -534,7 +579,9 @@ function pressureFrom(signals, weights = PRIOR_WEIGHTS) {
     // Measured as worthless stays worthless: `coil: 0` is in the file and
     // `finite(0)` is true, so it contributes nothing, which is exactly right.
     // Never measured falls back to its prior, and readSignals says how many did.
-    const w = finite(weights[s.key]) ? weights[s.key] : PRIOR_WEIGHTS[s.key];
+    const w = (MEASURABLE_BY_BACKTEST.includes(s.key) && finite(weights[s.key]))
+      ? weights[s.key]
+      : PRIOR_WEIGHTS[s.key];
     if (!finite(w)) continue;
     den += w;
     if (s.fired) num += w * s.strength;
@@ -577,7 +624,9 @@ function readSignals(bars, i, ctx = {}) {
   // priors is not the same claim as one built entirely from measurement, and the
   // difference belongs on screen rather than buried in a weights object.
   const onPriors = ctx.weights
-    ? signals.map((s) => s.key).filter((k) => !finite(weights[k]) && finite(PRIOR_WEIGHTS[k]))
+    ? signals.map((s) => s.key)
+      .filter((k) => finite(PRIOR_WEIGHTS[k]))
+      .filter((k) => !MEASURABLE_BY_BACKTEST.includes(k) || !finite(weights[k]))
     : signals.map((s) => s.key);
   return {
     signals,
@@ -609,6 +658,7 @@ module.exports = {
   pressureFrom,
   leanFrom,
   PRIOR_WEIGHTS,
+  MEASURABLE_BY_BACKTEST,
   // The full roster, in the order detectAt runs them. Exported because
   // "which detectors did this calibration never measure" is a question about
   // the calibration file, answerable with no rows loaded at all.

@@ -112,6 +112,7 @@ const SUBTYPE_LABELS = {
   energy: 'Energy', financials: 'Financials', consumer: 'Consumer', industrials: 'Industrials',
   small_cap: 'Small cap', crypto_equity: 'Crypto-linked', volatility_adjacent: 'Volatility-linked',
   core_index: 'Core index', target_date: 'Target date', bond_core: 'Core bonds',
+  treasury_fund: 'Treasury fund',
   dividend_growth: 'Dividend growth', sector: 'Sector', factor: 'Factor',
   international: 'International', commodity: 'Commodity', spot: 'Spot',
   covered_call: 'Covered call', bond_etf: 'Bond fund', dividend_etf: 'Dividend fund',
@@ -1001,8 +1002,15 @@ R.signalsView = (d) => {
   })()}
     </div>` : `
       <div class="sigmeta">${c.firing} of ${c.readable} measured rows are firing at least one signal.
-        ${c.unreadable ? `${c.unreadable} more carry no history the detectors can read and are excluded — `
-    + `${esc(((d.unreadableReasons || [])[0] || {}).why || '')}` : ''}</div>
+        ${c.unreadable ? `${c.unreadable} more carry no history the detectors can read and are excluded${
+      (d.unreadableReasons || []).length === 1
+        ? ` — ${esc(d.unreadableReasons[0].why)}`
+        : (d.unreadableReasons || []).length > 1
+          ? `, for ${d.unreadableReasons.length} different reasons.`
+          : '.'}` : ''}</div>
+    ${(d.unreadableReasons || []).length > 1 ? `<ul class="whynot">${d.unreadableReasons
+    .map((r) => `<li><b>${r.count.toLocaleString()}</b> ${r.count === 1 ? 'row' : 'rows'}: ${esc(r.why)}</li>`)
+    .join('')}</ul>` : ''}
       <div class="siggrid">${d.rows.map(card).join('')}</div>`}
 
     ${cal ? `<section style="margin-top:26px"><h3>What was measured</h3>

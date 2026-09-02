@@ -671,7 +671,6 @@
       ],
       "notes": "moomoo runs some of the most aggressive new-account promotions in the US brokerage market, which is exactly why the terms move so often. Read the current promotion page rather than trusting any figure more than a week old."
     },
-
     {
       "id": "chase-sapphire-preferred-signup",
       "kind": "card_signup",
@@ -684,7 +683,16 @@
       "windowDays": 90,
       "annualFee": 95,
       "reach": "everyone",
-      "series": [750, 750, 750, 938, 750, 750, 1000, 750],
+      "series": [
+        750,
+        750,
+        750,
+        938,
+        750,
+        750,
+        1000,
+        750
+      ],
       "url": "https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred",
       "accessNotes": "Apply online or through a referral link from someone who holds the card. Points post one to two statements after the spend requirement is met.",
       "requirements": [
@@ -707,7 +715,16 @@
       "windowDays": 90,
       "annualFee": 795,
       "reach": "everyone",
-      "series": [750, 938, 750, 750, 1125, 938, 1250, 1250],
+      "series": [
+        750,
+        938,
+        750,
+        750,
+        1125,
+        938,
+        1250,
+        1250
+      ],
       "url": "https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve",
       "accessNotes": "Apply online. The card carries a large annual fee that is charged at once, and a travel credit that is only worth anything if you actually travel.",
       "requirements": [
@@ -728,7 +745,16 @@
       "windowDays": 90,
       "annualFee": 0,
       "reach": "everyone",
-      "series": [200, 200, 200, 200, 250, 200, 200, 200],
+      "series": [
+        200,
+        200,
+        200,
+        200,
+        250,
+        200,
+        200,
+        200
+      ],
       "url": "https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited",
       "accessNotes": "Apply online or through a referral link. The statement credit posts within a couple of cycles of hitting the spend.",
       "requirements": [
@@ -829,7 +855,16 @@
       "windowDays": 180,
       "annualFee": 325,
       "reach": "everyone",
-      "series": [600, 600, 750, 600, 900, 600, 750, 600],
+      "series": [
+        600,
+        600,
+        750,
+        600,
+        900,
+        600,
+        750,
+        600
+      ],
       "url": "https://www.americanexpress.com/us/credit-cards/card/gold-card/",
       "accessNotes": "Apply online or through someone's referral link, which pays them as well. Amex shows a targeted offer when you log in that is often better than the public one.",
       "requirements": [
@@ -852,7 +887,16 @@
       "windowDays": 180,
       "annualFee": 895,
       "reach": "everyone",
-      "series": [600, 750, 1000, 800, 1250, 1000, 1500, 800],
+      "series": [
+        600,
+        750,
+        1000,
+        800,
+        1250,
+        1000,
+        1500,
+        800
+      ],
       "url": "https://www.americanexpress.com/us/credit-cards/card/platinum/",
       "accessNotes": "Apply online, through a referral, or from a targeted offer in your Amex account. The annual fee posts on the first statement.",
       "requirements": [
@@ -958,7 +1002,16 @@
       "windowDays": 90,
       "annualFee": 95,
       "reach": "everyone",
-      "series": [500, 600, 750, 750, 1000, 750, 750, 750],
+      "series": [
+        500,
+        600,
+        750,
+        750,
+        1000,
+        750,
+        750,
+        750
+      ],
       "url": "https://www.capitalone.com/credit-cards/venture/",
       "accessNotes": "Apply online; Capital One's pre-approval tool tells you your odds without a hard pull, which is unusual and worth using first.",
       "requirements": [
@@ -1038,7 +1091,16 @@
       "windowDays": 90,
       "annualFee": 95,
       "reach": "common",
-      "series": [600, 750, 750, 800, 750, 1000, 750, 750],
+      "series": [
+        600,
+        750,
+        750,
+        800,
+        750,
+        1000,
+        750,
+        750
+      ],
       "url": "https://www.citi.com/credit-cards/citi-strata-premier-credit-card",
       "accessNotes": "Apply online. Citi applies its own family rules about how recently you have opened or closed other ThankYou cards.",
       "requirements": [
@@ -1314,7 +1376,6 @@
       ],
       "notes": "Structurally different from every other row here: there is no threshold and no deadline, just a doubling. The dollar figure is a model, not a promise, and the honest way to read it is as a rate — Discover's first year is worth roughly double whatever the card would otherwise earn you."
     },
-
     {
       "id": "chase-freedom-flex-5pct-q3-2026",
       "kind": "card_category",
@@ -1452,7 +1513,6 @@
       "baselineRate": 1.5,
       "spendCap": 2500,
       "capPeriod": "quarter",
-      "expiresAt": "2026-08-31",
       "reach": "common",
       "url": "https://www.bankofamerica.com/credit-cards/products/cash-back-credit-cards/",
       "accessNotes": "Choose one 3% category in your online account. You can change it once each calendar month, and the change takes effect for the rest of that month — so the practical deadline is the end of the month.",
@@ -1461,7 +1521,8 @@
         "3% and 2% rates apply to the first $2,500 of combined spend per quarter",
         "Preferred Rewards status multiplies this rate by 25% to 75%"
       ],
-      "notes": "Small on its own and considerably larger for Bank of America Preferred Rewards customers, who earn up to 75% more on the same spend. The monthly change window is why this row carries a date."
+      "notes": "Small on its own and considerably larger for Bank of America Preferred Rewards customers, who earn up to 75% more on the same spend. The monthly change window is why this row carries a date, and why the date is the end of whichever month you are in rather than one written down once.",
+      "recurs": "month_end"
     },
     {
       "id": "amazon-prime-visa-5pct",
@@ -1562,7 +1623,6 @@
       ],
       "notes": "The largest recurring expense most people have, earning rewards for the first time. Modelled on $1,800 a month of rent. The five-transaction requirement catches people out every month, and the valuation depends entirely on transferring points rather than cashing them."
     },
-
     {
       "id": "rakuten-portal",
       "kind": "cashback_app",
@@ -1672,7 +1732,6 @@
       ],
       "notes": "Modelled on about $2,400 of annual fuel spend. Genuinely stacks with a 4% gas card, and the per-gallon offers are largest at stations that are trying to take share from a competitor across the road."
     },
-
     {
       "id": "public-transfer-promo",
       "kind": "transfer_promo",
@@ -1825,7 +1884,6 @@
       ],
       "notes": "Two years of Gold at about $5 a month is $120 of subscription against a $200 match on $20,000, so the real net is closer to $80 unless you were paying for Gold anyway. That subtraction is the entire calculation and it is nowhere in the advertisement."
     },
-
     {
       "id": "citi-simplicity-bt-carry",
       "kind": "credit_promo",
@@ -1867,7 +1925,6 @@
       ],
       "notes": "The comparison with the 21-month, 5%-fee version is the point of listing both: a lower fee over a shorter window still wins, because the fee is paid once and the annualised cost of it is what actually matters. Nearly two percent a year here versus about one."
     },
-
     {
       "id": "amex-offers-enrollment",
       "kind": "fintech_promo",
@@ -2006,7 +2063,6 @@
       ],
       "notes": "Modelled as a 75% boost on about $450 of annual card rewards at the top tier, which is roughly $337 a year on a $100,000 balance — a third of a percent. That is small as a rate and real as dollars, and it costs nothing if the money was going to sit in a brokerage account anyway. This is the rare row here where the capital is genuine, which is why it carries a real annualised figure instead of a payout."
     },
-
     {
       "id": "state-unclaimed-property",
       "kind": "found_money",

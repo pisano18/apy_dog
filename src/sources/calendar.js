@@ -174,6 +174,17 @@ function eventKey(e) {
   const day = isoDay(e.dateMs) || 'nodate';
   if (e.kind === catalyst.EVENT_KIND.EARNINGS) return `earnings|${String(e.symbol || '').toUpperCase()}|${day}`;
   if (e.kind === catalyst.EVENT_KIND.TREASURY_AUCTION) return `auction|${day}|${e.title || ''}`;
+  // Money deadlines key by title too, for the same reason auctions do: several
+  // unrelated ones genuinely land on the same day, and unlike a published
+  // schedule they come from ONE generator, so there is no cross-source
+  // duplication for the day-only key to collapse.
+  //
+  // Without this, 31 December carried two deadlines — "Last day to harvest
+  // losses, convert to Roth, or take an RMD", which this file itself calls the
+  // single biggest deadline in the year, and "FSA money is forfeited tonight" —
+  // and the merge silently kept whichever came second. Every year. The tests
+  // did not see it because they assert on the generator, before the merge.
+  if (e.kind === catalyst.EVENT_KIND.MONEY_DEADLINE) return `deadline|${day}|${e.title || ''}`;
   return `${e.kind}|${day}|${String(e.symbol || '').toUpperCase()}`;
 }
 
@@ -1032,7 +1043,18 @@ const adapter = {
     notes.unshift(`${events.length} events on the calendar, ${upcoming} still ahead. `
       + `${events.length - estimated} carry a published date; ${estimated} are inferred from a schedule pattern and `
       + 'are labelled estimated.');
-    notes.push(`${computed.length} expiry and rebalance dates computed from the calendar with no request at all.`);
+    // Counted from what actually reached the calendar, and named for what it
+    // actually is. Since the money deadlines joined `computed`, this line was
+    // calling tax dates "expiry and rebalance dates" and counting rows the
+    // merge had dropped or the horizon had cut — wrong every single day.
+    const landed = (kind) => events.filter((e) => e.kind === kind).length;
+    const deadlines = events.filter((e) => e.kind === catalyst.EVENT_KIND.MONEY_DEADLINE).length;
+    const shapes = computed.length - deadlines;
+    notes.push(`${Math.max(0, shapes)} expiry and rebalance dates and ${deadlines} statutory money deadlines, `
+      + 'all computed from the calendar with no request at all.');
+    if (landed(catalyst.EVENT_KIND.MONEY_DEADLINE) === 0) {
+      notes.push('No money deadline is inside the forward horizon, which is unusual — check the calendar horizon.');
+    }
     if (seeded.skipped) notes.push(`${seeded.skipped} bundled calendar entries were unreadable and were skipped.`);
     notes.push('This source contributes dated events, not buyable rows, which is why it lists no opportunities.');
 

@@ -110,6 +110,21 @@ function valuePerHour(o) {
   return v / Math.max(0.25, minutesFor(o) / 60);
 }
 
+/**
+ * The part of a one-off payment that lands inside the coming year.
+ *
+ * A $350 transfer match with a five-year clawback is $350, and it is not $350
+ * of this year. Spreading it evenly is the same convention score.js already
+ * uses for the year-one blend, so the plan's totals and the row's own
+ * incomeYear1 agree instead of contradicting each other by a factor of five.
+ */
+function yearOneShare(o, dollars) {
+  if (!Number.isFinite(dollars)) return null;
+  const days = Number.isFinite(o.term?.days) && o.term.days > 0 ? o.term.days : 365;
+  if (days <= 365) return dollars;
+  return dollars * (365 / days);
+}
+
 function stepFrom(o, tier, { capital = null, note = null, dollars = null } = {}) {
   return {
     tier,
@@ -125,6 +140,16 @@ function stepFrom(o, tier, { capital = null, note = null, dollars = null } = {})
     capital,
     ratePct: o.scores?.blendedGross ?? o.apy?.total ?? null,
     dollars,
+    // What of `dollars` actually lands inside twelve months.
+    //
+    // `oneTimeDollars` is the whole payment, whenever it arrives — that changed
+    // when long one-offs stopped reporting a fraction of themselves, and it is
+    // the right number for the step, because "$350" is what the offer is about.
+    // It is the wrong number for a total the interface labels "Year one": a
+    // five-year IRA match contributed its full $350 to a twelve-month figure
+    // that the same row's own incomeYear1 puts at $69.
+    dollarsYear1: yearOneShare(o, dollars),
+    termDays: Number.isFinite(o.term?.days) && o.term.days > 0 ? o.term.days : null,
     dollarsUnknown: !!o.dollarsUnknown,
     valuePerHour: valuePerHour(o),
     note,
@@ -238,8 +263,20 @@ function buildPlan(rows, opts = {}) {
   }
 
   // ---- tier 3: the buffer --------------------------------------------------
-  const bufferTarget = Number.isFinite(facts.monthlyExpenses) && facts.monthlyExpenses > 0
-    ? facts.monthlyExpenses * (Number(facts.bufferMonths) || 3)
+  // Zero months is an answer, not a missing value.
+  //
+  // `Number(x) || 3` treats 0 as absent, so somebody who set the buffer slider
+  // to zero got three months anyway — the plan committed 48% of a $25,000 budget
+  // to a checking account they had explicitly declined, while the step's own
+  // note read "Sized at 0 months of the $4,000 you said you spend." The
+  // persisted fact, the re-rendered control and the sentence all said 0; only
+  // the arithmetic said 3. It was unreachable until the Plan inputs were
+  // connected, which is exactly the kind of bug connecting them exposes.
+  const bufferMonths = Number.isFinite(facts.bufferMonths) && facts.bufferMonths >= 0
+    ? facts.bufferMonths
+    : DEFAULT_FACTS.bufferMonths;
+  const bufferTarget = Number.isFinite(facts.monthlyExpenses) && facts.monthlyExpenses > 0 && bufferMonths > 0
+    ? facts.monthlyExpenses * bufferMonths
     : null;
   if (bufferTarget) {
     const safe = rows
@@ -255,10 +292,16 @@ function buildPlan(rows, opts = {}) {
       steps.push(stepFrom(o, 'buffer', {
         capital: use,
         dollars: use === null ? null : use * ((o.scores?.blendedAfterTax ?? 0) / 100),
-        note: `Sized at ${facts.bufferMonths} months of the ${money(facts.monthlyExpenses)} you said you spend. `
+        note: `Sized at ${bufferMonths} months of the ${money(facts.monthlyExpenses)} you said you spend. `
           + 'Same-day access is the point; the rate is a bonus.',
       }));
     }
+  } else if (bufferMonths <= 0 && Number.isFinite(facts.monthlyExpenses)) {
+    // They said zero, which is a decision and not a gap. Recording it as an
+    // assumption rather than as something unknown is the difference between
+    // "you told me to skip this" and "I could not work this out".
+    assumptions.push('No buffer, because you asked for none. Every dollar is put to work, which is the right '
+      + 'call only if your emergency cash is somewhere this app cannot see.');
   } else {
     notKnown.push('What you spend in a month. Without it there is no way to size a buffer, so the plan puts '
       + 'everything to work and assumes you have cash elsewhere.');
@@ -377,12 +420,19 @@ function buildPlan(rows, opts = {}) {
   // needs no capital, so it does not scale with what you have and does not
   // belong in the same total as a yield on a balance. The plan reports both and
   // never sums them.
+  // Summed on the year-one share, because that is what the interface calls
+  // these. The step still shows the whole payment.
   const fromCapital = steps
-    .filter((s) => Number.isFinite(s.capital) && s.capital > 0 && Number.isFinite(s.dollars))
-    .reduce((n, s) => n + s.dollars, 0);
+    .filter((s) => Number.isFinite(s.capital) && s.capital > 0 && Number.isFinite(s.dollarsYear1))
+    .reduce((n, s) => n + s.dollarsYear1, 0);
   const fromActions = steps
-    .filter((s) => !(Number.isFinite(s.capital) && s.capital > 0) && Number.isFinite(s.dollars))
-    .reduce((n, s) => n + s.dollars, 0);
+    .filter((s) => !(Number.isFinite(s.capital) && s.capital > 0) && Number.isFinite(s.dollarsYear1))
+    .reduce((n, s) => n + s.dollarsYear1, 0);
+  // Anything whose payment reaches beyond twelve months, so the totals can say
+  // what they are leaving out rather than quietly shrinking.
+  const beyondYearOne = steps
+    .filter((s) => Number.isFinite(s.dollars) && Number.isFinite(s.dollarsYear1) && s.dollars - s.dollarsYear1 > 1)
+    .reduce((n, s) => n + (s.dollars - s.dollarsYear1), 0);
 
   return {
     steps,
@@ -392,6 +442,7 @@ function buildPlan(rows, opts = {}) {
     minutesUsed: Math.max(0, facts.hoursAvailable * 60 - minutesLeft),
     fromCapital: fromCapital > 0 ? fromCapital : null,
     fromActions: fromActions > 0 ? fromActions : null,
+    beyondYearOne: beyondYearOne > 1 ? beyondYearOne : null,
     firstYearIncomplete: steps.some((s) => s.dollarsUnknown),
     assumptions,
     notKnown,

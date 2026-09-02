@@ -157,7 +157,26 @@ describe('the planted positive: it finds structure that is really there', () => 
     const res = B.walkForward(syn.regimeBasket({ count: 20, n: 1400, seed: 3 }), { horizon: 21 });
     const sq = res.test.scores.find((s) => s.key === 'squeeze');
     assert.strictEqual(sq.verdict, 'insufficient');
-    assert.strictEqual(res.weights.squeeze, 0, 'an unmeasured signal must carry no weight');
+    // And it must be ABSENT from the weights, not written as a zero. This test
+    // asserted `weights.squeeze === 0` — which is the conflation its own comment
+    // above warns against, in the encoding the app reads. An explicit 0 tells
+    // the app "measured, beat nothing, stay silent", so a textbook squeeze read
+    // pressure 0 on any file the walk-forward path wrote, while the banner
+    // claimed a fully measured reading. Omission is what "never measured" looks
+    // like on disk; the app falls back to the prior and says so.
+    assert.ok(!('squeeze' in res.weights),
+      `an unmeasured signal must be absent from the weights, not recorded as ${res.weights.squeeze}`);
+    for (const key of ['catalyst', 'unlock']) {
+      assert.ok(!(key in res.weights), `${key} was never measurable here and must not be recorded`);
+    }
+    // A detector that WAS measured and failed still gets an explicit zero.
+    // Checked against the TRAIN scores, because those are the ones the weights
+    // are fit from — the test split is scored separately and can disagree.
+    const failed = (res.train?.scores || []).filter((x) => ['failed', 'inverted'].includes(x.verdict));
+    assert.ok(failed.length > 0, 'expected at least one measured-and-failed detector to check');
+    for (const x of failed) {
+      assert.strictEqual(res.weights[x.key], 0, `${x.key} failed its measurement and must carry a recorded zero`);
+    }
   });
 });
 
@@ -335,7 +354,14 @@ describe('the statistics are the right statistics', () => {
     ]);
     assert.ok(w.coil > 0);
     assert.strictEqual(w.extension, 0);
-    assert.strictEqual(w.unlock, 0, 'an unmeasured signal must not be trusted because its lift looked good');
+    // Absent, not zero. A lift of 3.0 on an "insufficient" verdict is noise
+    // from too few fires and must not become a weight — but recording it as 0
+    // says something different and equally false, that the detector was
+    // measured and beat nothing. The app reads an explicit 0 as a verdict and
+    // stays silent; it reads an absent key as "never measured" and falls back
+    // to the prior while saying so on the banner.
+    assert.ok(!('unlock' in w),
+      `an unmeasured signal must be absent, not recorded as ${w.unlock} because its lift looked good`);
     assert.ok(w.catalyst > 0 && w.catalyst < 0.4, 'unproven signals are damped, not adopted');
   });
 

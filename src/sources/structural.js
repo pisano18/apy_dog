@@ -315,6 +315,23 @@ function resolveWindow(spec, nowMs) {
         sentence: 'Unusually, this one is NOT a 31 December deadline: you have until the April filing deadline (no extensions) to make a contribution for the prior tax year, so for a few months two years are open at once.',
       };
     }
+    case 'extended_filing_deadline': {
+      // Distinct from `filing_deadline`, whose sentence says "no extensions" —
+      // true for an IRA or HSA contribution and false for a SEP-IRA or the
+      // employer side of a solo 401(k), which are expressly due at the business
+      // return's due date INCLUDING extensions. Filing those under the wrong
+      // type told a sole proprietor who extended that they had missed a window
+      // still open to them for another six months, while the same row's own
+      // access notes said the opposite.
+      const expiresAt = nextAnnual(now, 10, 15);
+      return {
+        startsAt: null,
+        expiresAt,
+        sentence: 'Due with the business return, INCLUDING extensions — so 15 October if you extend, and the '
+          + 'regular filing deadline if you do not. That makes this one of the very few moves still available '
+          + 'after the tax year has closed.',
+      };
+    }
     case 'month_end': {
       const expiresAt = nextMonthEnd(now);
       return {

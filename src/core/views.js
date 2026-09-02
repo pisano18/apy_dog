@@ -94,11 +94,17 @@ function radarPayload(dataset, { settings = {}, watchlist = [] } = {}) {
         grade: o.rating?.grade || null,
       }));
 
+    // Earnings for a single ticker is a catalyst, not a deadline you can miss.
+    // Money deadlines, maturities and expiries genuinely close. Named once,
+    // because the card and the count of what lies past it have to agree: they
+    // did not, and the footnote reported 133 things where 53 were showable —
+    // 80 of them earnings, jobs, CPI, PPI and FOMC dates the card is coded never
+    // to display, and the one it NAMED as coming next was usually one of those.
+    const CLOCK_KINDS = ['money_deadline', 'maturity', 'call_date', 'token_unlock',
+      'lockup_expiry', 'opex', 'index_rebalance', 'treasury_auction'];
     const clockEvents = (dataset.events || [])
       .filter((e) => Number.isFinite(e.daysAway) && e.daysAway >= 0 && e.daysAway <= 45)
-      // Earnings for a single ticker is a catalyst, not a deadline you can miss.
-      // Money deadlines, maturities and expiries genuinely close.
-      .filter((e) => ['money_deadline', 'maturity', 'call_date', 'token_unlock', 'lockup_expiry', 'opex', 'index_rebalance', 'treasury_auction'].includes(e.kind))
+      .filter((e) => CLOCK_KINDS.includes(e.kind))
       .map((e) => ({
         type: 'event',
         id: `event:${e.kind}:${e.dateMs}`,
@@ -144,6 +150,9 @@ function radarPayload(dataset, { settings = {}, watchlist = [] } = {}) {
         .map((o) => ({ days: o.daysLeft, name: o.name })),
       ...(dataset.events || [])
         .filter((e) => Number.isFinite(e.daysAway) && e.daysAway > CLOCK_WINDOW && e.daysAway <= 365)
+        // The same whitelist the card uses. Counting things the card would
+        // refuse to show made the footnote a promise it could not keep.
+        .filter((e) => CLOCK_KINDS.includes(e.kind))
         .map((e) => ({ days: e.daysAway, name: e.title || e.label })),
     ].sort((a, b) => a.days - b.days);
 
@@ -154,7 +163,11 @@ function radarPayload(dataset, { settings = {}, watchlist = [] } = {}) {
       onTheClockCount: onTheClock.length,
       clockWindowDays: CLOCK_WINDOW,
       beyondWindow: beyond.length,
-      nextBeyond: beyond[0] ? { days: Math.round(beyond[0].days), name: beyond[0].name } : null,
+      // Ceil, not round. `days > CLOCK_WINDOW` is strict, so an item at 45.4
+      // rounded to "the next in 45" — inside the window it was just declared to
+      // be beyond, which its own test asserts cannot happen. daysAway carries
+      // real fractions, so this fired on about a fifth of all moments.
+      nextBeyond: beyond[0] ? { days: Math.ceil(beyond[0].days), name: beyond[0].name } : null,
       weekEvents,
       weekEventCount: upcoming.length,
       groups: {
@@ -337,6 +350,14 @@ function mergeMeasured(existing, res) {
   row.id = existing.id;
   row.source = existing.source;
   if (existing.sourceLabel) row.sourceLabel = existing.sourceLabel;
+  // The name belongs to the row too. An index-tier equities row knows the
+  // company ("Ford Motor Company"); the on-demand measure path rebuilds from a
+  // universe entry that falls back to the bare symbol, so measuring renamed
+  // Ford to "F" on every index row — the entire tier the Measure button exists
+  // to serve. A measurement improves the numbers, not the identity.
+  if (existing.name && (!fresh.name || fresh.name === existing.symbol || fresh.name === row.symbol)) {
+    row.name = existing.name;
+  }
   if (existing.section && !fresh.section) row.section = existing.section;
   row.measured = true;
 

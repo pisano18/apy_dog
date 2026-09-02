@@ -435,7 +435,12 @@ describe('every row is actionable and honest', () => {
         // which is higher. What it can never do is exceed the better of the
         // two, because that money has to be somewhere.
         const ceiling = Math.max(o.tax?.grossApy ?? -Infinity, C.DEFAULT_SETTINGS?.riskFreeRate ?? 5) + 0.05;
-        for (const k of ['blendedGross', 'blendedAfterTax', 'blendedAfterTaxReal']) {
+        // `blendedYield` belongs in this list and was missing from it, which is
+        // exactly why a defect in that field went unnoticed: it is the one the
+        // ranking consumes (basisYield -> mu -> CE -> dogScore) and the one
+        // incomeYear1 and income5yr are computed from. The three display
+        // columns were checked; the number that decides the order was not.
+        for (const k of ['blendedYield', 'blendedGross', 'blendedAfterTax', 'blendedAfterTaxReal']) {
           if (!Number.isFinite(o.scores[k])) continue;
           assert.ok(o.scores[k] <= ceiling,
             `${o.name}: ${k} of ${o.scores[k]}% beats both its own rate and cash`);
@@ -453,6 +458,44 @@ describe('every row is actionable and honest', () => {
         if (Number.isFinite(o.scores.blendedGross) && Number.isFinite(o.scores.blendedAfterTax)) {
           assert.ok(o.scores.blendedAfterTax <= o.scores.blendedGross + 0.01,
             `${o.name} keeps more after tax (${o.scores.blendedAfterTax}%) than before it (${o.scores.blendedGross}%)`);
+        }
+      }
+    });
+
+    test('the ranked figure is the basis it says it is', () => {
+      // The leftover a cap excludes is credited at cash, and which VERSION of
+      // cash depends on the basis being ranked. That variant used to be picked
+      // by comparing the chosen rate's VALUE against each basis — and
+      // `grossApy === taxEquivalentYield` is an arithmetic identity for an
+      // ordinary-treatment row in a taxable account, so the headline basis fell
+      // through to the tax-equivalent arm and credited the remainder at a
+      // grossed-up rate above every cash rate in the app. Invisible under the
+      // default Texas profile, where no state tax collapses the two together.
+      const { scoreOne } = require('../src/core/score');
+      const profiles = [
+        { federalOrdinary: 37, federalLtcg: 20, state: 'CA', stateRate: 9.3, inflation: 2.6 },
+        { federalOrdinary: 24, federalLtcg: 15, state: 'TX', inflation: 2.6 },
+        { federalOrdinary: 32, federalLtcg: 15, state: 'NY', stateRate: 6.85, inflation: 0 },
+      ];
+      const bases = { gross: 'blendedGross', afterTax: 'blendedAfterTax', afterTaxReal: 'blendedAfterTaxReal' };
+      const treatments = ['ordinary', 'treasury', 'qualified_dividend', 'muni_federal_exempt',
+        'muni_triple_exempt', 'return_of_capital', 'tax_deferred', 'capital_gain_long'];
+
+      for (const taxProfile of profiles) {
+        for (const [basis, column] of Object.entries(bases)) {
+          for (const taxTreatment of treatments) {
+            for (const rate of [6.17, 0, -1.5, 12]) {
+              const s = scoreOne(
+                { id: 'x', name: 'Capped account', apy: { total: rate }, taxTreatment,
+                  maxInvestment: 1000, assetClass: 'cash', liquidity: 'instant', risk: { insurance: 'fdic' } },
+                { riskFree: 3.8, amount: 10000, budget: 10000, basis, taxProfile },
+              );
+              if (!Number.isFinite(s.blendedYield) || !Number.isFinite(s[column])) continue;
+              assert.ok(Math.abs(s.blendedYield - s[column]) < 0.001,
+                `${taxTreatment} at ${rate}% on the ${basis} basis: the ranking uses ${s.blendedYield}% `
+                + `while the ${column} column shows ${s[column]}% — the ranked figure is not the basis it claims`);
+            }
+          }
         }
       }
     });

@@ -368,7 +368,19 @@ function scoreSignal(key, obs, baseRate, opts = {}) {
 function fitWeights(scores) {
   const w = {};
   for (const s of scores) {
-    if (['failed', 'insufficient', 'unusable', 'inverted'].includes(s.verdict) || !finite(s.lift)) {
+    // "Judged and found worthless" and "could not be judged" are different
+    // results and must not be written the same way.
+    //
+    // Both used to land on weight 0. But an explicit 0 tells the app the
+    // detector was measured and beat nothing, so it stays silent — and a
+    // closes-only backtest can NEVER measure squeeze, catalyst or unlock,
+    // whose inputs it does not have. Writing 0 for them meant a run with
+    // --no-sweep produced a file on which a textbook squeeze read pressure 0
+    // while the banner claimed a fully measured reading. Omitting the key is
+    // the honest record of "never measured", and the app falls back to the
+    // prior and says so.
+    if (['insufficient', 'unusable'].includes(s.verdict) || !finite(s.lift)) continue;
+    if (['failed', 'inverted'].includes(s.verdict)) {
       // Inverted included: acting on it would mean flipping a detector on the
       // strength of the same data that revealed the flip, which is the oldest
       // way there is to turn noise into a strategy.

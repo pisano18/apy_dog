@@ -61,16 +61,23 @@ function main() {
   for (const line of renderReport(report, { symbols: (report.universe || []).length })) console.log(line);
 
   // The part the report itself cannot know: which detectors this run had no way
-  // to reach. A backtest over closes cannot see short interest, an event
-  // calendar or an unlock schedule, so those three are never in the file and
-  // are running on the weight somebody chose by hand.
-  const measured = Object.keys(report.weights || {});
-  const unmeasured = SIG.DETECTOR_KEYS.filter((k) => !measured.includes(k));
-  if (unmeasured.length) {
-    console.log(`\nNot measurable by a backtest over closes, so still on a hand-chosen weight:`);
-    console.log(`  ${unmeasured.join(', ')}`);
-    console.log('  These need short interest, an event calendar and an unlock schedule. They are not');
-    console.log('  part of what the numbers above verify, and the app says so on the Signals banner.');
+  // to reach. Stated from the apparatus, not inferred from which keys the file
+  // happens to contain — the walk-forward path writes all seven, three of them
+  // as a 0 that means "fired zero times because it had no inputs", and reading
+  // key presence made this caveat vanish on exactly the files that most needed
+  // it while the table above printed those three as measured.
+  const unreachable = SIG.DETECTOR_KEYS.filter((k) => !SIG.MEASURABLE_BY_BACKTEST.includes(k));
+  if (unreachable.length) {
+    console.log('\nNot measurable by a backtest over closes, so still on a hand-chosen weight:');
+    console.log(`  ${unreachable.join(', ')}`);
+    console.log('  These need short interest, an event calendar and an unlock schedule, which a run over');
+    console.log('  historical prices does not have. They fire zero times in every backtest, so any row the');
+    console.log('  table above shows for them describes the measurement, not the detector. They are not part');
+    console.log('  of what these numbers verify, and the app says so on the Signals banner.');
+    const recorded = unreachable.filter((k) => Number.isFinite((report.weights || {})[k]));
+    if (recorded.length) {
+      console.log(`  (This file records a weight for ${recorded.join(', ')} anyway. The app ignores it.)`);
+    }
   }
 
   console.log(`\nRead from ${path.relative(process.cwd(), file)}`

@@ -787,8 +787,48 @@ function expectedFor(valued, item, kind) {
   };
 }
 
+/**
+ * A deadline that comes round again, computed rather than written down.
+ *
+ * Some offers have a real date somebody published — a rotating category list
+ * for Q4 2026 ends on 31 December 2026 and then it is over. Others have a
+ * RECURRING deadline that a fixed date can only ever describe once: Bank of
+ * America's choice category can be changed once a calendar month, so the
+ * practical deadline is the end of whichever month you are in.
+ *
+ * The BofA row carried "2026-08-31", and on 2 September 2026 it silently
+ * vanished from every list in the app — expired, filtered out, gone — for an
+ * offer that was still perfectly live and whose own notes say "the practical
+ * deadline is the end of the month". A hard-coded date on a recurring deadline
+ * is a bomb with a fuse as long as the period.
+ *
+ * `recurs` names the period instead, and the date is derived from today.
+ */
+function recurringExpiry(recurs, nowMs) {
+  const now = Number.isFinite(nowMs) ? nowMs : null;
+  if (!now || !recurs) return null;
+  const d = new Date(now);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth();
+  const day = (yy, mm, dd) => `${yy}-${String(mm + 1).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+  const lastOf = (yy, mm) => new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();
+
+  switch (String(recurs)) {
+    case 'month_end':
+      return day(y, m, lastOf(y, m));
+    case 'quarter_end': {
+      const qEnd = m - (m % 3) + 2;
+      return day(y, qEnd, lastOf(y, qEnd));
+    }
+    case 'year_end':
+      return day(y, 11, 31);
+    default:
+      return null;
+  }
+}
+
 /** One curated offer -> one normalized opportunity, or null if it is unusable. */
-function buildRow(item, { dataAsOf, schema, C }) {
+function buildRow(item, { dataAsOf, schema, C, now = null }) {
   if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
 
   const kind = KINDS[String(item.kind || '').trim()];
@@ -816,7 +856,9 @@ function buildRow(item, { dataAsOf, schema, C }) {
   // Dates are the whole point of the deals shelf: a thing that closes on Friday
   // and a thing with no deadline are not comparable. Anything unparseable is
   // dropped rather than guessed at — a wrong countdown is worse than none.
-  const expiresAt = isoDay(item.expiresAt, null);
+  // A recurring deadline wins over a written one: a fixed date on a monthly
+  // window is only right for one month and silently deletes the row after it.
+  const expiresAt = recurringExpiry(item.recurs, now) || isoDay(item.expiresAt, null);
   const startsAt = isoDay(item.startsAt, null);
 
   const stated = Array.isArray(item.requirements) ? item.requirements.map((r) => String(r)).filter(Boolean) : [];
@@ -1033,7 +1075,7 @@ function buildRows(items, ctx = {}) {
   for (const item of Array.isArray(items) ? items : []) {
     let row = null;
     try {
-      row = buildRow(item, { dataAsOf, schema, C });
+      row = buildRow(item, { dataAsOf, schema, C, now: Number.isFinite(ctx.now) ? ctx.now : Date.now() });
     } catch {
       row = null;   // one malformed offer must never take the source down
     }
@@ -1161,6 +1203,21 @@ function collect(ctx, extraItems = []) {
   ];
   if (built.skipped) {
     notes.push(`${built.skipped} row(s) skipped — unknown kind, missing link or access notes, no usable amount, or figures outside the sanity limits.`);
+  }
+
+  // A bundled offer whose date has passed is not a missing offer, it is a stale
+  // file — and it used to disappear without a word. One BofA row rotted two days
+  // past its date and simply stopped existing, in an app whose whole promise is
+  // that it says what it does and does not know. Say it out loud instead, and
+  // name the rows, because "the snapshot is old" is actionable and a silently
+  // shorter list is not.
+  const stale = built.opportunities.filter((o) => o.expired);
+  if (stale.length) {
+    notes.push(`${stale.length} bundled offer${stale.length === 1 ? ' has' : 's have'} passed the closing date `
+      + `written into the snapshot and ${stale.length === 1 ? 'is' : 'are'} filtered out of every list: `
+      + `${stale.slice(0, 5).map((o) => o.name).join('; ')}${stale.length > 5 ? `, and ${stale.length - 5} more` : ''}. `
+      + 'A recurring deadline should carry "recurs" rather than a written date; a genuinely finished offer should be '
+      + 'replaced in your own deals file.');
   }
   const kinds = Object.entries(built.byKind).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${KINDS[k]?.label || k}`);
   if (kinds.length) notes.push(`By kind: ${kinds.join(', ')}.`);
