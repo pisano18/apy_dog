@@ -552,7 +552,10 @@ function registerIpc() {
     return buildPlan(dataset.opportunities, {
       budget: Number.isFinite(store.settings.budget) && store.settings.budget > 0 ? store.settings.budget : null,
       facts: store.settings.planFacts || {},
-      riskFree: dataset.meta?.riskFreeRate ?? 4,
+      // `riskFree`, not `riskFreeRate` — nothing in the pipeline has ever
+      // produced the latter, so the plan quoted the 4.00% fallback on every
+      // run while the table beside it used the measured rate.
+      riskFree: dataset.meta?.riskFree ?? 4,
     });
   });
 

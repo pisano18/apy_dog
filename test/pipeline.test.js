@@ -363,3 +363,53 @@ describe('money deadlines', () => {
       'the live calendar drops the money deadlines the bundled one has');
   });
 });
+
+/**
+ * The risk-free rate has to survive a refresh that did not ask about it.
+ *
+ * Sources refresh on their own cadences — crypto every four minutes, Treasury
+ * every hour — so almost every refresh after launch is a partial one that does
+ * not include Treasury. Each of those recomputed the rate from scratch, found
+ * no Treasury result and dropped to the 4.00% fallback, and the whole table was
+ * then re-scored against a number nobody had measured, roughly fourteen times
+ * an hour. It moves the blend, the certainty-equivalent, the dogScore and every
+ * dollar figure in the app.
+ */
+describe('the measured risk-free rate', () => {
+  let adapters;
+  before(() => { adapters = loadAdapters().adapters; });
+
+  test('survives every refresh that does not include Treasury', async () => {
+    let state = await aggregate(adapters, { offline: true });
+    const measured = state.meta.riskFree;
+    assert.strictEqual(state.meta.riskFreeSource, 'treasury', 'the baseline run did not measure a rate');
+
+    for (const source of ['crypto', 'equities', 'deals', 'defillama', 'savings', 'crypto']) {
+      state = await aggregate(adapters, { offline: true, only: [source], previous: state });
+      assert.strictEqual(state.meta.riskFree, measured,
+        `refreshing ${source} changed the risk-free rate to ${state.meta.riskFree}`);
+      assert.match(state.meta.riskFreeSource, /^treasury \(carried\)$/,
+        `the source label degraded to "${state.meta.riskFreeSource}"`);
+    }
+
+    // And refreshing Treasury itself measures it again rather than carrying.
+    state = await aggregate(adapters, { offline: true, only: ['treasury'], previous: state });
+    assert.strictEqual(state.meta.riskFreeSource, 'treasury');
+  });
+
+  test('a first run with no history still falls back honestly', async () => {
+    const only = await aggregate(adapters, { offline: true, only: ['crypto'], previous: null });
+    assert.strictEqual(only.meta.riskFreeSource, 'fallback',
+      'with nothing measured and nothing carried, it must say it is guessing');
+  });
+
+  test('and the plan reads the same rate the table does', () => {
+    // electron/main.js read `meta.riskFreeRate`, which nothing in the pipeline
+    // has ever produced, so the plan quoted the 4.00% fallback while the table
+    // beside it used the measured rate.
+    const fs2 = require('node:fs');
+    const src = fs2.readFileSync(require('node:path').join(__dirname, '..', 'electron', 'main.js'), 'utf8');
+    assert.ok(!/meta\?\.riskFreeRate/.test(src),
+      'main.js is reading meta.riskFreeRate again, a key the pipeline does not emit');
+  });
+});

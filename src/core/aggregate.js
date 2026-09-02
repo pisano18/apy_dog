@@ -182,6 +182,10 @@ async function aggregate(adapters, opts = {}) {
   // already held.
   const only = Array.isArray(opts.only) && opts.only.length ? new Set(opts.only) : null;
   const carried = only && Array.isArray(opts.previous?.opportunities) ? opts.previous : null;
+  // Meta survives a partial run even when the rows do not — a previous scan's
+  // measured risk-free rate is still the best number available to a refresh
+  // that did not ask Treasury anything.
+  const carriedMeta = opts.previous?.meta || null;
   if (only) active = active.filter((a) => only.has(a.id));
 
   const skipped = adapters.filter((a) => !active.includes(a) && (enabled === null || enabled === undefined ? a.defaultEnabled !== false : enabled.includes(a.id)));
@@ -229,6 +233,24 @@ async function aggregate(adapters, opts = {}) {
         if (Number.isFinite(bill?.apy?.total)) { riskFree = bill.apy.total; riskFreeSource = 'treasury:3mo-bill'; }
       }
     } catch { /* keep the fallback */ }
+  }
+
+  // A refresh that did not fetch Treasury has not learned anything new about
+  // the risk-free rate, and must not forget what it already knew.
+  //
+  // Sources refresh on their own cadences — crypto every four minutes, Treasury
+  // every hour — so almost every refresh after launch is a partial one that
+  // does not include Treasury. Each of those recomputed this from scratch,
+  // found no Treasury result, and dropped to the 4.00% fallback; the whole
+  // table was then re-scored against a rate nobody measured, roughly fourteen
+  // times an hour. The blend, the certainty-equivalent, the dogScore and every
+  // dollar figure move with it.
+  if (riskFreeSource === 'fallback' && carriedMeta && Number.isFinite(carriedMeta.riskFree)) {
+    riskFree = carriedMeta.riskFree;
+    // Marked carried once, not once per refresh — this runs about fourteen
+    // times an hour and the label is shown to the user.
+    const was = String(carriedMeta.riskFreeSource || '').replace(/ \(carried\)$/, '');
+    riskFreeSource = was ? `${was} (carried)` : 'carried';
   }
 
   // --- events ---------------------------------------------------------------

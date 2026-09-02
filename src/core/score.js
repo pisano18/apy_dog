@@ -264,10 +264,26 @@ function scoreOne(o, opts = {}) {
   const confidence = clamp(o.confidence ?? 0.5, 0, 1);
 
   // --- haircut the claim before trusting it in the maths --------------------
+  //
+  // A haircut discounts a return for the chance it is not real, and multiplying
+  // by a fraction only does that to a POSITIVE number. On a negative one the
+  // same multiplication shrinks the loss toward zero, so distrust became a
+  // bonus: the less the app believed a figure, the better the row scored. The
+  // same 2.00% account read mu -1.05 at full confidence and -0.58 at a
+  // confidence of 0.1, and 293 of 854 rows had their real loss shrunk on the
+  // "after tax and inflation" basis — every Treasury under about 2.7%, most
+  // savings accounts, every money market fund — by amounts that differ per row,
+  // so the ordering among them ran backwards on trust.
+  //
+  // tax.js already carries this exact guard, with a comment about a losing row
+  // reading as less bad after tax than before it. Same error, same answer: a
+  // loss is not improved by doubting it.
   const trapHaircut = 1 - 0.7 * (traps.score / 100);
   const confHaircut = 0.5 + 0.5 * confidence;
   const muRaw = Number.isFinite(chosen) ? chosen : null;
-  const mu = muRaw === null ? null : muRaw * trapHaircut * confHaircut;
+  const mu = muRaw === null ? null
+    : muRaw >= 0 ? muRaw * trapHaircut * confHaircut
+      : muRaw;
 
   // --- certainty equivalent -------------------------------------------------
   // You only collect the yield in the worlds where the thing survives the year,
@@ -277,7 +293,11 @@ function scoreOne(o, opts = {}) {
   const sigma = (Number.isFinite(vol) ? vol : assumedVolatility(o)) / 100;
   const lossWeight = lossAversionWeight(appetite);
   const tailDrag = tail.annualProbability * tail.lossGivenEvent * 100 * lossWeight;
-  const muSurvived = mu === null ? null : mu * (1 - tail.annualProbability);
+  // Same sign rule. Surviving the year does not make a losing position lose
+  // less; the tail loss is accounted separately in tailDrag below.
+  const muSurvived = mu === null ? null
+    : mu >= 0 ? mu * (1 - tail.annualProbability)
+      : mu;
 
   // Mark-to-market volatility on a guaranteed instrument you intend to hold to
   // maturity is noise you never realise: a 30-year Treasury returns par whatever
@@ -313,18 +333,35 @@ function scoreOne(o, opts = {}) {
   }
 
   // --- Sharpe-style excess return per unit of risk --------------------------
-  const sharpe = (Number.isFinite(gross) && sigma > 0.0005)
-    ? (gross - riskFree) / (sigma * 100)
+  // On the BLENDED figure, like every other rate this block reports. Computed
+  // from the raw annualised headline, a $300 checking bonus entered at its 500%
+  // annualised rate over a near-zero volatility and came out at 4962 — putting
+  // it top of the "Return per unit of risk" sort, which is precisely the
+  // ordering the SORTERS comment below says the blending exists to prevent. The
+  // same row's own panel led with "4.07% — worth to you, year one".
+  const sharpe = (Number.isFinite(blendedGross) && sigma > 0.0005)
+    ? (blendedGross - riskFree) / (sigma * 100)
     : null;
 
   // --- dollars, because percentages hide magnitude --------------------------
   // Computed on the blended figure so a capped or one-off offer reports what it
   // would really put in your pocket rather than a rate applied to money it will
   // not accept.
+  // A one-off's five-year figure is the payment itself, not five years of the
+  // year-one blend. `blended` un-annualises with `yearsHeld`, capped at a year,
+  // so a five-year match reported one fifth of itself — the same $59-for-$300
+  // defect fixed once already for `oneTimeDollars`, still on screen here and in
+  // the CSV, and now sitting directly under a note that says $300.
   const yearOne = Number.isFinite(blended) && !o.dollarsUnknown ? basisAmount * (blended / 100) : null;
   const fiveYear = o.dollarsUnknown ? null
     : o.oneTime
-      ? yearOne   // it does not repeat, so five years is not five times
+      // It does not repeat, so five years is not five times year one — it is
+      // the payment. Over a five-year window that payment has fully landed,
+      // whether it took ninety days or the whole five years, plus whatever the
+      // deployed money earned at cash for the rest of the window.
+      ? (Number.isFinite(oneTimeDollars)
+        ? oneTimeDollars + deployable * (riskFree / 100) * Math.max(0, 5 - Math.min(yearsToPay, 5))
+        : yearOne)
       : (Number.isFinite(blended) ? basisAmount * (Math.pow(1 + blended / 100, 5) - 1) : null);
 
   // --- headline 0..100 --------------------------------------------------------

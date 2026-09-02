@@ -462,6 +462,84 @@ describe('every row is actionable and honest', () => {
       }
     });
 
+    test('doubting a number never makes a losing row look better', () => {
+      // The trap and confidence haircuts multiply the expected return by a
+      // fraction, which discounts a POSITIVE return for the chance it is not
+      // real and shrinks a NEGATIVE one toward zero. So distrust became a
+      // bonus: the same 2.00% account read mu -1.05 at full confidence and
+      // -0.58 at a confidence of 0.1, and on the "after tax and inflation"
+      // basis 293 of 854 rows had their real loss shrunk — by different amounts
+      // each, so the ordering among them ran backwards on trust.
+      const { scoreOne, BASIS } = require('../src/core/score');
+      const base = {
+        id: 'x', name: 'A losing account', assetClass: 'cash', yieldKind: 'administered',
+        liquidity: 'instant', apy: { total: 2.0 }, taxTreatment: 'ordinary',
+        risk: { insurance: 'fdic' }, term: { days: null },
+      };
+      const opts = {
+        riskFree: 3.8, appetite: 45, amount: REFERENCE_AMOUNT,
+        taxProfile: { federalOrdinary: 24, state: 'TX', inflation: 2.6 },
+        basis: BASIS.AFTER_TAX_REAL,
+      };
+      const scores = [1.0, 0.5, 0.1].map((confidence) => scoreOne({ ...base, confidence }, opts));
+      for (const s of scores) {
+        assert.ok(s.basisYield < 0, 'this test needs a genuinely losing row');
+        assert.ok(s.adjustedYield <= s.basisYield + 1e-9,
+          `a haircut improved a loss: ${s.basisYield}% became ${s.adjustedYield}%`);
+      }
+      const dogScores = scores.map((s) => s.dogScore);
+      assert.strictEqual(new Set(dogScores).size, 1,
+        `trusting the same losing number less changed its score: ${dogScores.join(' vs ')}`);
+
+      // And across the whole dataset on every basis.
+      for (const basis of [BASIS.GROSS, BASIS.AFTER_TAX, BASIS.AFTER_TAX_REAL]) {
+        let improved = 0;
+        for (const o of rows) {
+          const s = scoreOne(o, { ...opts, basis });
+          if (Number.isFinite(s.basisYield) && s.basisYield < 0 && s.adjustedYield > s.basisYield + 1e-9) improved += 1;
+        }
+        assert.strictEqual(improved, 0, `${improved} losing rows were improved by their haircuts on ${basis}`);
+      }
+    });
+
+    test('a one-off is worth its payment over five years, not one year of it', () => {
+      // `blended` un-annualises with a term capped at one year, so income5yr on
+      // a five-year one-off reported a fifth of itself — the same $59-for-$300
+      // defect that was fixed for oneTimeDollars, still on screen underneath a
+      // note saying $300, and in the CSV export.
+      const long = rows.filter((o) => o.oneTime && o.term?.days > 400
+        && Number.isFinite(o.scores?.oneTimeDollars) && Number.isFinite(o.scores?.income5yr));
+      assert.ok(long.length >= 3, `expected multi-year one-offs, got ${long.length}`);
+      for (const o of long) {
+        assert.ok(o.scores.income5yr >= o.scores.oneTimeDollars - 1,
+          `${o.name}: the note says ${o.scores.oneTimeDollars} once and "over 5 years" says ${o.scores.income5yr}`);
+        assert.ok(o.scores.income5yr > o.scores.incomeYear1,
+          `${o.name}: five years is not more than one`);
+      }
+    });
+
+    test('return per unit of risk is computed on the blended figure', () => {
+      // Every other rate this block reports goes through blend(). Sharpe did
+      // not, so a $300 checking bonus entered at its 500% annualised rate over
+      // a near-zero volatility and came out at 4962 — top of the "Return per
+      // unit of risk" sort, which is exactly the ordering the blending exists
+      // to prevent, and 100x what the same row's own panel leads with.
+      const withSharpe = rows.filter((o) => Number.isFinite(o.scores?.sharpe));
+      assert.ok(withSharpe.length > 50, 'expected Sharpe ratios in the dataset');
+      for (const o of withSharpe) {
+        const rate = o.scores.blendedGross;
+        if (!Number.isFinite(rate)) continue;
+        // Sharpe is (rate - riskFree) / sigma. Whatever sigma is, the numerator
+        // must be the blended rate, so a row can never post a Sharpe that
+        // implies a return it does not claim anywhere on its own panel.
+        const implied = o.scores.sharpe * (o.risk?.volatility ?? 0) / 100;
+        if (!Number.isFinite(implied)) continue;
+        assert.ok(implied <= Math.abs(rate) + 5,
+          `${o.name}: a Sharpe of ${o.scores.sharpe} implies a return of ${implied.toFixed(1)}% `
+          + `from a row whose own blended rate is ${rate}%`);
+      }
+    });
+
     test('the ranked figure is the basis it says it is', () => {
       // The leftover a cap excludes is credited at cash, and which VERSION of
       // cash depends on the basis being ranked. That variant used to be picked
